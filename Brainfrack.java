@@ -24,13 +24,14 @@ class Interpreter {
         printMemory();
     }
 
-    // print the first 200 cells of memory
     private static void printMemory() {
-        for (int i=0; i < 200; i++) {
-                System.out.printf("%c,", memory[i]);
+        int numCells = 200;
+        System.out.printf("First %d cells of memory:\n", numCells);
+
+        System.out.print("[");
+        for (int i=0; i < numCells; i++) {
+                System.out.printf("%c, ", memory[i]);
         }
-        
-        System.out.println("Done.");
-        
+        System.out.print("]");
     }
 }
