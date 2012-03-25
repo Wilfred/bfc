@@ -18,7 +18,27 @@ class Interpreter {
 
     public static void evaluate(String program) {
         while (true) {
-            break;
+            char currentInstruction = program.charAt(instructionPointer);
+
+            if (currentInstruction == '>') {
+                dataPointer++;
+            } else if (currentInstruction == '<') {
+                dataPointer--;
+            } else if (currentInstruction == '+') {
+                memory[dataPointer]++;
+            } else if (currentInstruction == '-') {
+                memory[dataPointer]--;
+            } else if (currentInstruction == '.') {
+                System.out.printf("%c", memory[dataPointer]);
+            } else {
+                // no-op; we ignore any other characters
+            }
+
+            instructionPointer++;
+            if (program.length() == instructionPointer) {
+                // We've reached the end of the program, terminate.
+                break;
+            }
         }
 
         printMemory();
