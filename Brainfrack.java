@@ -87,7 +87,7 @@ class Interpreter {
         for (int i=0; i < numCells; i++) {
                 System.out.printf("%c, ", memory[i]);
         }
-        System.out.print("]");
+        System.out.print("]\n");
     }
 
 }
