@@ -21,6 +21,16 @@ class Interpreter {
             break;
         }
 
+        printMemory();
+    }
+
+    // print the first 200 cells of memory
+    private static void printMemory() {
+        for (int i=0; i < 200; i++) {
+                System.out.printf("%c,", memory[i]);
+        }
+        
         System.out.println("Done.");
+        
     }
 }
