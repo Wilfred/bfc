@@ -7,7 +7,7 @@ public class Brainfrack {
     }
 }
 
-/* TODO: exceptions for stackoverflow, accessing memory beyond MEMORY_SIZE */
+/* TODO: exceptions for stackoverflow, accessing memory beyond MEMORY_SIZE, ] without [, [ without ] */
 class Interpreter {
     static final int MEMORY_SIZE = 30000;
     
@@ -89,4 +89,5 @@ class Interpreter {
         }
         System.out.print("]");
     }
+
 }
