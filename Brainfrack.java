@@ -1,4 +1,4 @@
-
+import java.util.Stack;
 
 public class Brainfrack {
     public static void main(String[] args) {
@@ -16,11 +16,46 @@ class Interpreter {
     private static int instructionPointer = 0;
     private static int dataPointer = 0;
 
+    // When we encounter a [ we keep track of its position here so we
+    // can jump back to it.
+    private static Stack instructionStack = new Stack();
+
     public static void evaluate(String program) {
         while (true) {
             char currentInstruction = program.charAt(instructionPointer);
 
-            if (currentInstruction == '>') {
+            if (currentInstruction == '[') {
+                if (memory[dataPointer] == 0) {
+
+                    // Jump forward to the *matching* `]`.
+                    // FIXME: we assume a matching `]` exists.
+                    while (true) {
+                        int openBrackets = 0;
+                        instructionPointer++;
+
+                        currentInstruction = program.charAt(instructionPointer);
+
+                        if (currentInstruction == ']') {
+                            if (openBrackets == 0) {
+                                // We've found the matching bracket! Hurrah!
+                                break;
+                            } else {
+                                openBrackets--;
+                            }
+                        } else if (currentInstruction == '[') {
+                            openBrackets++;
+                        }
+                    }
+
+                } else {
+                    instructionStack.push(instructionPointer);
+                }
+                
+            } else if (currentInstruction == ']'){
+                instructionPointer = (int)instructionStack.pop();
+                continue;
+                
+            } else if (currentInstruction == '>') {
                 dataPointer++;
             } else if (currentInstruction == '<') {
                 dataPointer--;
@@ -35,7 +70,7 @@ class Interpreter {
             }
 
             instructionPointer++;
-            if (program.length() == instructionPointer) {
+            if (program.length() <= instructionPointer) {
                 // We've reached the end of the program, terminate.
                 break;
             }
