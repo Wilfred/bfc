@@ -2,8 +2,8 @@ import java.util.Stack;
 
 public class Brainfrack {
     public static void main(String[] args) {
-        String printCharacterA = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ .";
-        Interpreter.evaluate(printCharacterA);
+        String helloWorld = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
+        Interpreter.evaluate(helloWorld);
     }
 }
 
