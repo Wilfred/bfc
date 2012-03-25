@@ -2,8 +2,11 @@ import java.util.Stack;
 
 public class Brainfrack {
     public static void main(String[] args) {
-        String helloWorld = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
-        Interpreter.evaluate(helloWorld);
+        if (args.length == 2 && args[0].equals("-i")) {
+            Interpreter.evaluate(args[1]);
+        } else {
+            System.out.println("Usage: java Brainfrack -i <program>");
+        }
     }
 }
 
