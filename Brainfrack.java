@@ -79,7 +79,6 @@ class Interpreter {
             }
         }
 
-        printMemory();
     }
 
     private static void printMemory() {
