@@ -5,7 +5,8 @@ import java.util.Stack;
 public class App {
     public static void main(String[] args) {
         if (args.length == 2 && args[0].equals("-i")) {
-            Interpreter.evaluate(args[1]);
+            Interpreter interpreter = new Interpreter();
+            interpreter.evaluate(args[1]);
         } else {
             System.out.println("Usage: java Brainfrack -i <program>");
         }
@@ -16,16 +17,27 @@ public class App {
 class Interpreter {
     static final int MEMORY_SIZE = 30000;
     
-    public static char[] memory = new char[MEMORY_SIZE];
+    public char[] memory;
 
-    private static Integer instructionPointer = 0;
-    private static Integer dataPointer = 0;
+    private Integer instructionPointer;
+    private Integer dataPointer;
 
     // When we encounter a [ we keep track of its position here so we
     // can jump back to it.
-    private static Stack<Integer> instructionStack = new Stack<Integer>();
+    private Stack<Integer> instructionStack;
 
-    public static void evaluate(String program) {
+    /* Initialise an interpreter with zeroed memory.
+     */
+    public Interpreter() {
+        memory = new char[MEMORY_SIZE];
+
+        instructionPointer = 0;
+        dataPointer = 0;
+
+        instructionStack = new Stack<Integer>();
+    }
+
+    public void evaluate(String program) {
         while (true) {
             char currentInstruction = program.charAt(instructionPointer);
 
@@ -83,7 +95,7 @@ class Interpreter {
 
     }
 
-    private static void printMemory() {
+    private void printMemory() {
         int numCells = 200;
         System.out.printf("First %d cells of memory:\n", numCells);
 
