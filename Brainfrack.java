@@ -16,12 +16,12 @@ class Interpreter {
     
     private static char[] memory = new char[MEMORY_SIZE];
 
-    private static int instructionPointer = 0;
-    private static int dataPointer = 0;
+    private static Integer instructionPointer = 0;
+    private static Integer dataPointer = 0;
 
     // When we encounter a [ we keep track of its position here so we
     // can jump back to it.
-    private static Stack instructionStack = new Stack();
+    private static Stack<Integer> instructionStack = new Stack<Integer>();
 
     public static void evaluate(String program) {
         while (true) {
@@ -55,7 +55,7 @@ class Interpreter {
                 }
                 
             } else if (currentInstruction == ']'){
-                instructionPointer = (int)instructionStack.pop();
+                instructionPointer = (Integer)instructionStack.pop();
                 continue;
                 
             } else if (currentInstruction == '>') {
