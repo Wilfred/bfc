@@ -14,7 +14,9 @@ public class AppTest extends TestCase {
     }
 
     public void testDataIncrement() {
-        Interpreter.evaluate("+");
-        assertTrue(Interpreter.memory[0] == 1);
+        Interpreter interpreter = new Interpreter();
+        interpreter.evaluate("+");
+        assertEquals(1, interpreter.memory[0]);
+    }
     }
 }
