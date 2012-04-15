@@ -17,7 +17,7 @@ public class App {
 class Interpreter {
     static final int MEMORY_SIZE = 30000;
     
-    public char[] memory;
+    public byte[] memory;
 
     private Integer instructionPointer;
     private Integer dataPointer;
@@ -29,7 +29,7 @@ class Interpreter {
     /* Initialise an interpreter with zeroed memory.
      */
     public Interpreter() {
-        memory = new char[MEMORY_SIZE];
+        memory = new byte[MEMORY_SIZE];
 
         instructionPointer = 0;
         dataPointer = 0;
