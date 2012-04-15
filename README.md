@@ -7,15 +7,13 @@ license.
 
 Apache Maven required.
 
+    $ cd brainfrack
     $ mvn package
 
 ## Usage
 
 Brainfrack takes programs as command line arguments with an `-i` flag:
 
-    $ java Brainfrack -i "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
+    $ java -cp target/brainfrack-0.1.jar com.github.wilfred.App -i "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
     Hello world!
 
-Maven usage:
-
-    $ java -cp target/brainfrack-0.1.jar com.github.wilfred.App
