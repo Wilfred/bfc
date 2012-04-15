@@ -16,7 +16,7 @@ public class App {
 class Interpreter {
     static final int MEMORY_SIZE = 30000;
     
-    private static char[] memory = new char[MEMORY_SIZE];
+    public static char[] memory = new char[MEMORY_SIZE];
 
     private static Integer instructionPointer = 0;
     private static Integer dataPointer = 0;
