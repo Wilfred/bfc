@@ -25,12 +25,6 @@ public class AppTest extends TestCase {
         assertEquals(-1, interpreter.memory[0]);
     }
 
-    public void testDataIncrement() {
-        Interpreter interpreter = new Interpreter();
-        interpreter.evaluate("+");
-        assertEquals(1, interpreter.memory[0]);
-    }
-
     public void testComment() {
         Interpreter interpreter = new Interpreter();
         interpreter.evaluate("I'm a comment!");
