@@ -59,5 +59,5 @@ evalProgram' program instructionPointer cellPointer cells =
   where
     instruction = program !! instructionPointer
 
-
--- evalProgram :: String -> IO ()
+evalProgram :: String -> IO ()
+evalProgram program = evalProgram' program 0 0 [0 | _ <- [1 .. 30000]]
