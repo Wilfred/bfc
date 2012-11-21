@@ -19,20 +19,20 @@ findAllBrackets program = findAllBrackets' program 0
         []
       else
         case program !! index of
-          '[' -> (index, findClosingBracket program (index + 1) 1) : (findAllBrackets' program (index + 1))
+          '[' -> (index, findClosingBracket program (index + 1)) : (findAllBrackets' program (index + 1))
           _ -> findAllBrackets' program (index + 1)
 
 
-findClosingBracket :: Program -> Int -> Int -> Int
-findClosingBracket program index depth
-  | depth == 0 = index - 1
-  | otherwise =
-    case instruction of
-      '[' -> findClosingBracket program (index + 1) (depth + 1)
-      ']' -> findClosingBracket program (index + 1) (depth - 1)
-      _   -> findClosingBracket program (index + 1) depth
+findClosingBracket :: Program -> Int -> Int
+findClosingBracket program index = findClosingBracket' program index 1
   where
-    instruction = program !! index
+    findClosingBracket' program index depth
+      | depth == 0 = index - 1
+      | otherwise =
+        case program !! index of
+          '[' -> findClosingBracket' program (index + 1) (depth + 1)
+          ']' -> findClosingBracket' program (index + 1) (depth - 1)
+          _   -> findClosingBracket' program (index + 1) depth
     
 
 reverseTuple :: [(a,b)] -> [(b,a)]
