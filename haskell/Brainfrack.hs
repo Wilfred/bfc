@@ -73,7 +73,7 @@ evalProgram' program instructionIndex cellIndex cells =
             closingIndex = findClosingBracket program instructionIndex
         _ -> evalProgram' program (instructionIndex+1) cellIndex cells
     ']' -> undefined
-    _ -> return ()
+    _ -> evalProgram' program (instructionIndex+1) cellIndex cells
 
 
 evalProgram :: String -> IO ()
