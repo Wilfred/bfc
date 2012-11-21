@@ -44,33 +44,32 @@ reverseTuple ((x, y):rest) = (y, x) : reverseTuple rest
 -- todo: use word8 instead of Int for cells
 -- todo: we need to terminate at the end of the program
 evalProgram' :: Program -> Int -> Int -> [Int] -> IO ()
-evalProgram' program instructionPointer cellPointer cells =
-  case instruction of
-    '>' -> evalProgram' program (instructionPointer+1) (cellPointer+1) cells
-    '<' -> evalProgram' program (instructionPointer+1) (cellPointer-1) cells
+evalProgram' program instructionIndex cellIndex cells =
+  case program !! instructionIndex of
+    '>' -> evalProgram' program (instructionIndex+1) (cellIndex+1) cells
+    '<' -> evalProgram' program (instructionIndex+1) (cellIndex-1) cells
     '+' ->
-      evalProgram' program (instructionPointer+1) cellPointer cells'
+      evalProgram' program (instructionIndex+1) cellIndex cells'
       where
-        updatedCell = (cells !! cellPointer) + 1
-        cells' = replaceInList cells updatedCell cellPointer
+        updatedCell = (cells !! cellIndex) + 1
+        cells' = replaceInList cells updatedCell cellIndex
     '-' ->
-      evalProgram' program (instructionPointer+1) cellPointer cells'
+      evalProgram' program (instructionIndex+1) cellIndex cells'
       where
-        updatedCell = (cells !! cellPointer) - 1
-        cells' = replaceInList cells updatedCell cellPointer
+        updatedCell = (cells !! cellIndex) - 1
+        cells' = replaceInList cells updatedCell cellIndex
     '.' -> do
-      let charToPrint = chr (cells !! cellPointer)
+      let charToPrint = chr (cells !! cellIndex)
       putStr [charToPrint]
-      evalProgram' program (instructionPointer+1) cellPointer cells
+      evalProgram' program (instructionIndex+1) cellIndex cells
     ',' -> do
       updatedCell <- liftM ord getChar
-      let cells' = replaceInList cells updatedCell cellPointer
-      evalProgram' program (instructionPointer+1) cellPointer cells
+      let cells' = replaceInList cells updatedCell cellIndex
+      evalProgram' program (instructionIndex+1) cellIndex cells
     '[' -> undefined
     ']' -> undefined
     _ -> return ()
-  where
-    instruction = program !! instructionPointer
+
 
 evalProgram :: String -> IO ()
 evalProgram program = evalProgram' program 0 0 [0 | _ <- [1 .. 30000]]
