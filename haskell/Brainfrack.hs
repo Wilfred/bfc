@@ -66,7 +66,12 @@ evalProgram' program instructionIndex cellIndex cells =
       updatedCell <- liftM ord getChar
       let cells' = replaceInList cells updatedCell cellIndex
       evalProgram' program (instructionIndex+1) cellIndex cells
-    '[' -> undefined
+    '[' -> do
+      case cells !! cellIndex of
+        0 -> evalProgram' program (closingIndex+1) cellIndex cells
+          where 
+            closingIndex = findClosingBracket program instructionIndex
+        _ -> evalProgram' program (instructionIndex+1) cellIndex cells
     ']' -> undefined
     _ -> return ()
 
