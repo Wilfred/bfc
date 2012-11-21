@@ -11,20 +11,8 @@ replaceInList (x:xs) y 0 = y:xs
 replaceInList (x:xs) y index = x:replaceInList xs y (index - 1)
 
 
-findAllBrackets :: Program -> [(Int, Int)]
-findAllBrackets program = findAllBrackets' program 0
-  where
-    findAllBrackets' program index =
-      if length program <= index then
-        []
-      else
-        case program !! index of
-          '[' -> (index, findClosingBracket program (index + 1)) : (findAllBrackets' program (index + 1))
-          _ -> findAllBrackets' program (index + 1)
-
-
 findClosingBracket :: Program -> Int -> Int
-findClosingBracket program index = findClosingBracket' program index 1
+findClosingBracket program index = findClosingBracket' program (index+1) 1
   where
     findClosingBracket' program index depth
       | depth == 0 = index - 1
@@ -33,11 +21,18 @@ findClosingBracket program index = findClosingBracket' program index 1
           '[' -> findClosingBracket' program (index + 1) (depth + 1)
           ']' -> findClosingBracket' program (index + 1) (depth - 1)
           _   -> findClosingBracket' program (index + 1) depth
-    
-
-reverseTuple :: [(a,b)] -> [(b,a)]
-reverseTuple [] = []
-reverseTuple ((x, y):rest) = (y, x) : reverseTuple rest
+          
+findOpeningBracket :: Program -> Int -> Int
+findOpeningBracket program index = findOpeningBracket' program index 0
+  where
+    -- iterate through the program and find the opening bracket which matches this closing bracket
+    findOpeningBracket' program closeIndex index =
+      case program !! index of
+        '[' -> if closeIndex == (findClosingBracket program index) then 
+                 index
+               else
+                 findOpeningBracket' program closeIndex (index + 1)
+        _ -> findOpeningBracket' program closeIndex (index + 1)
 
 
 -- this could be faster using an array instead of a list of cells
