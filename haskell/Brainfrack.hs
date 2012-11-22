@@ -37,38 +37,39 @@ findOpeningBracket program index = findOpeningBracket' program index 0
 
 -- this could be faster using an array instead of a list of cells
 -- todo: use word8 instead of Int for cells
--- todo: we need to terminate at the end of the program
 evalProgram' :: Program -> Int -> Int -> [Int] -> IO ()
-evalProgram' program instructionIndex cellIndex cells =
-  case program !! instructionIndex of
-    '>' -> evalProgram' program (instructionIndex+1) (cellIndex+1) cells
-    '<' -> evalProgram' program (instructionIndex+1) (cellIndex-1) cells
-    '+' ->
-      evalProgram' program (instructionIndex+1) cellIndex cells'
-      where
-        updatedCell = (cells !! cellIndex) + 1
-        cells' = replaceInList cells updatedCell cellIndex
-    '-' ->
-      evalProgram' program (instructionIndex+1) cellIndex cells'
-      where
-        updatedCell = (cells !! cellIndex) - 1
-        cells' = replaceInList cells updatedCell cellIndex
-    '.' -> do
-      let charToPrint = chr (cells !! cellIndex)
-      putStr [charToPrint]
-      evalProgram' program (instructionIndex+1) cellIndex cells
-    ',' -> do
-      updatedCell <- liftM ord getChar
-      let cells' = replaceInList cells updatedCell cellIndex
-      evalProgram' program (instructionIndex+1) cellIndex cells
-    '[' -> do
-      case cells !! cellIndex of
-        0 -> evalProgram' program (closingIndex+1) cellIndex cells
-          where 
-            closingIndex = findClosingBracket program instructionIndex
-        _ -> evalProgram' program (instructionIndex+1) cellIndex cells
-    ']' -> undefined
-    _ -> evalProgram' program (instructionIndex+1) cellIndex cells
+evalProgram' program instructionIndex cellIndex cells
+  | instructionIndex >= length program = return ()
+  | otherwise =
+    case program !! instructionIndex of
+      '>' -> evalProgram' program (instructionIndex+1) (cellIndex+1) cells
+      '<' -> evalProgram' program (instructionIndex+1) (cellIndex-1) cells
+      '+' ->
+        evalProgram' program (instructionIndex+1) cellIndex cells'
+        where
+          updatedCell = (cells !! cellIndex) + 1
+          cells' = replaceInList cells updatedCell cellIndex
+      '-' ->
+        evalProgram' program (instructionIndex+1) cellIndex cells'
+        where
+          updatedCell = (cells !! cellIndex) - 1
+          cells' = replaceInList cells updatedCell cellIndex
+      '.' -> do
+        let charToPrint = chr (cells !! cellIndex)
+        putStr [charToPrint]
+        evalProgram' program (instructionIndex+1) cellIndex cells
+      ',' -> do
+        updatedCell <- liftM ord getChar
+        let cells' = replaceInList cells updatedCell cellIndex
+        evalProgram' program (instructionIndex+1) cellIndex cells
+      '[' -> do
+        case cells !! cellIndex of
+          0 -> evalProgram' program (closingIndex+1) cellIndex cells
+            where 
+              closingIndex = findClosingBracket program instructionIndex
+          _ -> evalProgram' program (instructionIndex+1) cellIndex cells
+      ']' -> undefined
+      _ -> evalProgram' program (instructionIndex+1) cellIndex cells
 
 
 evalProgram :: String -> IO ()
