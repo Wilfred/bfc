@@ -1,2 +1,5 @@
 *.class
-brainfrack/target
+java/brainfrack/target
+haskell/*.o
+haskell/*.hi
+haskell/Brainfrack
