@@ -68,7 +68,9 @@ evalProgram' program instructionIndex cellIndex cells
             where 
               closingIndex = findClosingBracket program instructionIndex
           _ -> evalProgram' program (instructionIndex+1) cellIndex cells
-      ']' -> undefined
+      ']' -> do
+        let openingIndex = findOpeningBracket program instructionIndex
+        evalProgram' program openingIndex cellIndex cells
       _ -> evalProgram' program (instructionIndex+1) cellIndex cells
 
 
