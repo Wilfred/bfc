@@ -1,5 +1,3 @@
-module Brainfrack (evalProgram) where
-
 import Data.Word (Word8)
 import Data.Char (ord, chr)
 import Control.Monad (liftM)
@@ -76,3 +74,8 @@ evalProgram' program instructionIndex cellIndex cells
 
 evalProgram :: String -> IO ()
 evalProgram program = evalProgram' program 0 0 [0 | _ <- [1 .. 30000]]
+
+
+main = do
+  program <- getContents
+  evalProgram program
