@@ -21,4 +21,14 @@ Brainfrack takes programs as command line arguments with an `-i` flag:
 
 ## Haskell
 
-Document me.
+### Compiling
+
+    $ cd haskell
+    $ ghc Brainfrack.hs
+    
+### Usage
+
+The Haskell implementation reads programs from standard in.
+
+    $ cd haskell
+    $ cat ../sample_programs/hello_world.bf | ./Brainfrack
