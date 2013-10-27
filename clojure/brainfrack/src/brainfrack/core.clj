@@ -102,7 +102,7 @@
              (let [current-value (aget memory data-index)]
                (if (= current-value 0)
                  ;; jump to the closing bracket
-                 (recur memory instructions data-index (bracket-map instruction-index))
+                 (recur memory instructions data-index (inc (bracket-map instruction-index)))
 
                  ;; step past the [
                  (recur memory instructions data-index (inc instruction-index))))
