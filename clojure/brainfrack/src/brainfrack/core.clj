@@ -29,3 +29,32 @@
      :else
      ;; neither an open nor a close, so recurse on the remainder
      (recur (rest remaining) nesting-level))))
+
+(defn find-matches
+  "Return a hash-map matching indexes of open brackets to close brackets."
+  [program]
+  (loop [instructions (seq program)
+         match-map {}
+         index 0
+         stack ()]
+    (cond
+     ;; return the map when we have no instructions left
+     (= instructions '())
+     match-map
+
+     ;; given an open bracket, push its index to the stack
+     (= (first instructions) \[)
+     (recur (rest instructions) match-map (inc index) (conj stack index))
+
+     ;; given a close bracket, pop its open index from the stack and
+     ;; add to the match map
+     (= (first instructions) \])
+     (recur
+      (rest instructions)
+      (conj match-map {(first stack) index})
+      (inc index)
+      (rest stack))
+
+     ;; otherwise, it's not an instruction we care about
+     :else
+     (recur (rest instructions) match-map (inc index) stack))))
