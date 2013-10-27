@@ -59,7 +59,7 @@ evalProgram' program instructionIndex cellIndex cells
       ',' -> do
         updatedCell <- liftM ord getChar
         let cells' = replaceInList cells updatedCell cellIndex
-        evalProgram' program (instructionIndex+1) cellIndex cells
+        evalProgram' program (instructionIndex+1) cellIndex cells'
       '[' -> do
         case cells !! cellIndex of
           0 -> evalProgram' program (closingIndex+1) cellIndex cells
