@@ -1,4 +1,5 @@
 (ns brainfrack.core
+  (:use [clojure.set :only (map-invert)])
   (:gen-class))
 
 (defn -main
@@ -58,3 +59,63 @@
      ;; otherwise, it's not an instruction we care about
      :else
      (recur (rest instructions) match-map (inc index) stack))))
+
+(defn eval-program
+  "Evaluate the brainfrack program given."
+  [program]
+  (let [bracket-map (find-matches program)]
+    (if (matching-brackets? program)
+      ;; evaluate the program
+      
+      (loop [memory (int-array 30000)
+             instructions (char-array program)
+             data-index 0
+             instruction-index 0]
+        ;; terminate when we reach the end of our instructions
+        (when-not (>= instruction-index (alength instructions))
+          (let [instruction (aget instructions instruction-index)]
+            (cond
+             
+             (= instruction \>)
+             (recur memory instructions (inc data-index) (inc instruction-index))
+
+             (= instruction <)
+             (recur memory instructions (dec data-index) (inc instruction-index))
+
+             (= instruction \+)
+             (let [old-value (aget memory data-index)]
+               (aset memory data-index (inc old-value))
+               (recur memory instructions data-index (inc instruction-index)))
+
+             (= instruction \-)
+             (let [old-value (aget memory data-index)]
+               (aset memory data-index (dec old-value))
+               (recur memory instructions data-index (inc instruction-index)))
+
+             (= instruction \.)
+             (do
+               ;; fixme: we should convert ints to ASCII
+               (print (aget memory data-index))
+               (recur memory instructions data-index (inc instruction-index)))
+
+             (= instruction \,)
+             (let [new-value (.read *in*)]
+               (aset memory data-index new-value)
+               (recur memory instructions data-index (inc instruction-index)))
+
+             (= instruction \[)
+             ;; jump to the closing bracket if the current value is zero
+             (let [current-value (aget memory data-index)]
+               (if (= current-value 0)
+                 ;; jump to the closing bracket
+                 (recur memory instructions data-index (bracket-map instruction-index))
+
+                 ;; step past the [
+                 (recur memory instructions data-index (inc instruction-index))))
+
+             (= instruction \])
+             ;; simply jump back to the matching open bracket
+             (recur memory instructions data-index ((map-invert bracket-map) instruction-index))))))
+
+      ;; else whinge that this isn't a valid program
+      (print "That isn't a valid brainfrack program, check your [ and ] are matched up."))))
