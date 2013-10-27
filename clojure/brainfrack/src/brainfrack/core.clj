@@ -109,7 +109,11 @@
 
              (= instruction \])
              ;; simply jump back to the matching open bracket
-             (recur memory instructions data-index ((map-invert bracket-map) instruction-index))))))
+             (recur memory instructions data-index ((map-invert bracket-map) instruction-index))
+
+             ;; ignore all other characters
+             :else
+             (recur memory instructions data-index (inc instruction-index))))))
 
       ;; else whinge that this isn't a valid program
       (print "That isn't a valid brainfrack program, check your [ and ] are matched up."))))
