@@ -3,9 +3,10 @@
   (:gen-class))
 
 (defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+  "Read a BF program from stdin and evaluate it."
+  []
+  ;; FIXME: only reads the first line from stdin
+  (eval-program (read-line)))
 
 (defn matching-brackets?
   "Verify that every [ is matched with a ] in the string."
