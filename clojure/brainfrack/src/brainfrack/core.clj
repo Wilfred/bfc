@@ -2,12 +2,6 @@
   (:use [clojure.set :only (map-invert)])
   (:gen-class))
 
-(defn -main
-  "Read a BF program from stdin and evaluate it."
-  []
-  ;; FIXME: only reads the first line from stdin
-  (eval-program (read-line)))
-
 (defn matching-brackets?
   "Verify that every [ is matched with a ] in the string."
   [string]
@@ -119,3 +113,9 @@
 
       ;; else whinge that this isn't a valid program
       (print "That isn't a valid brainfrack program, check your [ and ] are matched up."))))
+
+(defn -main
+  "Read a BF program from stdin and evaluate it."
+  []
+  ;; FIXME: only reads the first line from stdin
+  (eval-program (read-line)))
