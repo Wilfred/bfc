@@ -32,3 +32,7 @@ The Haskell implementation reads programs from standard in.
 
     $ cd haskell
     $ cat ../sample_programs/hello_world.bf | ./Brainfrack
+
+## Clojure
+
+TODOC.
