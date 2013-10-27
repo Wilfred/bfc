@@ -74,7 +74,7 @@
              (= instruction \>)
              (recur memory instructions (inc data-index) (inc instruction-index))
 
-             (= instruction <)
+             (= instruction \<)
              (recur memory instructions (dec data-index) (inc instruction-index))
 
              (= instruction \+)
