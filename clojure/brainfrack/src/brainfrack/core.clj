@@ -94,8 +94,7 @@
 
              (= instruction \.)
              (do
-               ;; fixme: we should convert ints to ASCII
-               (print (aget memory data-index))
+               (print (char (aget memory data-index)))
                (recur memory instructions data-index (inc instruction-index)))
 
              (= instruction \,)
