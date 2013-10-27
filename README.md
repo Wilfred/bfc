@@ -35,4 +35,9 @@ The Haskell implementation reads programs from standard in.
 
 ## Clojure
 
-TODOC.
+The Clojure implementation reads programs from standard in, but
+currently only evaluates the first line.
+
+    $ cd clojure/brainfrack
+    $ lein compile
+    $ cat ../../sample_programs/hello_world.bf | lein trampoline run
