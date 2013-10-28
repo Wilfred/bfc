@@ -58,65 +58,76 @@
 (defn eval-program
   "Evaluate the brainfrack program given."
   [program]
-  (let [bracket-map (find-matches program)]
-    (if (matching-brackets? program)
-      ;; evaluate the program
-      
-      (loop [memory (int-array 30000)
-             instructions (char-array program)
-             data-index 0
-             instruction-index 0]
-        ;; terminate when we reach the end of our instructions
-        (when-not (>= instruction-index (alength instructions))
-          (let [instruction (aget instructions instruction-index)]
-            (cond
-             
-             (= instruction \>)
-             (recur memory instructions (inc data-index) (inc instruction-index))
+  (let [bracket-map (find-matches program)
+        memory (int-array 30000)
+        instructions (char-array program)
+        data-index (ref 0)
+        instruction-index (ref 0)]
+    (cond
+     ;; empty program, nothing to do
+     (empty? (seq program))
+     nil
 
-             (= instruction \<)
-             (recur memory instructions (dec data-index) (inc instruction-index))
+     ;; invalid program, just whinge and terminate
+     (not (matching-brackets? program))
+     (println "That isn't a valid brainfrack program, check your [ and ] are matched up.")
 
-             (= instruction \+)
-             (let [old-value (aget memory data-index)]
-               (aset memory data-index (inc old-value))
-               (recur memory instructions data-index (inc instruction-index)))
+     ;; evaluate the program, terminating when we reach the end of our instructions
+     :else
+     (while (< @instruction-index (alength instructions))
+      (let [instruction (aget instructions @instruction-index)]
+        (cond
+         
+         (= instruction \>)
+         (dosync
+          (alter data-index inc)
+          (alter instruction-index inc))
 
-             (= instruction \-)
-             (let [old-value (aget memory data-index)]
-               (aset memory data-index (dec old-value))
-               (recur memory instructions data-index (inc instruction-index)))
+         (= instruction \<)
+         (dosync
+          (alter data-index dec)
+          (alter instruction-index inc))
 
-             (= instruction \.)
-             (do
-               (print (char (aget memory data-index)))
-               (recur memory instructions data-index (inc instruction-index)))
+         (= instruction \+)
+         (dosync
+          (aset memory @data-index (inc (aget memory @data-index)))
+          (alter instruction-index inc))
 
-             (= instruction \,)
-             (let [new-value (.read *in*)]
-               (aset memory data-index new-value)
-               (recur memory instructions data-index (inc instruction-index)))
+         (= instruction \-)
+         (dosync
+          (aset memory @data-index (dec (aget memory @data-index)))
+          (alter instruction-index inc))
 
-             (= instruction \[)
-             ;; jump to the closing bracket if the current value is zero
-             (let [current-value (aget memory data-index)]
-               (if (= current-value 0)
-                 ;; jump to the closing bracket
-                 (recur memory instructions data-index (inc (bracket-map instruction-index)))
+         (= instruction \.)
+         (dosync
+          (print (char (aget memory @data-index)))
+          (alter instruction-index inc))
 
-                 ;; step past the [
-                 (recur memory instructions data-index (inc instruction-index))))
+         (= instruction \,)
+         (dosync
+          (aset memory @data-index (.read *in*))
+          (alter instruction-index inc))
 
-             (= instruction \])
-             ;; simply jump back to the matching open bracket
-             (recur memory instructions data-index ((map-invert bracket-map) instruction-index))
+         (= instruction \[)
+         ;; jump to the closing bracket if the current value is zero
+         (if (= (aget memory @data-index) 0)
+           ;; jump to character after closing bracket
+           (dosync
+            (ref-set instruction-index (inc (bracket-map @instruction-index))))
 
-             ;; ignore all other characters
-             :else
-             (recur memory instructions data-index (inc instruction-index))))))
+           ;; step past the [
+           (dosync
+            (alter instruction-index inc)))
 
-      ;; else whinge that this isn't a valid program
-      (print "That isn't a valid brainfrack program, check your [ and ] are matched up."))))
+         (= instruction \])
+         ;; simply jump back to the matching open bracket
+         (dosync
+          (ref-set instruction-index ((map-invert bracket-map) @instruction-index)))
+
+         ;; ignore all other characters
+         :else
+         (dosync
+          (alter instruction-index inc))))))))
 
 (defn -main
   "Read a BF program from stdin and evaluate it."
