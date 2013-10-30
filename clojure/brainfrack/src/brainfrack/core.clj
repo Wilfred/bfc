@@ -9,7 +9,7 @@
     (cond
      (= remaining '())
      ;; at the end of the string, we shouldn't have any unmatched brackets
-     (= nesting-level 0)
+     (zero? nesting-level)
 
      (= (first remaining) \[)
      ;; an open bracket, so increment nesting level and continue
@@ -110,7 +110,7 @@
 
          (= instruction \[)
          ;; jump to the closing bracket if the current value is zero
-         (if (= (aget memory @data-index) 0)
+         (if (zero? (aget memory @data-index))
            ;; jump to character after closing bracket
            (dosync
             (ref-set instruction-index (inc (bracket-map @instruction-index))))
