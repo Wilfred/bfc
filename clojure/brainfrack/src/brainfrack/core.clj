@@ -60,7 +60,7 @@
   [program]
   (let [bracket-map (find-matches program)
         memory (int-array 30000)
-        instructions (char-array program)
+        instructions (vec program)
         data-index (ref 0)
         instruction-index (ref 0)]
     (cond
@@ -74,8 +74,8 @@
 
      ;; evaluate the program, terminating when we reach the end of our instructions
      :else
-     (while (< @instruction-index (alength instructions))
-      (let [instruction (aget instructions @instruction-index)]
+     (while (< @instruction-index (count instructions))
+      (let [instruction (instructions @instruction-index)]
         (cond
          
          (= instruction \>)
