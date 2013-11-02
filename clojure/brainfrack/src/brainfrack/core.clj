@@ -59,7 +59,7 @@
   "Evaluate the brainfrack program given."
   [program]
   (let [bracket-map (find-matches program)
-        memory (int-array 30000)
+        memory (ref (vec (repeat 30000 0)))
         instructions (vec program)
         data-index (ref 0)
         instruction-index (ref 0)]
@@ -90,27 +90,27 @@
 
          (= instruction \+)
          (dosync
-          (aset memory @data-index (inc (aget memory @data-index)))
+          (alter memory #(update-in % [@data-index] inc))
           (alter instruction-index inc))
 
          (= instruction \-)
          (dosync
-          (aset memory @data-index (dec (aget memory @data-index)))
+          (alter memory #(update-in % [@data-index] dec))
           (alter instruction-index inc))
 
          (= instruction \.)
          (dosync
-          (print (char (aget memory @data-index)))
+          (print (char (@memory @data-index)))
           (alter instruction-index inc))
 
          (= instruction \,)
          (dosync
-          (aset memory @data-index (.read *in*))
+          (alter memory #(assoc % @data-index (.read *in*)))
           (alter instruction-index inc))
 
          (= instruction \[)
          ;; jump to the closing bracket if the current value is zero
-         (if (zero? (aget memory @data-index))
+         (if (zero? (@memory @data-index))
            ;; jump to character after closing bracket
            (dosync
             (ref-set instruction-index (inc (bracket-map @instruction-index))))
