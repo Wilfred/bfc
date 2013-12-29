@@ -9,7 +9,10 @@ replaceInList (_:xs) y 0 = y:xs
 replaceInList (x:xs) y index = x:replaceInList xs y (index - 1)
 
 
-findClosingBracket :: Program -> Int -> Int
+type BracketPosition = Int
+
+
+findClosingBracket :: Program -> BracketPosition -> BracketPosition
 findClosingBracket program index = findClosingBracket' program (index+1) 1
   where
     findClosingBracket' program index depth
@@ -20,7 +23,7 @@ findClosingBracket program index = findClosingBracket' program (index+1) 1
           ']' -> findClosingBracket' program (index + 1) (depth - 1)
           _   -> findClosingBracket' program (index + 1) depth
           
-findOpeningBracket :: Program -> Int -> Int
+findOpeningBracket :: Program -> BracketPosition -> BracketPosition
 findOpeningBracket program index = findOpeningBracket' program index 0
   where
     -- iterate through the program and find the opening bracket which matches this closing bracket
@@ -33,9 +36,12 @@ findOpeningBracket program index = findOpeningBracket' program index 0
         _ -> findOpeningBracket' program closeIndex (index + 1)
 
 
+type Cells = [Int]
+
+
 -- this could be faster using an array instead of a list of cells
 -- todo: use word8 instead of Int for cells
-evalProgram' :: Program -> Int -> Int -> [Int] -> IO ()
+evalProgram' :: Program -> Int -> Int -> Cells -> IO ()
 evalProgram' program instructionIndex cellIndex cells
   | instructionIndex >= length program = return ()
   | otherwise =
@@ -73,7 +79,9 @@ evalProgram' program instructionIndex cellIndex cells
 
 
 evalProgram :: String -> IO ()
-evalProgram program = evalProgram' program 0 0 [0 | _ <- [1 .. 30000]]
+evalProgram program = evalProgram' program 0 0 initialCells
+  where
+    initialCells = [0 | _ <- [1 .. 30000 :: Integer]]
 
 main :: IO ()
 main = do
