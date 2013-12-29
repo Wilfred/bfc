@@ -129,8 +129,12 @@
          (dosync
           (alter instruction-index inc))))))))
 
+(defn -read-all-stdin
+  "Read all the text from stdin and return as a string."
+  []
+  (apply str (line-seq (java.io.BufferedReader. *in*))))
+
 (defn -main
   "Read a BF program from stdin and evaluate it."
   []
-  ;; FIXME: only reads the first line from stdin
-  (eval-program (read-line)))
+  (eval-program (-read-all-stdin)))

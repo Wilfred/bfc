@@ -35,9 +35,8 @@ The Haskell implementation reads programs from standard in.
 
 ## Clojure
 
-The Clojure implementation reads programs from standard in, but
-currently only evaluates the first line.
+The Clojure implementation reads programs from standard in.
 
     $ cd clojure/brainfrack
     $ lein compile
-    $ cat ../../sample_programs/hello_world.bf | tr '\n' ' ' | lein trampoline run
+    $ cat ../../sample_programs/hello_world.bf | lein trampoline run
