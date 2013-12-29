@@ -1,5 +1,8 @@
-*.class
+java/*.class
 java/brainfrack/target
+
 haskell/*.o
 haskell/*.hi
 haskell/Brainfrack
+
+c/*.out
