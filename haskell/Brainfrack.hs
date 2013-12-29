@@ -13,15 +13,16 @@ type BracketPosition = Int
 
 
 findClosingBracket :: Program -> BracketPosition -> BracketPosition
-findClosingBracket program index = findClosingBracket' program (index+1) 1
+findClosingBracket program openIndex = findClosingBracket' (openIndex+1) (1 :: Integer)
   where
-    findClosingBracket' program index depth
+    -- iterate through the program and find the first unbalanced closing bracket
+    findClosingBracket' index depth
       | depth == 0 = index - 1
       | otherwise =
         case program !! index of
-          '[' -> findClosingBracket' program (index + 1) (depth + 1)
-          ']' -> findClosingBracket' program (index + 1) (depth - 1)
-          _   -> findClosingBracket' program (index + 1) depth
+          '[' -> findClosingBracket' (index + 1) (depth + 1)
+          ']' -> findClosingBracket' (index + 1) (depth - 1)
+          _   -> findClosingBracket' (index + 1) depth
           
 findOpeningBracket :: Program -> BracketPosition -> BracketPosition
 findOpeningBracket program closeIndex = findOpeningBracket' 0
