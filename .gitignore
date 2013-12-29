@@ -5,4 +5,4 @@ haskell/*.o
 haskell/*.hi
 haskell/Brainfrack
 
-c/*.out
+c/brainfrack
