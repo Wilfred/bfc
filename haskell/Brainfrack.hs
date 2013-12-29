@@ -24,16 +24,16 @@ findClosingBracket program index = findClosingBracket' program (index+1) 1
           _   -> findClosingBracket' program (index + 1) depth
           
 findOpeningBracket :: Program -> BracketPosition -> BracketPosition
-findOpeningBracket program index = findOpeningBracket' program index 0
+findOpeningBracket program closeIndex = findOpeningBracket' 0
   where
     -- iterate through the program and find the opening bracket which matches this closing bracket
-    findOpeningBracket' program closeIndex index =
+    findOpeningBracket' index =
       case program !! index of
         '[' -> if closeIndex == (findClosingBracket program index) then 
                  index
                else
-                 findOpeningBracket' program closeIndex (index + 1)
-        _ -> findOpeningBracket' program closeIndex (index + 1)
+                 findOpeningBracket' (index + 1)
+        _ -> findOpeningBracket' (index + 1)
 
 
 type Cells = [Int]
