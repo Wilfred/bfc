@@ -5,6 +5,21 @@
 void eval_program(char* program, int program_len) {
     // Our cells are initialised to 0.
     char cells[30000] = {};
+    int data_index = 0;
+    int instruction_index = 0;
+
+    char c;
+    while (instruction_index < program_len) {
+        c = *(program + instruction_index);
+
+        if (c == '[') {
+            printf("%c (open!)\n", c);
+        } else {
+            printf("%c\n", c);
+        }
+
+        instruction_index++;
+    }
 }
 
 int main() {
@@ -16,7 +31,7 @@ int main() {
     // todo: handle errors from read()
     int program_len = read(STDIN_FD, program, MAX_PROGRAM_SIZE);
 
-    printf("program: %s\n", program);
+    eval_program(program, program_len);
 
     free(program);
 
