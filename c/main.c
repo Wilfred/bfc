@@ -12,10 +12,34 @@ void eval_program(char* program, int program_len) {
     while (instruction_index < program_len) {
         c = *(program + instruction_index);
 
-        if (c == '[') {
-            printf("%c (open!)\n", c);
-        } else {
-            printf("%c\n", c);
+        switch (c) {
+        case '>':
+            data_index++;
+            break;
+        case '<':
+            data_index--;
+            break;
+        case '+':
+            cells[data_index]++;
+            break;
+        case '-':
+            cells[data_index]--;
+            break;
+        case '.':
+            // todo
+            break;
+        case ',':
+            // todo
+            break;
+        case '[':
+            // todo
+            break;
+        case ']':
+            // todo
+            break;
+        default:
+            // ignore other characters
+            break;
         }
 
         instruction_index++;
