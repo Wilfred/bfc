@@ -26,10 +26,11 @@ void eval_program(char* program, int program_len) {
             cells[data_index]--;
             break;
         case '.':
-            // todo
+            printf("%c", cells[data_index]);
             break;
         case ',':
-            // todo
+            // todo: handle errors from getchar
+            cells[data_index] = getchar();
             break;
         case '[':
             // todo
