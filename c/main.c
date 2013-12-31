@@ -2,6 +2,34 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+// Given the index of an opening bracket, find the index of the
+// matching close bracket.
+// TODO: Handle malformed programs that aren't well-bracketed.
+int find_close(char* program, int program_len, int open_index) {
+    int depth = 0;
+
+    char c;
+    for (int i = open_index + 1; i < program_len; i++) {
+        c = *(program + instruction_index);
+
+        switch (c) {
+        case '[':
+            depth++;
+            break;
+        case ']':
+            if (depth == 0) {
+                return i;
+            } else {
+                depth--;
+                break;
+            }
+        default:
+            // ignore any other character
+            break;
+        }
+    }
+}
+
 void eval_program(char* program, int program_len) {
     // Our cells are initialised to 0.
     char cells[30000] = {};
