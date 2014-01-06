@@ -10,7 +10,7 @@ int find_close(char* program, int program_len, int open_index) {
 
     char c;
     for (int i = open_index + 1; i < program_len; i++) {
-        c = *(program + instruction_index);
+        c = *(program + i);
 
         switch (c) {
         case '[':
