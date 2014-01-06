@@ -40,3 +40,11 @@ The Clojure implementation reads programs from standard in.
     $ cd clojure/brainfrack
     $ lein compile
     $ cat ../../sample_programs/hello_world.bf | lein trampoline run
+
+## C
+
+The C implementation reads programs from standard in.
+
+    $ cd c
+    $ make
+    $ cat ../sample_programs/hello_world.bf | ./brainfrack
