@@ -67,35 +67,47 @@ void eval_program(char* program, int program_len) {
         switch (c) {
         case '>':
             data_index++;
+            instruction_index++;
             break;
         case '<':
             data_index--;
+            instruction_index++;
             break;
         case '+':
             cells[data_index]++;
+            instruction_index++;
             break;
         case '-':
             cells[data_index]--;
+            instruction_index++;
             break;
         case '.':
             printf("%c", cells[data_index]);
+            instruction_index++;
             break;
         case ',':
             // todo: handle errors from getchar
             cells[data_index] = getchar();
+            instruction_index++;
             break;
         case '[':
-            // todo
+            if (cells[data_index] > 0) {
+                // Step into the bracketed section.
+                instruction_index++;
+            } else {
+                // Step over the bracketed section.
+                instruction_index = find_close_index(program, program_len, instruction_index) + 1;
+            }
             break;
         case ']':
-            // todo
+            // Jump to the open bracket.
+            instruction_index = find_open_index(program, program_len, instruction_index);
             break;
         default:
             // ignore other characters
+            instruction_index++;
             break;
         }
-
-        instruction_index++;
     }
 }
 
