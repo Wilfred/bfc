@@ -1,7 +1,8 @@
 # Brainfrack
 
-A simple brainf*** (henceforth BF) interpreter in multiple
-languages. GPLv2 or later license.
+A simple [brainf***](http://en.wikipedia.org/wiki/Brainfuck)
+(henceforth BF) interpreter in multiple languages. GPLv2 or later
+license.
 
 ## Java
 
@@ -21,16 +22,10 @@ Brainfrack takes programs as command line arguments with an `-i` flag:
 
 ## Haskell
 
-### Compiling
-
-    $ cd haskell
-    $ ghc Brainfrack.hs
-    
-### Usage
-
 The Haskell implementation reads programs from standard in.
 
     $ cd haskell
+    $ ghc Brainfrack.hs
     $ cat ../sample_programs/hello_world.bf | ./Brainfrack
 
 ## Clojure
