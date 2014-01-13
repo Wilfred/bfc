@@ -43,3 +43,9 @@ The C implementation reads programs from standard in.
     $ cd c
     $ make
     $ cat ../sample_programs/hello_world.bf | ./brainfrack
+
+## LLVM
+
+(in progress)
+
+    $ lli num.ll
