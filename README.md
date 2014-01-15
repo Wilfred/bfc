@@ -48,4 +48,4 @@ The C implementation reads programs from standard in.
 
 (in progress)
 
-    $ lli num.ll
+    $ lli hello.ll
