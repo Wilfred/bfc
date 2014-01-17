@@ -49,3 +49,9 @@ The C implementation reads programs from standard in.
 (in progress)
 
     $ lli hello.ll
+
+Or
+
+    $ llc hello.ll
+    $ gcc hello.s
+    $ ./a.out
