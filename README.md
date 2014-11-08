@@ -1,8 +1,7 @@
 # Brainfrack
 
-A simple [brainf***](http://en.wikipedia.org/wiki/Brainfuck)
-(henceforth BF) interpreter in multiple languages. GPLv2 or later
-license.
+A simple [BF](http://en.wikipedia.org/wiki/Brainfuck) interpreter in
+multiple languages. GPLv2 or later license.
 
 ## Java
 
