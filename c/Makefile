@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -std=c99
+CFLAGS=-g -Wall -Wextra -std=c99
 
 default: brainfrack
 
