@@ -6,3 +6,5 @@ default: brainfrack
 brainfrack: main.c
 	$(CC) $(CFLAGS) main.c -o brainfrack
 
+clean:
+	rm -f brainfrack
