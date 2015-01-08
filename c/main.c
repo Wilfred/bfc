@@ -120,9 +120,15 @@ int main() {
     // todo: handle errors from read()
     int program_len = read(STDIN_FD, program, MAX_PROGRAM_SIZE);
 
-    eval_program(program, program_len);
+    int return_code = 0;
+    if (program_len == -1) {
+        printf("Could not read from stdin");
+        return_code = 1;
+    } else {
+        eval_program(program, program_len);
+    }
 
     free(program);
 
-    return 0;
+    return return_code;
 }
