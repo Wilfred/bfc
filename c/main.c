@@ -1,5 +1,7 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <alloca.h>
 #include <unistd.h>
 
 // Given the index of an opening bracket, find the index of the
@@ -54,7 +56,9 @@ int find_open_index(char* program, int program_len, int close_index) {
     return -1;
 }
 
-void eval_program(char* program, int program_len) {
+void eval_program(char* program) {
+    int program_len = strlen(program);
+    
     // Our cells are initialised to 0.
     char cells[30000] = {};
     int data_index = 0;
@@ -111,24 +115,47 @@ void eval_program(char* program, int program_len) {
     }
 }
 
-int main() {
-    // todo: handle programs of arbitrary size
-    int MAX_PROGRAM_SIZE = 1024;
-    char *program = malloc(sizeof(char) * MAX_PROGRAM_SIZE);
+void *realloc_or_die(void *ptr, size_t size) {
+    void *p = realloc(ptr, size);
 
-    int STDIN_FD = 0;
-    // todo: handle errors from read()
-    int program_len = read(STDIN_FD, program, MAX_PROGRAM_SIZE);
-
-    int return_code = 0;
-    if (program_len == -1) {
-        printf("Could not read from stdin");
-        return_code = 1;
-    } else {
-        eval_program(program, program_len);
+    if (p == NULL) {
+        fprintf(stderr, "Out of memory! Exiting.");
+        exit(1);
     }
 
-    free(program);
+    return p;
+}
 
-    return return_code;
+char *read_string(int file_descriptor) {
+    char *s = NULL;
+    int total_bytes_read = 0;
+    
+    int BUFFER_SIZE = sizeof(char) * 1024;
+    char *temp_buffer = alloca(BUFFER_SIZE);
+
+    int bytes_read;
+    // todo: handle errors from read()
+    while((bytes_read = read(file_descriptor, temp_buffer, BUFFER_SIZE))) {
+        if (bytes_read == -1) {
+            fprintf(stderr, "Could not read from file descriptor %d, exiting.\n", file_descriptor);
+            exit(1);
+        }
+        
+        s = realloc_or_die(s, total_bytes_read + bytes_read);
+        memcpy(s + total_bytes_read, temp_buffer, bytes_read);
+        total_bytes_read += bytes_read;
+    }
+
+    s = realloc_or_die(s, total_bytes_read + 1);
+    s[total_bytes_read] = '\0';
+
+    return s;
+}
+
+static int STDIN_FD = 0;
+
+int main() {
+    char *program = read_string(STDIN_FD);
+    eval_program(program);
+    free(program);
 }
