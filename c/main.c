@@ -7,7 +7,7 @@
 // Given the index of an opening bracket, find the index of the
 // matching close bracket.
 // TODO: Handle malformed programs that aren't well-bracketed.
-int find_close_index(char* program, int program_len, int open_index) {
+int find_close_index(char *program, int program_len, int open_index) {
     int depth = 0;
 
     char c;
@@ -39,7 +39,7 @@ int find_close_index(char* program, int program_len, int open_index) {
 // Given the index of a closing bracket, find the index of the
 // matching open bracket.
 // TODO: Handle malformed programs that aren't well-bracketed.
-int find_open_index(char* program, int program_len, int close_index) {
+int find_open_index(char *program, int program_len, int close_index) {
     char c;
     for (int i = 0; i < close_index; i++) {
         c = *(program + i);
@@ -56,9 +56,9 @@ int find_open_index(char* program, int program_len, int close_index) {
     return -1;
 }
 
-void eval_program(char* program) {
+void eval_program(char *program) {
     int program_len = strlen(program);
-    
+
     // Our cells are initialised to 0.
     char cells[30000] = {};
     int data_index = 0;
@@ -100,12 +100,15 @@ void eval_program(char* program) {
                 instruction_index++;
             } else {
                 // Step over the bracketed section.
-                instruction_index = find_close_index(program, program_len, instruction_index) + 1;
+                instruction_index =
+                    find_close_index(program, program_len, instruction_index) +
+                    1;
             }
             break;
         case ']':
             // Jump to the open bracket.
-            instruction_index = find_open_index(program, program_len, instruction_index);
+            instruction_index =
+                find_open_index(program, program_len, instruction_index);
             break;
         default:
             // ignore other characters
@@ -129,18 +132,20 @@ void *realloc_or_die(void *ptr, size_t size) {
 char *read_string(int file_descriptor) {
     char *s = NULL;
     int total_bytes_read = 0;
-    
+
     int BUFFER_SIZE = sizeof(char) * 1024;
     char *temp_buffer = alloca(BUFFER_SIZE);
 
     int bytes_read;
     // todo: handle errors from read()
-    while((bytes_read = read(file_descriptor, temp_buffer, BUFFER_SIZE))) {
+    while ((bytes_read = read(file_descriptor, temp_buffer, BUFFER_SIZE))) {
         if (bytes_read == -1) {
-            fprintf(stderr, "Could not read from file descriptor %d, exiting.\n", file_descriptor);
+            fprintf(stderr,
+                    "Could not read from file descriptor %d, exiting.\n",
+                    file_descriptor);
             exit(1);
         }
-        
+
         s = realloc_or_die(s, total_bytes_read + bytes_read);
         memcpy(s + total_bytes_read, temp_buffer, bytes_read);
         total_bytes_read += bytes_read;
