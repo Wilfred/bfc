@@ -9,3 +9,7 @@ brainfrack: main.c
 .PHONY: clean
 clean:
 	rm -f brainfrack
+
+.PHONY: format
+format:
+	clang-format -i *.c
