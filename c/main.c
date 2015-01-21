@@ -163,4 +163,6 @@ int main() {
     char *program = read_string(STDIN_FD);
     eval_program(program);
     free(program);
+
+    return 0;
 }
