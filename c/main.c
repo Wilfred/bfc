@@ -130,15 +130,14 @@ void *realloc_or_die(void *ptr, size_t size) {
 }
 
 char *read_string(int file_descriptor) {
-    char *s = NULL;
-    int total_bytes_read = 0;
+    size_t BUFFER_INCREMENT = sizeof(char) * 1024;
+    char *s = malloc(BUFFER_INCREMENT);
 
-    int BUFFER_SIZE = sizeof(char) * 1024;
-    char *temp_buffer = alloca(BUFFER_SIZE);
+    size_t total_bytes_read = 0;
 
-    int bytes_read;
-    // todo: handle errors from read()
-    while ((bytes_read = read(file_descriptor, temp_buffer, BUFFER_SIZE))) {
+    ssize_t bytes_read;
+    while ((bytes_read = read(file_descriptor, s + total_bytes_read,
+                              BUFFER_INCREMENT))) {
         if (bytes_read == -1) {
             fprintf(stderr,
                     "Could not read from file descriptor %d, exiting.\n",
@@ -146,9 +145,8 @@ char *read_string(int file_descriptor) {
             exit(1);
         }
 
-        s = realloc_or_die(s, total_bytes_read + bytes_read);
-        memcpy(s + total_bytes_read, temp_buffer, bytes_read);
         total_bytes_read += bytes_read;
+        s = realloc_or_die(s, BUFFER_INCREMENT + total_bytes_read);
     }
 
     s = realloc_or_die(s, total_bytes_read + 1);
