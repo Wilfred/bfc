@@ -123,7 +123,7 @@ void *realloc_or_die(void *ptr, size_t size) {
 
     if (p == NULL) {
         fprintf(stderr, "Out of memory! Exiting.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     return p;
@@ -142,7 +142,7 @@ char *read_string(int file_descriptor) {
             fprintf(stderr,
                     "Could not read from file descriptor %d, exiting.\n",
                     file_descriptor);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         total_bytes_read += bytes_read;
