@@ -1,7 +1,7 @@
-declare noalias i8* @malloc(i64)
+declare noalias i8* @calloc(i64)
 
 define i32 @main() nounwind {
-       %cells = call i8* @malloc(i64 3000)
+       %cells = call i8* @calloc(i64 3000)
        %cell_index = alloca i8
 
        %cell_index_val = load i8* %cell_index
