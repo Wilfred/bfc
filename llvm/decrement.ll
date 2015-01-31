@@ -12,5 +12,8 @@ define i32 @main() nounwind {
        %tmp2 = sub i8 %tmp, 1
        store i8 %tmp2, i8* %cell_ptr
 
-       ret i32 0
+       ; exit the stored value, as a sanity check
+       %exit_code_byte = load i8* %cell_ptr
+       %exit_code = zext i8 %exit_code_byte to i32
+       ret i32 %exit_code
 }
