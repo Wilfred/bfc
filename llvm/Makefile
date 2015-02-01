@@ -1,9 +1,11 @@
-
+CC = clang++
+CFLAGS = -Wall -Wextra -g
+LLVM_CONFIG = `llvm-config --cxxflags --ldflags --system-libs --libs core`
 
 all: compiler
 
-compiler:
-	clang++ -g compiler.cpp -o compiler
+compiler: compiler.cpp
+	$(CC) $(CFLAGS) $< $(LLVM_CONFIG) -o $@
 
 .PHONY: format
 format:
