@@ -8,6 +8,7 @@ define i32 @main() nounwind {
 
        ; we implement the BF program '[-]'
 loop:
+       %cell_index_val = load i8* %cell_index
        %cell_ptr = getelementptr i8* %cells, i8 %cell_index_val
 
        ; see if we should continue looping
@@ -16,7 +17,6 @@ loop:
        br i1 %is_zero, label %end, label %decrement
 
 decrement:
-       %cell_index_val = load i8* %cell_index
        %tmp = load i8* %cell_ptr
        %tmp2 = add i8 %tmp, 1
        store i8 %tmp2, i8* %cell_ptr
