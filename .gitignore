@@ -8,3 +8,4 @@ haskell/Brainfrack
 c/brainfrack
 
 llvm/compiler
+.gdb_history
