@@ -6,3 +6,5 @@ haskell/*.hi
 haskell/Brainfrack
 
 c/brainfrack
+
+llvm/compiler
