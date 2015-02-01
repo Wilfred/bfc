@@ -34,4 +34,6 @@ int main() {
 
     // Print the generated code
     TheModule->dump();
+
+    delete TheModule;
 }
