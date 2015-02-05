@@ -8,32 +8,36 @@
 
 using namespace llvm;
 
-static IRBuilder<> Builder(getGlobalContext());
+// Append the LLVM IR for -'+'
+void appendIncrement(IRBuilder<> *Builder) {
+    // placeholder, currently just:
+    // int main(void) { return 2; }
+    Value *RetVal = ConstantInt::get(getGlobalContext(), APInt(32, 2));
+    Builder->CreateRet(RetVal);
+}
+
+Function *createMain(Module *Mod) {
+    FunctionType *FuncType =
+        FunctionType::get(Type::getInt32Ty(getGlobalContext()), false);
+
+    return Function::Create(FuncType, Function::ExternalLinkage, "main", Mod);
+}
 
 int main() {
-    // create a simple:
-    // int main(void) { return 2; }
-
     LLVMContext &Context = getGlobalContext();
-    Module *TheModule = new Module("brainfrack test", Context);
+    Module TheModule("brainfrack test", Context);
 
-    
-    FunctionType *FT = FunctionType::get(Type::getInt32Ty(getGlobalContext()),
-                                         false);
+    IRBuilder<> Builder(Context);
 
-    Function *F =
-        Function::Create(FT, Function::ExternalLinkage, "main", TheModule);
+    Function *Func = createMain(&TheModule);
 
-    BasicBlock *BB =
-        BasicBlock::Create(getGlobalContext(), "entry", F);
+    BasicBlock *BB = BasicBlock::Create(Context, "entry", Func);
     Builder.SetInsertPoint(BB);
 
-    Value *RetVal = ConstantInt::get(getGlobalContext(), APInt(32, 2));
-
-    Builder.CreateRet(RetVal);
+    appendIncrement(&Builder);
 
     // Print the generated code
-    TheModule->dump();
+    TheModule.dump();
 
-    delete TheModule;
+    return 0;
 }
