@@ -8,36 +8,67 @@
 
 using namespace llvm;
 
-// Append the LLVM IR for -'+'
-void appendIncrement(IRBuilder<> *Builder) {
+// Append the LLVM IR for '+'
+void appendIncrement(Function *Func) {
+    IRBuilder<> Builder(getGlobalContext());
+
+    BasicBlock *Entry = &Func->getBasicBlockList().front();
+    Builder.SetInsertPoint(Entry);
+
     // placeholder, currently just:
     // int main(void) { return 2; }
     Value *RetVal = ConstantInt::get(getGlobalContext(), APInt(32, 2));
-    Builder->CreateRet(RetVal);
+    Builder.CreateRet(RetVal);
 }
 
 Function *createMain(Module *Mod) {
-    FunctionType *FuncType =
-        FunctionType::get(Type::getInt32Ty(getGlobalContext()), false);
+    LLVMContext &Context = getGlobalContext();
 
-    return Function::Create(FuncType, Function::ExternalLinkage, "main", Mod);
+    FunctionType *FuncType =
+        FunctionType::get(Type::getInt32Ty(Context), false);
+
+    Function *Func =
+        Function::Create(FuncType, Function::ExternalLinkage, "main", Mod);
+
+    return Func;
+}
+
+#define NUM_CELLS 3000
+
+void addPrologue(Module *Mod, Function *Func) {
+    BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", Func);
+
+    IRBuilder<> Builder(getGlobalContext());
+    Builder.SetInsertPoint(BB);
+
+    Function *Calloc = Mod->getFunction("calloc");
+    std::vector<Value *> CallocArgs(
+        1, ConstantInt::get(getGlobalContext(), APInt(32, NUM_CELLS)));
+    Builder.CreateCall(Calloc, CallocArgs, "cells");
+}
+
+void declareCFunctions(Module *Mod) {
+    LLVMContext &Context = getGlobalContext();
+
+    std::vector<Type *> CallocReturnType(1, Type::getInt64Ty(Context));
+    FunctionType *CallocType =
+        FunctionType::get(Type::getInt8PtrTy(Context), CallocReturnType, false);
+    Function::Create(CallocType, Function::ExternalLinkage, "calloc", Mod);
 }
 
 int main() {
     LLVMContext &Context = getGlobalContext();
-    Module TheModule("brainfrack test", Context);
+    Module Mod("brainfrack test", Context);
 
-    IRBuilder<> Builder(Context);
+    declareCFunctions(&Mod);
 
-    Function *Func = createMain(&TheModule);
+    Function *Func = createMain(&Mod);
+    addPrologue(&Mod, Func);
 
-    BasicBlock *BB = BasicBlock::Create(Context, "entry", Func);
-    Builder.SetInsertPoint(BB);
-
-    appendIncrement(&Builder);
+    appendIncrement(Func);
 
     // Print the generated code
-    TheModule.dump();
+    Mod.dump();
 
     return 0;
 }
