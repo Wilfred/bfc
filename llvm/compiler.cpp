@@ -52,8 +52,8 @@ void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
     CellsPtr = Builder->CreateCall(Calloc, CallocArgs, "cells");
 
     // int cell_index = 0;
-    CellIndexPtr =
-        Builder->CreateAlloca(Type::getInt32Ty(Context), NULL, "cell_index_ptr");
+    CellIndexPtr = Builder->CreateAlloca(Type::getInt32Ty(Context), NULL,
+                                         "cell_index_ptr");
     auto Zero = ConstantInt::get(Context, APInt(32, 0));
     Builder->CreateStore(Zero, CellIndexPtr);
 }
@@ -68,7 +68,8 @@ void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
         Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
     Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
-    Value *RetVal = Builder->CreateZExt(CellVal, Type::getInt32Ty(Context), "exit_code");
+    Value *RetVal =
+        Builder->CreateZExt(CellVal, Type::getInt32Ty(Context), "exit_code");
 
     // free(cells);
     Function *Free = Mod->getFunction("free");
