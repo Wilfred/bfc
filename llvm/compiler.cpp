@@ -29,12 +29,22 @@ enum {
     NUM_CELLS = 3000
 };
 
-Value *cellsPtr;
+Value *CellsPtr;
+Value *CellIndex;
+
 // Set up the cells and return a pointer to the cells as a Value.
 void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
+    auto &Context = getGlobalContext();
+
+    // char *cells = calloc(3000);
     Function *Calloc = Mod->getFunction("calloc");
-    auto CallocArg = ConstantInt::get(getGlobalContext(), APInt(32, NUM_CELLS));
-    cellsPtr = Builder->CreateCall(Calloc, CallocArg, "cells");
+    auto CallocArg = ConstantInt::get(Context, APInt(32, NUM_CELLS));
+    CellsPtr = Builder->CreateCall(Calloc, CallocArg, "cells");
+
+    // int cell_pointer = 0;
+    CellIndex = Builder->CreateAlloca(Type::getInt32Ty(Context), NULL, "cell_index");
+    auto Zero = ConstantInt::get(Context, APInt(32, 0));
+    Builder->CreateStore(Zero, CellIndex);
 }
 
 void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
@@ -42,7 +52,7 @@ void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
     
     // free(cells);
     Function *Free = Mod->getFunction("free");
-    Builder->CreateCall(Free, cellsPtr);
+    Builder->CreateCall(Free, CellsPtr);
     
     // return 0;
     Value *RetVal = ConstantInt::get(Context, APInt(32, 0));
