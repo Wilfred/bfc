@@ -36,7 +36,7 @@ Function *createMain(Module *Mod) {
     return Func;
 }
 
-enum { NUM_CELLS = 3000 };
+enum { NUM_CELLS = 3000, CELL_SIZE_IN_BYTES = 1 };
 
 // Set up the cells and return a pointer to the cells as a Value.
 void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
@@ -44,8 +44,10 @@ void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
 
     // char *cells = calloc(3000);
     Function *Calloc = Mod->getFunction("calloc");
-    auto CallocArg = ConstantInt::get(Context, APInt(32, NUM_CELLS));
-    CellsPtr = Builder->CreateCall(Calloc, CallocArg, "cells");
+    std::vector<Value *> CallocArgs = {
+        ConstantInt::get(Context, APInt(32, NUM_CELLS)),
+        ConstantInt::get(Context, APInt(32, CELL_SIZE_IN_BYTES))};
+    CellsPtr = Builder->CreateCall(Calloc, CallocArgs, "cells");
 
     // int cell_pointer = 0;
     CellIndex =
@@ -69,9 +71,10 @@ void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
 void declareCFunctions(Module *Mod) {
     LLVMContext &Context = getGlobalContext();
 
-    std::vector<Type *> CallocReturnType(1, Type::getInt64Ty(Context));
+    std::vector<Type *> CallocArgs = {Type::getInt32Ty(Context),
+                                      Type::getInt32Ty(Context)};
     FunctionType *CallocType =
-        FunctionType::get(Type::getInt8PtrTy(Context), CallocReturnType, false);
+        FunctionType::get(Type::getInt8PtrTy(Context), CallocArgs, false);
     Function::Create(CallocType, Function::ExternalLinkage, "calloc", Mod);
 
     std::vector<Type *> FreeReturnType(1, Type::getInt8PtrTy(Context));
