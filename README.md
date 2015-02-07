@@ -1,7 +1,13 @@
 # Brainfrack
 
-A simple [BF](http://en.wikipedia.org/wiki/Brainfuck) interpreter in
-multiple languages. GPLv2 or later license.
+[![Build Status](https://travis-ci.org/Wilfred/Brainfrack.svg?branch=master)](https://travis-ci.org/Wilfred/Brainfrack)
+
+This repo contains various
+[BF](http://en.wikipedia.org/wiki/Brainfuck) implementations, both
+interpreters and a compiler. I use BF as a coding exercise to explore
+unfamiliar programming languages or tools.
+
+GPLv2 or later license.
 
 ## Java
 
