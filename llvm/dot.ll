@@ -4,6 +4,7 @@ declare i32 @putchar(i32)
 define i32 @main() nounwind {
        %cells = call i8* @calloc(i64 3000)
        %cell_index = alloca i8
+       store i8 0, i8* %cell_index
 
        %cell_index_val = load i8* %cell_index
 
