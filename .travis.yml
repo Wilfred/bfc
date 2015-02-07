@@ -9,5 +9,5 @@ script:
   - cd haskell; ghc Brainfrack.hs
   - cd c; make
 
-  - sudo apt-get install -y llvm-3.5 llvm-3.5-dev
+  - sudo apt-get install -y llvm-3.5 llvm-3.5-dev llvm-3.5-runtime libllvm3.5
   - cd llvm; make
