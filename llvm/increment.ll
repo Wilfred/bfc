@@ -6,7 +6,7 @@ define i32 @main() nounwind {
 
        %cell_index_val = load i8* %cell_index
 
-       ; we implement the BF program '-'
+       ; we implement the BF program '+'
        %cell_ptr = getelementptr i8* %cells, i8 %cell_index_val
        %tmp = load i8* %cell_ptr
        %tmp2 = add i8 %tmp, 1
