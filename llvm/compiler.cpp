@@ -15,7 +15,8 @@ Value *CellIndex;
 void addIncrement(IRBuilder<> *Builder) {
     LLVMContext &Context = getGlobalContext();
 
-    Value *CurrentCellPtr = Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+    Value *CurrentCellPtr =
+        Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
     Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
     auto One = ConstantInt::get(Context, APInt(32, 0));
@@ -77,9 +78,9 @@ void declareCFunctions(Module *Mod) {
         FunctionType::get(Type::getInt8PtrTy(Context), CallocArgs, false);
     Function::Create(CallocType, Function::ExternalLinkage, "calloc", Mod);
 
-    std::vector<Type *> FreeReturnType(1, Type::getInt8PtrTy(Context));
+    std::vector<Type *> FreeArgs = {Type::getInt8PtrTy(Context)};
     FunctionType *FreeType =
-        FunctionType::get(Type::getVoidTy(Context), FreeReturnType, false);
+        FunctionType::get(Type::getVoidTy(Context), FreeArgs, false);
     Function::Create(FreeType, Function::ExternalLinkage, "free", Mod);
 }
 
