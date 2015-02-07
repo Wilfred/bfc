@@ -8,9 +8,20 @@
 
 using namespace llvm;
 
+Value *CellsPtr;
+Value *CellIndex;
+
 // Append the LLVM IR for '+'
-void appendIncrement(IRBuilder<> *Builder) {
-    // TODO
+void addIncrement(IRBuilder<> *Builder) {
+    LLVMContext &Context = getGlobalContext();
+
+    Value *CurrentCellPtr = Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+    Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
+    auto One = ConstantInt::get(Context, APInt(32, 0));
+    Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
+
+    Builder->CreateStore(NewCellVal, CurrentCellPtr);
 }
 
 Function *createMain(Module *Mod) {
@@ -26,9 +37,6 @@ Function *createMain(Module *Mod) {
 }
 
 enum { NUM_CELLS = 3000 };
-
-Value *CellsPtr;
-Value *CellIndex;
 
 // Set up the cells and return a pointer to the cells as a Value.
 void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
@@ -85,7 +93,7 @@ int main() {
     Builder.SetInsertPoint(BB);
 
     addCellsInit(&Builder, &Mod);
-    appendIncrement(&Builder);
+    addIncrement(&Builder);
     addCellsCleanup(&Builder, &Mod);
 
     // Print the generated code
