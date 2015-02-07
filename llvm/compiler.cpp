@@ -13,20 +13,27 @@ Value *CellIndexPtr;
 
 enum { NUM_CELLS = 3000, CELL_SIZE_IN_BYTES = 1 };
 
-// Append the LLVM IR for '+'
-void addIncrement(IRBuilder<> *Builder) {
-    LLVMContext &Context = getGlobalContext();
+class BFInstruction {
+  public:
+    virtual void compile(IRBuilder<> *) = 0;
+};
 
-    Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
-    Value *CurrentCellPtr =
-        Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+class BFIncrement : public BFInstruction {
+  public:
+    virtual void compile(IRBuilder<> *Builder) {
+        LLVMContext &Context = getGlobalContext();
 
-    Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
-    auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 1));
-    Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
+        Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
+        Value *CurrentCellPtr =
+            Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
-    Builder->CreateStore(NewCellVal, CurrentCellPtr);
-}
+        Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
+        auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 1));
+        Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
+
+        Builder->CreateStore(NewCellVal, CurrentCellPtr);
+    }
+};
 
 Function *createMain(Module *Mod) {
     LLVMContext &Context = getGlobalContext();
@@ -106,7 +113,10 @@ Module *compileProgram() {
     Builder.SetInsertPoint(BB);
 
     addCellsInit(&Builder, Mod);
-    addIncrement(&Builder);
+
+    BFIncrement BFInst;
+    BFInst.compile(&Builder);
+
     addCellsCleanup(&Builder, Mod);
 
     return Mod;
@@ -114,7 +124,7 @@ Module *compileProgram() {
 
 int main() {
     auto *Mod = compileProgram();
-    
+
     // Print the generated code
     Mod->dump();
 
