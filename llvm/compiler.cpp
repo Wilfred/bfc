@@ -9,16 +9,8 @@
 using namespace llvm;
 
 // Append the LLVM IR for '+'
-void appendIncrement(Function *Func) {
-    IRBuilder<> Builder(getGlobalContext());
-
-    BasicBlock *Entry = &Func->getBasicBlockList().front();
-    Builder.SetInsertPoint(Entry);
-
-    // placeholder, currently just:
-    // int main(void) { return 2; }
-    Value *RetVal = ConstantInt::get(getGlobalContext(), APInt(32, 2));
-    Builder.CreateRet(RetVal);
+void appendIncrement(IRBuilder<> *Builder) {
+    // TODO
 }
 
 Function *createMain(Module *Mod) {
@@ -35,16 +27,16 @@ Function *createMain(Module *Mod) {
 
 #define NUM_CELLS 3000
 
-void addPrologue(Module *Mod, Function *Func) {
-    BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", Func);
-
-    IRBuilder<> Builder(getGlobalContext());
-    Builder.SetInsertPoint(BB);
-
+void addPrologue(IRBuilder<> *Builder, Module *Mod) {
     Function *Calloc = Mod->getFunction("calloc");
     std::vector<Value *> CallocArgs(
         1, ConstantInt::get(getGlobalContext(), APInt(32, NUM_CELLS)));
-    Builder.CreateCall(Calloc, CallocArgs, "cells");
+    Builder->CreateCall(Calloc, CallocArgs, "cells");
+}
+
+void addEpilogue(IRBuilder<> *Builder) {
+    Value *RetVal = ConstantInt::get(getGlobalContext(), APInt(32, 0));
+    Builder->CreateRet(RetVal);
 }
 
 void declareCFunctions(Module *Mod) {
@@ -63,9 +55,14 @@ int main() {
     declareCFunctions(&Mod);
 
     Function *Func = createMain(&Mod);
-    addPrologue(&Mod, Func);
+    BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", Func);
 
-    appendIncrement(Func);
+    IRBuilder<> Builder(getGlobalContext());
+    Builder.SetInsertPoint(BB);
+
+    addPrologue(&Builder, &Mod);
+    appendIncrement(&Builder);
+    addEpilogue(&Builder);
 
     // Print the generated code
     Mod.dump();
