@@ -7,5 +7,5 @@ script:
   - cd clojure/brainfrack; lein compile
   - "./build.sh"
 
-  - sudo apt-get install -y llvm-3.5-dev
+  - sudo apt-get install -y llvm-3.5 llvm-3.5-dev
   - cd llvm; make
