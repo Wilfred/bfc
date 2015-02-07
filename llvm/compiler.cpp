@@ -29,19 +29,20 @@ enum {
     NUM_CELLS = 3000
 };
 
+Value *cellsPtr;
 // Set up the cells and return a pointer to the cells as a Value.
-Value *addPrologue(IRBuilder<> *Builder, Module *Mod) {
+void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
     Function *Calloc = Mod->getFunction("calloc");
     auto CallocArg = ConstantInt::get(getGlobalContext(), APInt(32, NUM_CELLS));
-    return Builder->CreateCall(Calloc, CallocArg, "cells");
+    cellsPtr = Builder->CreateCall(Calloc, CallocArg, "cells");
 }
 
-void addEpilogue(Value *cellPtr, IRBuilder<> *Builder, Module *Mod) {
+void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
     auto &Context = getGlobalContext();
     
     // free(cells);
     Function *Free = Mod->getFunction("free");
-    Builder->CreateCall(Free, cellPtr);
+    Builder->CreateCall(Free, cellsPtr);
     
     // return 0;
     Value *RetVal = ConstantInt::get(Context, APInt(32, 0));
@@ -74,9 +75,9 @@ int main() {
     IRBuilder<> Builder(getGlobalContext());
     Builder.SetInsertPoint(BB);
 
-    Value *cellsPtr = addPrologue(&Builder, &Mod);
+    addCellsInit(&Builder, &Mod);
     appendIncrement(&Builder);
-    addEpilogue(cellsPtr, &Builder, &Mod);
+    addCellsCleanup(&Builder, &Mod);
 
     // Print the generated code
     Mod.dump();
