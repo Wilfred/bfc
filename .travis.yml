@@ -4,10 +4,10 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y ghc leiningen
 script:
-  - cd java/brainfrack; mvn package
+  - cd java/brainfrack; mvn package -q
   - cd ../..
 
-  - cd clojure/brainfrack; lein compile
+  - cd clojure/brainfrack; LEIN_SILENT=true lein compile
   - cd ../..
 
   - cd haskell; ghc Brainfrack.hs
