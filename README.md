@@ -9,6 +9,20 @@ unfamiliar programming languages or tools.
 
 GPLv2 or later license.
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
+**Table of Contents**
+
+- [Brainfrack](#brainfrack)
+    - [Java](#java)
+        - [Compiling](#compiling)
+        - [Usage](#usage)
+    - [Haskell](#haskell)
+    - [Clojure](#clojure)
+    - [C](#c)
+    - [LLVM](#llvm)
+
+<!-- markdown-toc end -->
+
 ## Java
 
 ### Compiling
