@@ -93,24 +93,32 @@ void declareCFunctions(Module *Mod) {
     Function::Create(FreeType, Function::ExternalLinkage, "free", Mod);
 }
 
-int main() {
-    LLVMContext &Context = getGlobalContext();
-    Module Mod("brainfrack test", Context);
+Module *compileProgram() {
+    auto &Context = getGlobalContext();
+    Module *Mod = new Module("brainfrack test", Context);
 
-    declareCFunctions(&Mod);
+    declareCFunctions(Mod);
 
-    Function *Func = createMain(&Mod);
+    Function *Func = createMain(Mod);
     BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", Func);
 
     IRBuilder<> Builder(getGlobalContext());
     Builder.SetInsertPoint(BB);
 
-    addCellsInit(&Builder, &Mod);
+    addCellsInit(&Builder, Mod);
     addIncrement(&Builder);
-    addCellsCleanup(&Builder, &Mod);
+    addCellsCleanup(&Builder, Mod);
 
+    return Mod;
+}
+
+int main() {
+    auto *Mod = compileProgram();
+    
     // Print the generated code
-    Mod.dump();
+    Mod->dump();
+
+    delete Mod;
 
     return 0;
 }
