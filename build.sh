@@ -12,3 +12,6 @@ cd "$ROOT_DIR/haskell"
 ghc Brainfrack.hs
 cd "$ROOT_DIR"
 
+cd "$ROOT_DIR/c"
+make
+cd "$ROOT_DIR"
