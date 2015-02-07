@@ -25,9 +25,7 @@ Function *createMain(Module *Mod) {
     return Func;
 }
 
-enum {
-    NUM_CELLS = 3000
-};
+enum { NUM_CELLS = 3000 };
 
 Value *CellsPtr;
 Value *CellIndex;
@@ -42,18 +40,19 @@ void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
     CellsPtr = Builder->CreateCall(Calloc, CallocArg, "cells");
 
     // int cell_pointer = 0;
-    CellIndex = Builder->CreateAlloca(Type::getInt32Ty(Context), NULL, "cell_index");
+    CellIndex =
+        Builder->CreateAlloca(Type::getInt32Ty(Context), NULL, "cell_index");
     auto Zero = ConstantInt::get(Context, APInt(32, 0));
     Builder->CreateStore(Zero, CellIndex);
 }
 
 void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
     auto &Context = getGlobalContext();
-    
+
     // free(cells);
     Function *Free = Mod->getFunction("free");
     Builder->CreateCall(Free, CellsPtr);
-    
+
     // return 0;
     Value *RetVal = ConstantInt::get(Context, APInt(32, 0));
     Builder->CreateRet(RetVal);
