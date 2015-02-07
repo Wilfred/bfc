@@ -22,7 +22,7 @@ void addIncrement(IRBuilder<> *Builder) {
         Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
     Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
-    auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 0));
+    auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 1));
     Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
 
     Builder->CreateStore(NewCellVal, CurrentCellPtr);
