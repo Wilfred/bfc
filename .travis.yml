@@ -1,6 +1,6 @@
 language: generic
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y ghc leiningen
+  - sudo apt-get install -y ghc leiningen llvm-3.5-dev
 script:
   - "./build.sh"
