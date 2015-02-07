@@ -1,6 +1,6 @@
 language: generic
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y ghc
+  - sudo apt-get install -y ghc leiningen
 script:
   - "./build.sh"

@@ -15,3 +15,9 @@ cd "$ROOT_DIR"
 cd "$ROOT_DIR/c"
 make
 cd "$ROOT_DIR"
+
+cd "$ROOT_DIR/clojure/brainfrack"
+lein compile
+cd "$ROOT_DIR"
+
+
