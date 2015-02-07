@@ -1,6 +1,7 @@
 language: generic
 before_install:
+  - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main' >> /etc/apt/sources.list"
   - sudo apt-get update -qq
-  - sudo apt-get install -y ghc leiningen llvm-dev
+  - sudo apt-get install -y ghc leiningen llvm-3.5-dev
 script:
   - "./build.sh"
