@@ -11,6 +11,8 @@ using namespace llvm;
 Value *CellsPtr;
 Value *CellIndexPtr;
 
+enum { NUM_CELLS = 3000, CELL_SIZE_IN_BYTES = 1 };
+
 // Append the LLVM IR for '+'
 void addIncrement(IRBuilder<> *Builder) {
     LLVMContext &Context = getGlobalContext();
@@ -20,7 +22,7 @@ void addIncrement(IRBuilder<> *Builder) {
         Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
     Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
-    auto One = ConstantInt::get(Context, APInt(32, 0));
+    auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 0));
     Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
 
     Builder->CreateStore(NewCellVal, CurrentCellPtr);
@@ -37,8 +39,6 @@ Function *createMain(Module *Mod) {
 
     return Func;
 }
-
-enum { NUM_CELLS = 3000, CELL_SIZE_IN_BYTES = 1 };
 
 // Set up the cells and return a pointer to the cells as a Value.
 void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
