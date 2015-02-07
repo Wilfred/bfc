@@ -15,8 +15,3 @@ cd "$ROOT_DIR"
 cd "$ROOT_DIR/c"
 make
 cd "$ROOT_DIR"
-
-cd "$ROOT_DIR/llvm"
-make
-cd "$ROOT_DIR"
-
