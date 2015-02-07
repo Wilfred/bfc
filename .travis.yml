@@ -5,9 +5,16 @@ before_install:
   - sudo apt-get install -y ghc leiningen
 script:
   - cd java/brainfrack; mvn package
+  - cd ../..
+
   - cd clojure/brainfrack; lein compile
+  - cd ../..
+
   - cd haskell; ghc Brainfrack.hs
+  - cd ..
+
   - cd c; make
+  - cd ..
 
   - sudo apt-get install -y llvm-3.5 llvm-3.5-dev llvm-3.5-runtime libllvm3.5
   - cd llvm; make
