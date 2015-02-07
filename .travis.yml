@@ -15,5 +15,5 @@ script:
   - cd c; make
   - cd ..
 
-  - sudo apt-get install -y llvm-3.5 llvm-3.5-dev llvm-3.5-runtime libllvm3.5
+  - sudo apt-get install -y llvm-3.5 llvm-3.5-dev llvm-3.5-runtime libllvm3.5 libconfig++8-dev
   - cd llvm; make
