@@ -65,12 +65,9 @@ The C implementation reads programs from standard in.
 
 ## LLVM
 
-(in progress)
+The LLVM implementation is a C++ program that compiles BF to LLVM
+IR. It has been written on a 32-bit x86 machine and may not work
+elsewhere.
 
-    $ lli hello.ll
-
-Or
-
-    $ llc hello.ll
-    $ gcc hello.s
-    $ ./a.out
+    $ cd llvm
+    $ make
