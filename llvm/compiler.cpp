@@ -29,9 +29,8 @@ Function *createMain(Module *Mod) {
 
 void addPrologue(IRBuilder<> *Builder, Module *Mod) {
     Function *Calloc = Mod->getFunction("calloc");
-    std::vector<Value *> CallocArgs(
-        1, ConstantInt::get(getGlobalContext(), APInt(32, NUM_CELLS)));
-    Builder->CreateCall(Calloc, CallocArgs, "cells");
+    auto CallocArg = ConstantInt::get(getGlobalContext(), APInt(32, NUM_CELLS));
+    Builder->CreateCall(Calloc, CallocArg, "cells");
 }
 
 void addEpilogue(IRBuilder<> *Builder, Module *Mod) {
@@ -39,9 +38,8 @@ void addEpilogue(IRBuilder<> *Builder, Module *Mod) {
     
     // free(cells);
     Function *Free = Mod->getFunction("free");
-    std::vector<Value *> FreeArgs(
-        1, ConstantInt::get(Context, APInt(32, NUM_CELLS)));
-    Builder->CreateCall(Free, FreeArgs);
+    auto FreeArg = ConstantInt::get(Context, APInt(32, NUM_CELLS));
+    Builder->CreateCall(Free, FreeArg);
     
     // return 0;
     Value *RetVal = ConstantInt::get(Context, APInt(32, 0));
