@@ -61,12 +61,19 @@ void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
 void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
     auto &Context = getGlobalContext();
 
+    // Return the current cell value as our exit code, for a sanity
+    // check.
+    Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
+    Value *CurrentCellPtr =
+        Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+    Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
+    Value *RetVal = Builder->CreateZExt(CellVal, Type::getInt32Ty(Context), "exit_code");
+
     // free(cells);
     Function *Free = Mod->getFunction("free");
     Builder->CreateCall(Free, CellsPtr);
 
-    // return 0;
-    Value *RetVal = ConstantInt::get(Context, APInt(32, 0));
     Builder->CreateRet(RetVal);
 }
 
