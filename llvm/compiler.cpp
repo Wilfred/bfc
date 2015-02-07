@@ -9,12 +9,13 @@
 using namespace llvm;
 
 Value *CellsPtr;
-Value *CellIndex;
+Value *CellIndexPtr;
 
 // Append the LLVM IR for '+'
 void addIncrement(IRBuilder<> *Builder) {
     LLVMContext &Context = getGlobalContext();
 
+    Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
     Value *CurrentCellPtr =
         Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
@@ -50,11 +51,11 @@ void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
         ConstantInt::get(Context, APInt(32, CELL_SIZE_IN_BYTES))};
     CellsPtr = Builder->CreateCall(Calloc, CallocArgs, "cells");
 
-    // int cell_pointer = 0;
-    CellIndex =
-        Builder->CreateAlloca(Type::getInt32Ty(Context), NULL, "cell_index");
+    // int cell_index = 0;
+    CellIndexPtr =
+        Builder->CreateAlloca(Type::getInt32Ty(Context), NULL, "cell_index_ptr");
     auto Zero = ConstantInt::get(Context, APInt(32, 0));
-    Builder->CreateStore(Zero, CellIndex);
+    Builder->CreateStore(Zero, CellIndexPtr);
 }
 
 void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
