@@ -35,6 +35,23 @@ class BFIncrement : public BFInstruction {
     }
 };
 
+class BFDecrement : public BFInstruction {
+  public:
+    virtual void compile(IRBuilder<> *Builder) {
+        LLVMContext &Context = getGlobalContext();
+
+        Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
+        Value *CurrentCellPtr =
+            Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+        Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
+        auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 1));
+        Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
+
+        Builder->CreateStore(NewCellVal, CurrentCellPtr);
+    }
+};
+
 Function *createMain(Module *Mod) {
     LLVMContext &Context = getGlobalContext();
 
@@ -100,7 +117,7 @@ void declareCFunctions(Module *Mod) {
     Function::Create(FreeType, Function::ExternalLinkage, "free", Mod);
 }
 
-Module *compileProgram() {
+Module *compileProgram(std::vector<BFInstruction *> *Program) {
     auto &Context = getGlobalContext();
     Module *Mod = new Module("brainfrack test", Context);
 
@@ -114,8 +131,9 @@ Module *compileProgram() {
 
     addCellsInit(&Builder, Mod);
 
-    BFIncrement BFInst;
-    BFInst.compile(&Builder);
+    for(auto I = Program->begin(), E = Program->end(); I != E; ++I) {
+        (*I)->compile(&Builder);
+    }    
 
     addCellsCleanup(&Builder, Mod);
 
@@ -123,7 +141,11 @@ Module *compileProgram() {
 }
 
 int main() {
-    auto *Mod = compileProgram();
+    BFIncrement Inst;
+    std::vector<BFInstruction *> Program;
+    Program.push_back(&Inst);
+    
+    Module *Mod = compileProgram(&Program);
 
     // Print the generated code
     Mod->dump();
