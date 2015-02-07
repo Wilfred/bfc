@@ -25,7 +25,9 @@ Function *createMain(Module *Mod) {
     return Func;
 }
 
-#define NUM_CELLS 3000
+enum {
+    NUM_CELLS = 3000
+};
 
 // Set up the cells and return a pointer to the cells as a Value.
 Value *addPrologue(IRBuilder<> *Builder, Module *Mod) {
