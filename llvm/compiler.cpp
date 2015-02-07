@@ -34,8 +34,17 @@ void addPrologue(IRBuilder<> *Builder, Module *Mod) {
     Builder->CreateCall(Calloc, CallocArgs, "cells");
 }
 
-void addEpilogue(IRBuilder<> *Builder) {
-    Value *RetVal = ConstantInt::get(getGlobalContext(), APInt(32, 0));
+void addEpilogue(IRBuilder<> *Builder, Module *Mod) {
+    auto &Context = getGlobalContext();
+    
+    // free(cells);
+    Function *Free = Mod->getFunction("free");
+    std::vector<Value *> FreeArgs(
+        1, ConstantInt::get(Context, APInt(32, NUM_CELLS)));
+    Builder->CreateCall(Free, FreeArgs);
+    
+    // return 0;
+    Value *RetVal = ConstantInt::get(Context, APInt(32, 0));
     Builder->CreateRet(RetVal);
 }
 
@@ -46,6 +55,11 @@ void declareCFunctions(Module *Mod) {
     FunctionType *CallocType =
         FunctionType::get(Type::getInt8PtrTy(Context), CallocReturnType, false);
     Function::Create(CallocType, Function::ExternalLinkage, "calloc", Mod);
+
+    std::vector<Type *> FreeReturnType(1, Type::getInt8PtrTy(Context));
+    FunctionType *FreeType =
+        FunctionType::get(Type::getVoidTy(Context), FreeReturnType, false);
+    Function::Create(FreeType, Function::ExternalLinkage, "free", Mod);
 }
 
 int main() {
@@ -62,7 +76,7 @@ int main() {
 
     addPrologue(&Builder, &Mod);
     appendIncrement(&Builder);
-    addEpilogue(&Builder);
+    addEpilogue(&Builder, &Mod);
 
     // Print the generated code
     Mod.dump();
