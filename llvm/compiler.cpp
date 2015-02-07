@@ -27,19 +27,19 @@ Function *createMain(Module *Mod) {
 
 #define NUM_CELLS 3000
 
-void addPrologue(IRBuilder<> *Builder, Module *Mod) {
+// Set up the cells and return a pointer to the cells as a Value.
+Value *addPrologue(IRBuilder<> *Builder, Module *Mod) {
     Function *Calloc = Mod->getFunction("calloc");
     auto CallocArg = ConstantInt::get(getGlobalContext(), APInt(32, NUM_CELLS));
-    Builder->CreateCall(Calloc, CallocArg, "cells");
+    return Builder->CreateCall(Calloc, CallocArg, "cells");
 }
 
-void addEpilogue(IRBuilder<> *Builder, Module *Mod) {
+void addEpilogue(Value *cellPtr, IRBuilder<> *Builder, Module *Mod) {
     auto &Context = getGlobalContext();
     
     // free(cells);
     Function *Free = Mod->getFunction("free");
-    auto FreeArg = ConstantInt::get(Context, APInt(32, NUM_CELLS));
-    Builder->CreateCall(Free, FreeArg);
+    Builder->CreateCall(Free, cellPtr);
     
     // return 0;
     Value *RetVal = ConstantInt::get(Context, APInt(32, 0));
@@ -72,9 +72,9 @@ int main() {
     IRBuilder<> Builder(getGlobalContext());
     Builder.SetInsertPoint(BB);
 
-    addPrologue(&Builder, &Mod);
+    Value *cellsPtr = addPrologue(&Builder, &Mod);
     appendIncrement(&Builder);
-    addEpilogue(&Builder, &Mod);
+    addEpilogue(cellsPtr, &Builder, &Mod);
 
     // Print the generated code
     Mod.dump();
