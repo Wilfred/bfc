@@ -71,3 +71,9 @@ elsewhere.
 
     $ cd llvm
     $ make
+
+## Test programs
+
+http://www.hevanet.com/cristofd/brainfuck/tests.b is a treasure trove
+of implementation tests. Most implementations here don't pass all
+these tests yet.
