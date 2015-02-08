@@ -43,23 +43,6 @@ class BFIncrement : public BFInstruction {
     }
 };
 
-class BFDecrement : public BFInstruction {
-  public:
-    virtual void compile(IRBuilder<> *Builder) {
-        LLVMContext &Context = getGlobalContext();
-
-        Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
-        Value *CurrentCellPtr =
-            Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
-
-        Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
-        auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 1));
-        Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
-
-        Builder->CreateStore(NewCellVal, CurrentCellPtr);
-    }
-};
-
 Function *createMain(Module *Mod) {
     LLVMContext &Context = getGlobalContext();
 
