@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <alloca.h>
 #include <unistd.h>
+#include <assert.h>
 
 // Given the index of an opening bracket, find the index of the
 // matching close bracket.
@@ -56,11 +57,15 @@ int find_open_index(char *program, int program_len, int close_index) {
     return -1;
 }
 
+enum {
+    NUM_CELLS = 3000
+};
+
 void eval_program(char *program) {
     int program_len = strlen(program);
 
     // Our cells are initialised to 0.
-    char cells[30000] = {};
+    char cells[NUM_CELLS] = {};
     int data_index = 0;
     int instruction_index = 0;
 
@@ -71,9 +76,11 @@ void eval_program(char *program) {
         switch (c) {
         case '>':
             data_index++;
+            assert(data_index < NUM_CELLS && "Tried to access beyond the last cell");
             instruction_index++;
             break;
         case '<':
+            assert(data_index > 0 && "Tried to access a negative cell index");
             data_index--;
             instruction_index++;
             break;
