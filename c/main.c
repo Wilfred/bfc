@@ -58,7 +58,7 @@ int find_open_index(char *program, int program_len, int close_index) {
 }
 
 enum {
-    NUM_CELLS = 3000
+    NUM_CELLS = 30000
 };
 
 void eval_program(char *program) {
