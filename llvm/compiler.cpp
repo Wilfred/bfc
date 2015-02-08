@@ -158,7 +158,7 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
     addCellsInit(&Builder, Mod);
 
     for (auto I = Program->begin(), E = Program->end(); I != E; ++I) {
-        (*I)->compile(BB);
+        BB = (*I)->compile(BB);
     }
 
     addCellsCleanup(&Builder, Mod);
