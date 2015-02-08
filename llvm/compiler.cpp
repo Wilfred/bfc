@@ -139,9 +139,9 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
 
     addCellsInit(&Builder, Mod);
 
-    for(auto I = Program->begin(), E = Program->end(); I != E; ++I) {
+    for (auto I = Program->begin(), E = Program->end(); I != E; ++I) {
         (*I)->compile(&Builder);
-    }    
+    }
 
     addCellsCleanup(&Builder, Mod);
 
@@ -152,7 +152,7 @@ int main() {
     BFIncrement Inst;
     std::vector<BFInstruction *> Program;
     Program.push_back(&Inst);
-    
+
     Module *Mod = compileProgram(&Program);
 
     // Print the generated code
