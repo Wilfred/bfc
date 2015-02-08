@@ -15,7 +15,10 @@ enum { NUM_CELLS = 3000, CELL_SIZE_IN_BYTES = 1 };
 
 class BFInstruction {
   public:
-    virtual void compile(IRBuilder<> *) = 0;
+    // Append the appropriate instructions to the given basic
+    // block. We may also create new basic blocks, return the next
+    // basic block we should append to.
+    virtual BasicBlock *compile(BasicBlock *) = 0;
 };
 
 class BFIncrement : public BFInstruction {
@@ -26,20 +29,25 @@ class BFIncrement : public BFInstruction {
     BFIncrement() { Amount = 1; }
 
     BFIncrement(int Amount_) { Amount = Amount_; };
-    virtual void compile(IRBuilder<> *Builder) {
-        LLVMContext &Context = getGlobalContext();
+    virtual BasicBlock *compile(BasicBlock *BB) {
+        auto &Context = getGlobalContext();
 
-        Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
+        IRBuilder<> Builder(Context);
+        Builder.SetInsertPoint(BB);
+
+        Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
         Value *CurrentCellPtr =
-            Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+            Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
-        Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
+        Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
         auto IncrementAmount =
             ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, Amount));
         Value *NewCellVal =
-            Builder->CreateAdd(CellVal, IncrementAmount, "cell_value");
+            Builder.CreateAdd(CellVal, IncrementAmount, "cell_value");
 
-        Builder->CreateStore(NewCellVal, CurrentCellPtr);
+        Builder.CreateStore(NewCellVal, CurrentCellPtr);
+
+        return BB;
     }
 };
 
@@ -51,14 +59,22 @@ class BFDataIncrement : public BFInstruction {
     BFDataIncrement() { Amount = 1; }
 
     BFDataIncrement(int Amount_) { Amount = Amount_; };
-    virtual void compile(IRBuilder<> *Builder) {
-        LLVMContext &Context = getGlobalContext();
+    virtual BasicBlock *compile(BasicBlock *BB) {
+        auto &Context = getGlobalContext();
 
-        Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
+        IRBuilder<> Builder(Context);
+        Builder.SetInsertPoint(BB);
+
+        Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
         auto IncrementAmount = ConstantInt::get(Context, APInt(32, Amount));
-        Value *NewCellIndex = Builder->CreateAdd(CellIndex, IncrementAmount);
+        Value *NewCellIndex = Builder.CreateAdd(CellIndex, IncrementAmount);
 
-        Builder->CreateStore(NewCellIndex, CellIndexPtr);
+        Builder.CreateStore(NewCellIndex, CellIndexPtr);
+
+        return BB;
+    }
+};
+
     }
 };
 
@@ -142,7 +158,7 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
     addCellsInit(&Builder, Mod);
 
     for (auto I = Program->begin(), E = Program->end(); I != E; ++I) {
-        (*I)->compile(&Builder);
+        (*I)->compile(BB);
     }
 
     addCellsCleanup(&Builder, Mod);
