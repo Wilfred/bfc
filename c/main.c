@@ -52,9 +52,7 @@ int find_open_index(char *program, int program_len, int close_index) {
     assert(false && "Program is not well bracketed");
 }
 
-enum {
-    NUM_CELLS = 30000
-};
+enum { NUM_CELLS = 30000 };
 
 void eval_program(char *program) {
     int program_len = strlen(program);
@@ -71,7 +69,8 @@ void eval_program(char *program) {
         switch (c) {
         case '>':
             data_index++;
-            assert(data_index < NUM_CELLS && "Tried to access beyond the last cell");
+            assert(data_index < NUM_CELLS &&
+                   "Tried to access beyond the last cell");
             instruction_index++;
             break;
         case '<':
