@@ -4,10 +4,10 @@
 #include <alloca.h>
 #include <unistd.h>
 #include <assert.h>
+#include <stdbool.h>
 
 // Given the index of an opening bracket, find the index of the
 // matching close bracket.
-// TODO: Handle malformed programs that aren't well-bracketed.
 int find_close_index(char *program, int program_len, int open_index) {
     int depth = 0;
 
@@ -32,14 +32,11 @@ int find_close_index(char *program, int program_len, int open_index) {
         }
     }
 
-    // We are assuming the program is well-bracketed, but we need to
-    // return something to keep GCC happy.
-    return -1;
+    assert(false && "Program is not well bracketed");
 }
 
 // Given the index of a closing bracket, find the index of the
 // matching open bracket.
-// TODO: Handle malformed programs that aren't well-bracketed.
 int find_open_index(char *program, int program_len, int close_index) {
     char c;
     for (int i = 0; i < close_index; i++) {
@@ -52,9 +49,7 @@ int find_open_index(char *program, int program_len, int close_index) {
         }
     }
 
-    // We are assuming the program is well-bracketed, but we need to
-    // return something to keep GCC happy.
-    return -1;
+    assert(false && "Program is not well bracketed");
 }
 
 enum {
