@@ -43,6 +43,26 @@ class BFIncrement : public BFInstruction {
     }
 };
 
+class BFDataIncrement : public BFInstruction {
+  private:
+    int Amount;
+
+  public:
+    BFDataIncrement() { Amount = 1; }
+
+    BFDataIncrement(int Amount_) { Amount = Amount_; };
+    virtual void compile(IRBuilder<> *Builder) {
+        LLVMContext &Context = getGlobalContext();
+
+        Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
+        auto IncrementAmount =
+            ConstantInt::get(Context, APInt(32, Amount));
+        Value *NewCellIndex = Builder->CreateAdd(CellIndex, IncrementAmount);
+
+        Builder->CreateStore(NewCellIndex, CellIndexPtr);
+    }
+};
+
 Function *createMain(Module *Mod) {
     LLVMContext &Context = getGlobalContext();
 
@@ -133,8 +153,14 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
 
 int main() {
     BFIncrement Inst;
+    BFDataIncrement DataInst;
+    BFDataIncrement DataInst2(-1);
     std::vector<BFInstruction *> Program;
     Program.push_back(&Inst);
+    Program.push_back(&Inst);
+    Program.push_back(&DataInst);
+    Program.push_back(&Inst);
+    Program.push_back(&DataInst2);
 
     Module *Mod = compileProgram(&Program);
 
