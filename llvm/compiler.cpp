@@ -19,7 +19,13 @@ class BFInstruction {
 };
 
 class BFIncrement : public BFInstruction {
+  private:
+    int Amount;
+
   public:
+    BFIncrement() { Amount = 1; }
+
+    BFIncrement(int Amount_) { Amount = Amount_; };
     virtual void compile(IRBuilder<> *Builder) {
         LLVMContext &Context = getGlobalContext();
 
@@ -28,8 +34,10 @@ class BFIncrement : public BFInstruction {
             Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
         Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
-        auto One = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 1));
-        Value *NewCellVal = Builder->CreateAdd(CellVal, One, "cell_value");
+        auto IncrementAmount =
+            ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, Amount));
+        Value *NewCellVal =
+            Builder->CreateAdd(CellVal, IncrementAmount, "cell_value");
 
         Builder->CreateStore(NewCellVal, CurrentCellPtr);
     }
