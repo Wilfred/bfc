@@ -79,7 +79,7 @@ class BFDataIncrement : public BFInstruction {
 };
 
 Function *createMain(Module *Mod) {
-    LLVMContext &Context = getGlobalContext();
+    auto &Context = getGlobalContext();
 
     FunctionType *FuncType =
         FunctionType::get(Type::getInt32Ty(Context), false);
@@ -129,7 +129,7 @@ void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
 }
 
 void declareCFunctions(Module *Mod) {
-    LLVMContext &Context = getGlobalContext();
+    auto &Context = getGlobalContext();
 
     std::vector<Type *> CallocArgs = {Type::getInt32Ty(Context),
                                       Type::getInt32Ty(Context)};
@@ -150,9 +150,9 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
     declareCFunctions(Mod);
 
     Function *Func = createMain(Mod);
-    BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", Func);
+    BasicBlock *BB = BasicBlock::Create(Context, "entry", Func);
 
-    IRBuilder<> Builder(getGlobalContext());
+    IRBuilder<> Builder(Context);
     Builder.SetInsertPoint(BB);
 
     addCellsInit(&Builder, Mod);
