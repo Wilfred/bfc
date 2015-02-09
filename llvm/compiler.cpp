@@ -108,24 +108,26 @@ void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
     Builder->CreateStore(Zero, CellIndexPtr);
 }
 
-void addCellsCleanup(IRBuilder<> *Builder, Module *Mod) {
+void addCellsCleanup(BasicBlock *BB, Module *Mod) {
     auto &Context = getGlobalContext();
+    IRBuilder<> Builder(Context);
+    Builder.SetInsertPoint(BB);
 
     // Return the current cell value as our exit code, for a sanity
     // check.
-    Value *CellIndex = Builder->CreateLoad(CellIndexPtr, "cell_index");
+    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
     Value *CurrentCellPtr =
-        Builder->CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+        Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
-    Value *CellVal = Builder->CreateLoad(CurrentCellPtr, "cell_value");
+    Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
     Value *RetVal =
-        Builder->CreateZExt(CellVal, Type::getInt32Ty(Context), "exit_code");
+        Builder.CreateZExt(CellVal, Type::getInt32Ty(Context), "exit_code");
 
     // free(cells);
     Function *Free = Mod->getFunction("free");
-    Builder->CreateCall(Free, CellsPtr);
+    Builder.CreateCall(Free, CellsPtr);
 
-    Builder->CreateRet(RetVal);
+    Builder.CreateRet(RetVal);
 }
 
 void declareCFunctions(Module *Mod) {
@@ -161,7 +163,7 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
         BB = (*I)->compile(BB);
     }
 
-    addCellsCleanup(&Builder, Mod);
+    addCellsCleanup(BB, Mod);
 
     return Mod;
 }
