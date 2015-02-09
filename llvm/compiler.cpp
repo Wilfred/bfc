@@ -4,8 +4,6 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 
-#include <stdio.h>
-
 using namespace llvm;
 
 Value *CellsPtr;
