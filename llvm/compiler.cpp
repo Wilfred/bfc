@@ -78,9 +78,7 @@ class BFLoop : public BFInstruction {
     std::vector<BFInstruction *> LoopBody;
 
   public:
-    BFLoop(std::vector<BFInstruction *> LoopBody_) {
-        LoopBody = LoopBody_;
-    }
+    BFLoop(std::vector<BFInstruction *> LoopBody_) { LoopBody = LoopBody_; }
 
     virtual BasicBlock *compile(BasicBlock *BB) {
         auto &Context = getGlobalContext();
@@ -215,7 +213,7 @@ int main() {
     LoopBody.push_back(&Inst2);
 
     BFLoop LoopInst(LoopBody);
-    
+
     BFIncrement Inst;
 
     std::vector<BFInstruction *> Program;
