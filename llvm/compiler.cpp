@@ -73,6 +73,49 @@ class BFDataIncrement : public BFInstruction {
     }
 };
 
+class BFLoop : public BFInstruction {
+  private:
+    std::vector<BFInstruction *> LoopBody;
+
+  public:
+    BFLoop(std::vector<BFInstruction *> LoopBody_) {
+        LoopBody = LoopBody_;
+    }
+
+    virtual BasicBlock *compile(BasicBlock *BB) {
+        auto &Context = getGlobalContext();
+        IRBuilder<> Builder(Context);
+
+        BasicBlock *LoopHeader = BasicBlock::Create(Context, "loop_header");
+
+        // We start by entering the loop header from the previous
+        // instructions.
+        Builder.SetInsertPoint(BB);
+        Builder.CreateBr(LoopHeader);
+
+        BasicBlock *LoopBodyBlock = BasicBlock::Create(Context, "loop_body");
+        BasicBlock *LoopAfter = BasicBlock::Create(Context, "loop_after");
+
+        // loop_header:
+        //   %current_cell = ...
+        //   %current_cell_is_zero = icmp ...
+        //   br %current_cell_is_zero, %loop_after, %loop_body
+        Builder.SetInsertPoint(LoopHeader);
+        Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+        Value *CurrentCellPtr =
+            Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+        Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
+
+        auto Zero = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 0));
+        Value *CellValIsZero = Builder.CreateICmpEQ(CellVal, Zero);
+
+        Builder.CreateCondBr(CellValIsZero, LoopAfter, LoopBodyBlock);
+
+        for (auto I = LoopBody.begin(), E = LoopBody.end(); I != E; ++I) {
+            LoopBodyBlock = (*I)->compile(LoopBodyBlock);
+        }
+
+        return LoopBodyBlock;
     }
 };
 
@@ -167,15 +210,17 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
 }
 
 int main() {
+    BFIncrement Inst2(-1);
+    std::vector<BFInstruction *> LoopBody;
+    LoopBody.push_back(&Inst2);
+
+    BFLoop LoopInst(LoopBody);
+    
     BFIncrement Inst;
-    BFDataIncrement DataInst;
-    BFDataIncrement DataInst2(-1);
+
     std::vector<BFInstruction *> Program;
     Program.push_back(&Inst);
-    Program.push_back(&Inst);
-    Program.push_back(&DataInst);
-    Program.push_back(&Inst);
-    Program.push_back(&DataInst2);
+    Program.push_back(&LoopInst);
 
     Module *Mod = compileProgram(&Program);
 
