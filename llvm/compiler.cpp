@@ -16,7 +16,7 @@ class BFInstruction {
     // Append the appropriate instructions to the given basic
     // block. We may also create new basic blocks, return the next
     // basic block we should append to.
-    virtual BasicBlock *compile(Function *, BasicBlock *) = 0;
+    virtual BasicBlock *compile(Module *, Function *, BasicBlock *) = 0;
 };
 
 class BFIncrement : public BFInstruction {
@@ -27,7 +27,7 @@ class BFIncrement : public BFInstruction {
     BFIncrement() { Amount = 1; }
 
     BFIncrement(int Amount_) { Amount = Amount_; };
-    virtual BasicBlock *compile(Function *, BasicBlock *BB) {
+    virtual BasicBlock *compile(Module *, Function *, BasicBlock *BB) {
         auto &Context = getGlobalContext();
 
         IRBuilder<> Builder(Context);
@@ -49,6 +49,28 @@ class BFIncrement : public BFInstruction {
     }
 };
 
+class BFWrite : public BFInstruction {
+  public:
+    virtual BasicBlock *compile(Module *Mod, Function *, BasicBlock *BB) {
+        auto &Context = getGlobalContext();
+
+        IRBuilder<> Builder(Context);
+        Builder.SetInsertPoint(BB);
+
+        Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+        Value *CurrentCellPtr =
+            Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+        Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
+        Value *CellValAsChar = Builder.CreateSExt(CellVal, Type::getInt32Ty(Context), "cell_val_as_char");
+        
+        Function *PutChar = Mod->getFunction("putchar");
+        Builder.CreateCall(PutChar, CellValAsChar);
+
+        return BB;
+    }
+};
+
 class BFDataIncrement : public BFInstruction {
   private:
     int Amount;
@@ -57,7 +79,7 @@ class BFDataIncrement : public BFInstruction {
     BFDataIncrement() { Amount = 1; }
 
     BFDataIncrement(int Amount_) { Amount = Amount_; };
-    virtual BasicBlock *compile(Function *, BasicBlock *BB) {
+    virtual BasicBlock *compile(Module *, Function *, BasicBlock *BB) {
         auto &Context = getGlobalContext();
 
         IRBuilder<> Builder(Context);
@@ -80,7 +102,7 @@ class BFLoop : public BFInstruction {
   public:
     BFLoop(std::vector<BFInstruction *> LoopBody_) { LoopBody = LoopBody_; }
 
-    virtual BasicBlock *compile(Function *F, BasicBlock *BB) {
+    virtual BasicBlock *compile(Module *Mod, Function *F, BasicBlock *BB) {
         auto &Context = getGlobalContext();
         IRBuilder<> Builder(Context);
 
@@ -110,7 +132,7 @@ class BFLoop : public BFInstruction {
         Builder.CreateCondBr(CellValIsZero, LoopAfter, LoopBodyBlock);
 
         for (auto I = LoopBody.begin(), E = LoopBody.end(); I != E; ++I) {
-            LoopBodyBlock = (*I)->compile(F, LoopBodyBlock);
+            LoopBodyBlock = (*I)->compile(Mod, F, LoopBodyBlock);
         }
 
         Builder.SetInsertPoint(LoopBodyBlock);
@@ -185,6 +207,11 @@ void declareCFunctions(Module *Mod) {
     FunctionType *FreeType =
         FunctionType::get(Type::getVoidTy(Context), FreeArgs, false);
     Function::Create(FreeType, Function::ExternalLinkage, "free", Mod);
+
+    std::vector<Type *> PutCharArgs = {Type::getInt32Ty(Context)};
+    FunctionType *PutCharType =
+        FunctionType::get(Type::getInt32Ty(Context), PutCharArgs, false);
+    Function::Create(PutCharType, Function::ExternalLinkage, "putchar", Mod);
 }
 
 Module *compileProgram(std::vector<BFInstruction *> *Program) {
@@ -202,7 +229,7 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
     addCellsInit(&Builder, Mod);
 
     for (auto I = Program->begin(), E = Program->end(); I != E; ++I) {
-        BB = (*I)->compile(Func, BB);
+        BB = (*I)->compile(Mod, Func, BB);
     }
 
     addCellsCleanup(BB, Mod);
@@ -211,19 +238,15 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
 }
 
 int main() {
-    BFIncrement Inst2(-1);
-    std::vector<BFInstruction *> LoopBody;
-    LoopBody.push_back(&Inst2);
-
-    BFLoop LoopInst(LoopBody);
-
     BFIncrement Inst;
 
     std::vector<BFInstruction *> Program;
-    Program.push_back(&Inst);
-    Program.push_back(&LoopInst);
-    Program.push_back(&Inst);
-    Program.push_back(&Inst);
+    for (int i = 0; i < 33; ++i) { // ASCII 33 == '!'
+        Program.push_back(&Inst);
+    }
+
+    BFWrite Inst2;
+    Program.push_back(&Inst2);
 
     Module *Mod = compileProgram(&Program);
 
