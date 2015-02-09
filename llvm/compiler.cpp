@@ -177,21 +177,13 @@ void addCellsCleanup(BasicBlock *BB, Module *Mod) {
     IRBuilder<> Builder(Context);
     Builder.SetInsertPoint(BB);
 
-    // Return the current cell value as our exit code, for a sanity
-    // check.
-    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
-    Value *CurrentCellPtr =
-        Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
-
-    Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
-    Value *RetVal =
-        Builder.CreateZExt(CellVal, Type::getInt32Ty(Context), "exit_code");
-
     // free(cells);
     Function *Free = Mod->getFunction("free");
     Builder.CreateCall(Free, CellsPtr);
 
-    Builder.CreateRet(RetVal);
+    // exit(0);
+    auto Zero = ConstantInt::get(Context, APInt(32, 0));
+    Builder.CreateRet(Zero);
 }
 
 void declareCFunctions(Module *Mod) {
