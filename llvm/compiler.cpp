@@ -16,7 +16,7 @@ class BFInstruction {
     // Append the appropriate instructions to the given basic
     // block. We may also create new basic blocks, return the next
     // basic block we should append to.
-    virtual BasicBlock *compile(BasicBlock *) = 0;
+    virtual BasicBlock *compile(Function *, BasicBlock *) = 0;
 };
 
 class BFIncrement : public BFInstruction {
@@ -27,7 +27,7 @@ class BFIncrement : public BFInstruction {
     BFIncrement() { Amount = 1; }
 
     BFIncrement(int Amount_) { Amount = Amount_; };
-    virtual BasicBlock *compile(BasicBlock *BB) {
+    virtual BasicBlock *compile(Function *, BasicBlock *BB) {
         auto &Context = getGlobalContext();
 
         IRBuilder<> Builder(Context);
@@ -57,7 +57,7 @@ class BFDataIncrement : public BFInstruction {
     BFDataIncrement() { Amount = 1; }
 
     BFDataIncrement(int Amount_) { Amount = Amount_; };
-    virtual BasicBlock *compile(BasicBlock *BB) {
+    virtual BasicBlock *compile(Function *, BasicBlock *BB) {
         auto &Context = getGlobalContext();
 
         IRBuilder<> Builder(Context);
@@ -80,19 +80,19 @@ class BFLoop : public BFInstruction {
   public:
     BFLoop(std::vector<BFInstruction *> LoopBody_) { LoopBody = LoopBody_; }
 
-    virtual BasicBlock *compile(BasicBlock *BB) {
+    virtual BasicBlock *compile(Function *F, BasicBlock *BB) {
         auto &Context = getGlobalContext();
         IRBuilder<> Builder(Context);
 
-        BasicBlock *LoopHeader = BasicBlock::Create(Context, "loop_header");
+        BasicBlock *LoopHeader = BasicBlock::Create(Context, "loop_header", F);
 
         // We start by entering the loop header from the previous
         // instructions.
         Builder.SetInsertPoint(BB);
         Builder.CreateBr(LoopHeader);
 
-        BasicBlock *LoopBodyBlock = BasicBlock::Create(Context, "loop_body");
-        BasicBlock *LoopAfter = BasicBlock::Create(Context, "loop_after");
+        BasicBlock *LoopBodyBlock = BasicBlock::Create(Context, "loop_body", F);
+        BasicBlock *LoopAfter = BasicBlock::Create(Context, "loop_after", F);
 
         // loop_header:
         //   %current_cell = ...
@@ -110,10 +110,13 @@ class BFLoop : public BFInstruction {
         Builder.CreateCondBr(CellValIsZero, LoopAfter, LoopBodyBlock);
 
         for (auto I = LoopBody.begin(), E = LoopBody.end(); I != E; ++I) {
-            LoopBodyBlock = (*I)->compile(LoopBodyBlock);
+            LoopBodyBlock = (*I)->compile(F, LoopBodyBlock);
         }
 
-        return LoopBodyBlock;
+        Builder.SetInsertPoint(LoopBodyBlock);
+        Builder.CreateBr(LoopHeader);
+
+        return LoopAfter;
     }
 };
 
@@ -199,7 +202,7 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
     addCellsInit(&Builder, Mod);
 
     for (auto I = Program->begin(), E = Program->end(); I != E; ++I) {
-        BB = (*I)->compile(BB);
+        BB = (*I)->compile(Func, BB);
     }
 
     addCellsCleanup(BB, Mod);
@@ -219,6 +222,8 @@ int main() {
     std::vector<BFInstruction *> Program;
     Program.push_back(&Inst);
     Program.push_back(&LoopInst);
+    Program.push_back(&Inst);
+    Program.push_back(&Inst);
 
     Module *Mod = compileProgram(&Program);
 
