@@ -62,8 +62,9 @@ class BFWrite : public BFInstruction {
             Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
         Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
-        Value *CellValAsChar = Builder.CreateSExt(CellVal, Type::getInt32Ty(Context), "cell_val_as_char");
-        
+        Value *CellValAsChar = Builder.CreateSExt(
+            CellVal, Type::getInt32Ty(Context), "cell_val_as_char");
+
         Function *PutChar = Mod->getFunction("putchar");
         Builder.CreateCall(PutChar, CellValAsChar);
 
