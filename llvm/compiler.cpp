@@ -49,6 +49,28 @@ class BFIncrement : public BFInstruction {
     }
 };
 
+class BFRead : public BFInstruction {
+  public:
+    virtual BasicBlock *compile(Module *Mod, Function *, BasicBlock *BB) {
+        auto &Context = getGlobalContext();
+
+        IRBuilder<> Builder(Context);
+        Builder.SetInsertPoint(BB);
+
+        Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+        Value *CurrentCellPtr =
+            Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+        Function *GetChar = Mod->getFunction("getchar");
+        Value *InputChar = Builder.CreateCall(GetChar, "%input_char");
+        Value *InputByte = Builder.CreateTrunc(
+            InputChar, Type::getInt8Ty(Context), "%input_byte");
+        Builder.CreateStore(InputByte, CurrentCellPtr);
+
+        return BB;
+    }
+};
+
 class BFWrite : public BFInstruction {
   public:
     virtual BasicBlock *compile(Module *Mod, Function *, BasicBlock *BB) {
@@ -205,6 +227,11 @@ void declareCFunctions(Module *Mod) {
     FunctionType *PutCharType =
         FunctionType::get(Type::getInt32Ty(Context), PutCharArgs, false);
     Function::Create(PutCharType, Function::ExternalLinkage, "putchar", Mod);
+
+    std::vector<Type *> GetCharArgs;
+    FunctionType *GetCharType =
+        FunctionType::get(Type::getInt32Ty(Context), GetCharArgs, false);
+    Function::Create(GetCharType, Function::ExternalLinkage, "getchar", Mod);
 }
 
 Module *compileProgram(std::vector<BFInstruction *> *Program) {
@@ -231,12 +258,10 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
 }
 
 int main() {
-    BFIncrement Inst;
-
     std::vector<BFInstruction *> Program;
-    for (int i = 0; i < 33; ++i) { // ASCII 33 == '!'
-        Program.push_back(&Inst);
-    }
+
+    BFRead Inst;
+    Program.push_back(&Inst);
 
     BFWrite Inst2;
     Program.push_back(&Inst2);
