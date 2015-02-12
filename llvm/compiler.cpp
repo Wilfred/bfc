@@ -178,24 +178,27 @@ Function *createMain(Module *Mod) {
 }
 
 // Set up the cells and return a pointer to the cells as a Value.
-void addCellsInit(IRBuilder<> *Builder, Module *Mod) {
+void addCellsInit(Module *Mod, BasicBlock *BB) {
     auto &Context = getGlobalContext();
+
+    IRBuilder<> Builder(Context);
+    Builder.SetInsertPoint(BB);
 
     // char *cells = calloc(3000);
     Function *Calloc = Mod->getFunction("calloc");
     std::vector<Value *> CallocArgs = {
         ConstantInt::get(Context, APInt(32, NUM_CELLS)),
         ConstantInt::get(Context, APInt(32, CELL_SIZE_IN_BYTES))};
-    CellsPtr = Builder->CreateCall(Calloc, CallocArgs, "cells");
+    CellsPtr = Builder.CreateCall(Calloc, CallocArgs, "cells");
 
     // int cell_index = 0;
-    CellIndexPtr = Builder->CreateAlloca(Type::getInt32Ty(Context), NULL,
-                                         "cell_index_ptr");
+    CellIndexPtr =
+        Builder.CreateAlloca(Type::getInt32Ty(Context), NULL, "cell_index_ptr");
     auto Zero = ConstantInt::get(Context, APInt(32, 0));
-    Builder->CreateStore(Zero, CellIndexPtr);
+    Builder.CreateStore(Zero, CellIndexPtr);
 }
 
-void addCellsCleanup(BasicBlock *BB, Module *Mod) {
+void addCellsCleanup(Module *Mod, BasicBlock *BB) {
     auto &Context = getGlobalContext();
     IRBuilder<> Builder(Context);
     Builder.SetInsertPoint(BB);
@@ -243,16 +246,13 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
     Function *Func = createMain(Mod);
     BasicBlock *BB = BasicBlock::Create(Context, "entry", Func);
 
-    IRBuilder<> Builder(Context);
-    Builder.SetInsertPoint(BB);
-
-    addCellsInit(&Builder, Mod);
+    addCellsInit(Mod, BB);
 
     for (auto I = Program->begin(), E = Program->end(); I != E; ++I) {
         BB = (*I)->compile(Mod, Func, BB);
     }
 
-    addCellsCleanup(BB, Mod);
+    addCellsCleanup(Mod, BB);
 
     return Mod;
 }
