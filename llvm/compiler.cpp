@@ -5,6 +5,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <fstream>
+
 using namespace llvm;
 
 Value *CellsPtr;
@@ -260,6 +262,14 @@ Module *compileProgram(BFProgram *Program) {
     return Mod;
 }
 
+std::string readSource(char *programPath) {
+    std::ifstream stream(programPath);
+    std::string source((std::istreambuf_iterator<char>(stream)),
+                       std::istreambuf_iterator<char>());
+
+    return source;
+}
+
 void printUsage(char *ProgramName) {
     errs() << "Usage: " << ProgramName << " <my-program.bf> \n";
 }
@@ -269,6 +279,10 @@ int main(int argc, char *argv[]) {
         printUsage(argv[0]);
         exit(EXIT_FAILURE);
     }
+
+    auto ProgramPath = argv[1];
+    auto Source = readSource(ProgramPath);
+    errs() << Source;
 
     BFProgram Program;
 
