@@ -62,9 +62,9 @@ class BFRead : public BFInstruction {
             Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
         Function *GetChar = Mod->getFunction("getchar");
-        Value *InputChar = Builder.CreateCall(GetChar, "%input_char");
+        Value *InputChar = Builder.CreateCall(GetChar, "input_char");
         Value *InputByte = Builder.CreateTrunc(
-            InputChar, Type::getInt8Ty(Context), "%input_byte");
+            InputChar, Type::getInt8Ty(Context), "input_byte");
         Builder.CreateStore(InputByte, CurrentCellPtr);
 
         return BB;
