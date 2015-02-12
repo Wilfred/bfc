@@ -3,6 +3,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
 
@@ -257,7 +258,16 @@ Module *compileProgram(std::vector<BFInstruction *> *Program) {
     return Mod;
 }
 
-int main() {
+void printUsage(char *ProgramName) {
+    errs() << "Usage: " << ProgramName << " <my-program.bf> \n";
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printUsage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
     std::vector<BFInstruction *> Program;
 
     BFRead Inst;
