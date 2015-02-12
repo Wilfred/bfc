@@ -238,7 +238,9 @@ void declareCFunctions(Module *Mod) {
     Function::Create(GetCharType, Function::ExternalLinkage, "getchar", Mod);
 }
 
-Module *compileProgram(std::vector<BFInstruction *> *Program) {
+using BFProgram = std::vector<BFInstruction *>;
+
+Module *compileProgram(BFProgram *Program) {
     auto &Context = getGlobalContext();
     Module *Mod = new Module("brainfrack test", Context);
 
@@ -268,7 +270,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    std::vector<BFInstruction *> Program;
+    BFProgram Program;
 
     BFRead Inst;
     Program.push_back(&Inst);
