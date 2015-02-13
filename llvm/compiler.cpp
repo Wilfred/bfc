@@ -20,6 +20,8 @@ class BFInstruction {
     // block. We may also create new basic blocks, return the next
     // basic block we should append to.
     virtual BasicBlock *compile(Module *, Function *, BasicBlock *) = 0;
+
+    virtual ~BFInstruction() {};
 };
 
 class BFIncrement : public BFInstruction {
@@ -270,6 +272,37 @@ std::string readSource(char *programPath) {
     return source;
 }
 
+BFProgram parseSource(std::string Source) {
+    // TODO: [ and ].
+    BFProgram Program;
+
+    for (auto I = Source.begin(), E = Source.end(); I != E; ++I) {
+        switch (*I) {
+        case '+': {
+            Program.push_back(new BFIncrement(1));
+            break;
+        }
+        case '-': {
+            Program.push_back(new BFIncrement(-1));
+            break;
+        }
+        case '>': {
+            Program.push_back(new BFDataIncrement(1));
+            break;
+        }
+        case '<': {
+            Program.push_back(new BFDataIncrement(-1));
+            break;
+        }
+        default:
+            // skip comments
+            break;
+        }
+    }
+
+    return Program;
+}
+
 void printUsage(char *ProgramName) {
     errs() << "Usage: " << ProgramName << " <my-program.bf> \n";
 }
@@ -282,17 +315,14 @@ int main(int argc, char *argv[]) {
 
     auto ProgramPath = argv[1];
     auto Source = readSource(ProgramPath);
-    errs() << Source;
-
-    BFProgram Program;
-
-    BFRead Inst;
-    Program.push_back(&Inst);
-
-    BFWrite Inst2;
-    Program.push_back(&Inst2);
+    auto Program = parseSource(Source);
 
     Module *Mod = compileProgram(&Program);
+
+    // TODO: use a proper pointer container instead of raw pointers.
+    for (auto I = Program.begin(), E = Program.end(); I != E; ++I) {
+        delete *I;
+    }
 
     // Print the generated code
     Mod->dump();
