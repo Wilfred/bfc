@@ -338,6 +338,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto ProgramPath = std::string(argv[1]);
+    // TODO: check file exists.
     auto Source = readSource(ProgramPath);
     auto Program = parseSource(Source);
 
