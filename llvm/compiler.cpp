@@ -294,6 +294,14 @@ BFProgram parseSource(std::string Source) {
             Program.push_back(new BFDataIncrement(-1));
             break;
         }
+        case ',': {
+            Program.push_back(new BFRead);
+            break;
+        }
+        case '.': {
+            Program.push_back(new BFWrite);
+            break;
+        }
         default:
             // skip comments
             break;
