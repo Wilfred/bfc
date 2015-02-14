@@ -265,7 +265,7 @@ Module *compileProgram(BFProgram *Program) {
     return Mod;
 }
 
-std::string readSource(char *programPath) {
+std::string readSource(std::string programPath) {
     std::ifstream stream(programPath);
     std::string source((std::istreambuf_iterator<char>(stream)),
                        std::istreambuf_iterator<char>());
@@ -312,7 +312,7 @@ BFProgram parseSource(std::string Source) {
     return Program;
 }
 
-void printUsage(char *ProgramName) {
+void printUsage(std::string ProgramName) {
     errs() << "Usage: " << ProgramName << " <my-program.bf> \n";
 }
 
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    auto ProgramPath = argv[1];
+    auto ProgramPath = std::string(argv[1]);
     auto Source = readSource(ProgramPath);
     auto Program = parseSource(Source);
 
