@@ -4,6 +4,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/raw_os_ostream.h"
 
 #include <fstream>
 
@@ -332,8 +333,12 @@ int main(int argc, char *argv[]) {
         delete *I;
     }
 
+    // Write the LLVM IR to a file.
+    std::ofstream StdOutputFile("out.ll");
+    raw_os_ostream OutputFile(StdOutputFile);
+
     // Print the generated code
-    Mod->print(outs(), nullptr);
+    Mod->print(OutputFile, nullptr);
 
     delete Mod;
 
