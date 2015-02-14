@@ -7,6 +7,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 #include <fstream>
+#include <regex>
 
 using namespace llvm;
 
@@ -316,6 +317,20 @@ void printUsage(std::string ProgramName) {
     errs() << "Usage: " << ProgramName << " <my-program.bf> \n";
 }
 
+std::string getOutputName(std::string ProgramName) {
+    // Strip the path, so "../foo/bar/baz.bf" -> "baz.bf".
+    std::regex FilenamePattern("[^/]+$");
+    std::smatch RegexMatch;
+    std::regex_search(ProgramName, RegexMatch, FilenamePattern);
+    std::string FileName = RegexMatch[0].str();
+
+    // Strip the extension "baz.bf" -> "baz"
+    std::regex ExtensionPattern("\\.bf?$");
+    std::string Name = std::regex_replace(FileName, ExtensionPattern, "");
+
+    return Name + ".ll";
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         printUsage(argv[0]);
@@ -334,7 +349,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Write the LLVM IR to a file.
-    std::ofstream StdOutputFile("out.ll");
+    std::ofstream StdOutputFile(getOutputName(ProgramPath));
     raw_os_ostream OutputFile(StdOutputFile);
 
     // Print the generated code
