@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Print the generated code
-    Mod->dump();
+    Mod->print(outs(), nullptr);
 
     delete Mod;
 
