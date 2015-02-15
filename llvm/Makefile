@@ -1,6 +1,6 @@
 CC = clang++
 CFLAGS = -Wall -Wextra -g
-LLVM_CONFIG = `llvm-config --cxxflags --ldflags --system-libs --libs core`
+LLVM_CONFIG := $(shell llvm-config --cxxflags --ldflags --system-libs --libs core)
 
 all: compiler
 
