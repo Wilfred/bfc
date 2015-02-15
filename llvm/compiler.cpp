@@ -16,7 +16,7 @@ using namespace llvm;
 Value *CellsPtr;
 Value *CellIndexPtr;
 
-enum { NUM_CELLS = 3000, CELL_SIZE_IN_BYTES = 1 };
+enum { NUM_CELLS = 30000, CELL_SIZE_IN_BYTES = 1 };
 
 class BFInstruction {
   public:
