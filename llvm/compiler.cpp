@@ -303,10 +303,10 @@ ssize_t findMatchingClose(std::string Source, size_t OpenIndex) {
 }
 
 BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
-    // TODO: [ and ].
     BFProgram Program;
 
-    for (size_t I = From; I < To; ++I) {
+    size_t I = From;
+    while (I < To) {
         switch (Source[I]) {
         case '+': {
             Program.push_back(new BFIncrement(1));
@@ -332,10 +332,33 @@ BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
             Program.push_back(new BFWrite);
             break;
         }
+        case '[': {
+            ssize_t MatchingCloseIdx = findMatchingClose(Source, I);
+            if (MatchingCloseIdx == -1) {
+                errs() << "Unmatched '[' at position " << I << "\n";
+                // FIXME: this leaks Program, the instructions, and everything
+                // in main.
+                exit(EXIT_FAILURE);
+            }
+            Program.push_back(new BFLoop(
+                parseSourceBetween(Source, I + 1, MatchingCloseIdx)));
+            I = MatchingCloseIdx;
+            break;
+        }
+        case ']': {
+            // We will have already stepped over the ']' unless our
+            // brackets are not well-matched.
+            errs() << "Unmatched ']' at position " << I << "\n";
+            // FIXME: this leaks Program, the instructions, and everything in
+            // main.
+            exit(EXIT_FAILURE);
+        }
         default:
             // skip comments
             break;
         }
+
+        ++I;
     }
 
     return Program;
