@@ -1,7 +1,7 @@
 CC = clang++
 CFLAGS = -Wall -Wextra -g
 LLVM_CONFIG := $(shell llvm-config --cxxflags --ldflags --system-libs --libs core)
-LLVM_OVERRIDE = -O0 # annoyingly, llvm-config sets -O3
+LLVM_OVERRIDE = -O0 -UNDEBUG # annoyingly, llvm-config sets -O3
 LIBS_CONFIG = -lboost_filesystem -lboost_system
 
 all: compiler
