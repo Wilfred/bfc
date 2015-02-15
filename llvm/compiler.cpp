@@ -25,7 +25,7 @@ class BFInstruction {
     // basic block we should append to.
     virtual BasicBlock *compile(Module *, Function *, BasicBlock *) = 0;
 
-    virtual ~BFInstruction() {};
+    virtual ~BFInstruction(){};
 };
 
 class BFIncrement : public BFInstruction {
