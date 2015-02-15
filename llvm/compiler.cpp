@@ -276,6 +276,31 @@ std::string readSource(std::string programPath) {
     return source;
 }
 
+// Return the index of the ']' that matches the '[' at Offset, or -1
+// if we don't have one.
+ssize_t findMatchingClose(std::string Source, size_t Offset) {
+    assert((Source[Offset] == '[') && "Looking for ']' but not starting from a '['");
+
+    int OpenCount = 0;
+
+    for (size_t I = Offset; I < Source.length(); ++I) {
+        switch (Source[I]) {
+        case '[':
+            OpenCount++;
+            break;
+        case ']':
+            OpenCount--;
+            break;
+        }
+
+        if (OpenCount == 0) {
+            return I;
+        }
+    }
+
+    return -1;
+}
+
 BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
     // TODO: [ and ].
     BFProgram Program;
