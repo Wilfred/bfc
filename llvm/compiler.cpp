@@ -6,6 +6,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/raw_os_ostream.h"
 
+#include <boost/filesystem.hpp>
+
 #include <fstream>
 #include <regex>
 
@@ -338,7 +340,12 @@ int main(int argc, char *argv[]) {
     }
 
     auto ProgramPath = std::string(argv[1]);
-    // TODO: check file exists.
+
+    if (!boost::filesystem::exists(ProgramPath)) {
+        errs() << "No such file: " << ProgramPath << "\n";
+        exit(EXIT_FAILURE);
+    }
+
     auto Source = readSource(ProgramPath);
     auto Program = parseSource(Source);
 
