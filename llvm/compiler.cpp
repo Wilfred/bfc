@@ -336,14 +336,14 @@ std::string getOutputName(std::string ProgramName) {
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         printUsage(argv[0]);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     auto ProgramPath = std::string(argv[1]);
 
     if (!boost::filesystem::exists(ProgramPath)) {
         errs() << "No such file: " << ProgramPath << "\n";
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     auto Source = readSource(ProgramPath);
