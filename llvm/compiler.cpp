@@ -276,14 +276,15 @@ std::string readSource(std::string programPath) {
     return source;
 }
 
-// Return the index of the ']' that matches the '[' at Offset, or -1
+// Return the index of the ']' that matches the '[' at OpenIndex, or -1
 // if we don't have one.
-ssize_t findMatchingClose(std::string Source, size_t Offset) {
-    assert((Source[Offset] == '[') && "Looking for ']' but not starting from a '['");
+ssize_t findMatchingClose(std::string Source, size_t OpenIndex) {
+    assert((Source[OpenIndex] == '[') &&
+           "Looking for ']' but not starting from a '['");
 
     int OpenCount = 0;
 
-    for (size_t I = Offset; I < Source.length(); ++I) {
+    for (size_t I = OpenIndex; I < Source.length(); ++I) {
         switch (Source[I]) {
         case '[':
             OpenCount++;
