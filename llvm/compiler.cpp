@@ -276,12 +276,12 @@ std::string readSource(std::string programPath) {
     return source;
 }
 
-BFProgram parseSource(std::string Source) {
+BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
     // TODO: [ and ].
     BFProgram Program;
 
-    for (auto I = Source.begin(), E = Source.end(); I != E; ++I) {
-        switch (*I) {
+    for (size_t I = From; I < To; ++I) {
+        switch (Source[I]) {
         case '+': {
             Program.push_back(new BFIncrement(1));
             break;
@@ -313,6 +313,10 @@ BFProgram parseSource(std::string Source) {
     }
 
     return Program;
+}
+
+BFProgram parseSource(std::string Source) {
+    return parseSourceBetween(Source, 0, Source.length());
 }
 
 void printUsage(std::string ProgramName) {
