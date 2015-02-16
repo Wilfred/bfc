@@ -412,8 +412,6 @@ int main(int argc, char *argv[]) {
     // Write the LLVM IR to a file.
     std::ofstream StdOutputFile(getOutputName(ProgramPath));
     raw_os_ostream OutputFile(StdOutputFile);
-
-    // Print the generated code
     Mod->print(OutputFile, nullptr);
 
     delete Mod;
