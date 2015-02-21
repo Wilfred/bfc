@@ -1,4 +1,4 @@
-declare noalias i8* @calloc(i32)
+declare i8* @calloc(i32)
 declare void @free(i8*)
 
 define i32 @main() {
