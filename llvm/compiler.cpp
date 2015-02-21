@@ -119,7 +119,8 @@ class BFDataIncrement : public BFInstruction {
 
         Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
         auto IncrementAmount = ConstantInt::get(Context, APInt(32, Amount));
-        Value *NewCellIndex = Builder.CreateAdd(CellIndex, IncrementAmount);
+        Value *NewCellIndex =
+            Builder.CreateAdd(CellIndex, IncrementAmount, "new_cell_index");
 
         Builder.CreateStore(NewCellIndex, CellIndexPtr);
 
