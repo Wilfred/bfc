@@ -1,26 +1,21 @@
-declare noalias i8* @calloc(i64)
+declare noalias i8* @calloc(i32)
+declare void @free(i8*)
 
-define i32 @main() nounwind {
-       %cells = call i8* @calloc(i64 3000)
-       %cell_index = alloca i8
-       store i8 0, i8* %cell_index
+define i32 @main() {
+       %cells = call i8* @calloc(i32 30000)
+       %cell_index_ptr = alloca i32
+       store i32 0, i32* %cell_index_ptr
 
-       ; we implement the BF program '>+'
+       ; we implement the BF program '>'
 
        ; increment the cell_index
-       %cell_index_tmp = load i8* %cell_index
-       %cell_index_tmp2 = add i8 1, %cell_index_tmp
-       store i8 %cell_index_tmp2, i8* %cell_index
+       %cell_index = load i32* %cell_index_ptr
+       %new_cell_index = add i32 1, %cell_index
+       store i32 %new_cell_index, i32* %cell_index_ptr
 
-       ; increment this cell
-       %cell_index_tmp3 = load i8* %cell_index
-       %cell_ptr2 = getelementptr i8* %cells, i8 %cell_index_tmp3
-       %cell_value_tmp = load i8* %cell_ptr2
-       %cell_value_tmp2 = add i8 %cell_value_tmp, 1
-       store i8 %cell_value_tmp2, i8* %cell_ptr2
+       call void @free(i8* %cells)
 
-       ; exit the stored value, as a sanity check
-       %exit_code_byte = load i8* %cell_ptr2
-       %exit_code = zext i8 %exit_code_byte to i32
+       ; sanity check: exit((int)cell_index);
+       %exit_code = load i32* %cell_index_ptr
        ret i32 %exit_code
 }
