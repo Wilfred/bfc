@@ -1,7 +1,6 @@
 java/*.class
 java/brainfrack/target
 
-haskell/*.o
 haskell/*.hi
 haskell/Brainfrack
 
@@ -9,3 +8,6 @@ c/brainfrack
 
 llvm/compiler
 .gdb_history
+
+*.o
+a.out
