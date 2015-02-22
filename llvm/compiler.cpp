@@ -28,6 +28,9 @@ class BFInstruction {
     virtual ~BFInstruction(){};
 };
 
+using BFInstPtr = std::shared_ptr<BFInstruction>;
+using BFSequence = std::vector<BFInstPtr>;
+
 class BFIncrement : public BFInstruction {
   private:
     int Amount;
@@ -130,10 +133,10 @@ class BFDataIncrement : public BFInstruction {
 
 class BFLoop : public BFInstruction {
   private:
-    std::vector<BFInstruction *> LoopBody;
+    BFSequence LoopBody;
 
   public:
-    BFLoop(std::vector<BFInstruction *> LoopBody_) { LoopBody = LoopBody_; }
+    BFLoop(BFSequence LoopBody_) { LoopBody = LoopBody_; }
 
     virtual BasicBlock *compile(Module *Mod, Function *F, BasicBlock *BB) {
         auto &Context = getGlobalContext();
@@ -247,9 +250,7 @@ void declareCFunctions(Module *Mod) {
     Function::Create(GetCharType, Function::ExternalLinkage, "getchar", Mod);
 }
 
-using BFProgram = std::vector<BFInstruction *>;
-
-Module *compileProgram(BFProgram *Program) {
+Module *compileProgram(BFSequence *Program) {
     auto &Context = getGlobalContext();
     Module *Mod = new Module("brainfrack test", Context);
 
@@ -303,34 +304,40 @@ ssize_t findMatchingClose(std::string Source, size_t OpenIndex) {
     return -1;
 }
 
-BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
-    BFProgram Program;
+BFSequence parseSourceBetween(std::string Source, size_t From, size_t To) {
+    BFSequence Program;
 
     size_t I = From;
     while (I < To) {
         switch (Source[I]) {
         case '+': {
-            Program.push_back(new BFIncrement(1));
+            BFInstPtr ptr(new BFIncrement(1));
+            Program.push_back(ptr);
             break;
         }
         case '-': {
-            Program.push_back(new BFIncrement(-1));
+            BFInstPtr ptr(new BFIncrement(-1));
+            Program.push_back(ptr);
             break;
         }
         case '>': {
-            Program.push_back(new BFDataIncrement(1));
+            BFInstPtr ptr(new BFDataIncrement(1));
+            Program.push_back(ptr);
             break;
         }
         case '<': {
-            Program.push_back(new BFDataIncrement(-1));
+            BFInstPtr ptr(new BFDataIncrement(-1));
+            Program.push_back(ptr);
             break;
         }
         case ',': {
-            Program.push_back(new BFRead);
+            BFInstPtr ptr(new BFRead);
+            Program.push_back(ptr);
             break;
         }
         case '.': {
-            Program.push_back(new BFWrite);
+            BFInstPtr ptr(new BFWrite);
+            Program.push_back(ptr);
             break;
         }
         case '[': {
@@ -341,8 +348,9 @@ BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
                 // in main.
                 exit(EXIT_FAILURE);
             }
-            Program.push_back(new BFLoop(
+            BFInstPtr ptr(new BFLoop(
                 parseSourceBetween(Source, I + 1, MatchingCloseIdx)));
+            Program.push_back(ptr);
             I = MatchingCloseIdx;
             break;
         }
@@ -365,7 +373,7 @@ BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
     return Program;
 }
 
-BFProgram parseSource(std::string Source) {
+BFSequence parseSource(std::string Source) {
     return parseSourceBetween(Source, 0, Source.length());
 }
 
@@ -404,11 +412,6 @@ int main(int argc, char *argv[]) {
     auto Program = parseSource(Source);
 
     Module *Mod = compileProgram(&Program);
-
-    // TODO: use a proper pointer container instead of raw pointers.
-    for (auto I = Program.begin(), E = Program.end(); I != E; ++I) {
-        delete *I;
-    }
 
     // Write the LLVM IR to a file.
     std::ofstream StdOutputFile(getOutputName(ProgramPath));
