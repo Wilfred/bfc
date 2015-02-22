@@ -2,6 +2,8 @@
 
 This directory contains a BF to LLVM IR compiler written in C++.
 
+You will need LLVM and boost installed to compile this.
+
 ## Future Work
 
 Optimise it! See:
