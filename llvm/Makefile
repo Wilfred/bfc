@@ -9,6 +9,9 @@ all: compiler
 compiler: compiler.cpp
 	$(CC) $(CFLAGS) $< $(LLVM_CONFIG) $(LLVM_OVERRIDE) $(LIBS_CONFIG) -o $@
 
+test: test.cpp
+	$(CC) $(CFLAGS) -lgtest $< -o $@
+
 .PHONY: format
 format:
 	find -name "*.cpp" -type f | xargs clang-format -i
