@@ -7,7 +7,7 @@ haskell/Brainfrack
 c/brainfrack
 
 llvm/compiler
-llvm/test
+llvm/run_tests
 .gdb_history
 
 *.o

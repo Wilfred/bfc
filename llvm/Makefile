@@ -14,8 +14,12 @@ compiler: compiler.cpp bfir.o
 bfir.o: bfir.cpp bfir.h
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE)
 
-test: test.cpp
-	$(CC) $(CFLAGS) $(TEST_LIBS) $< bfir.o -o $@
+run_tests: run_tests.cpp bfir.o
+	$(CC) $(CFLAGS) $< bfir.o $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(TEST_LIBS) -o $@
+
+.PHONY: test
+test: run_tests
+	./run_tests
 
 .PHONY: format
 format:
@@ -23,4 +27,4 @@ format:
 
 .PHONY: clean
 clean:
-	rm -f compiler bfir.o
+	rm -f compiler bfir.o run_tests
