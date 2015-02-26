@@ -17,7 +17,7 @@ test: test.cpp
 
 .PHONY: format
 format:
-	find -name "*.cpp" -type f | xargs clang-format -i
+	find -name "*.cpp" -o -name "*.h" -type f | xargs clang-format -i
 
 .PHONY: clean
 clean:
