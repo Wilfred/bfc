@@ -10,10 +10,136 @@
 
 using namespace llvm;
 
-const int NUM_CELLS = 30000;
-
 Value *CellsPtr;
 Value *CellIndexPtr;
+
+const int CELL_SIZE_IN_BYTES = 1;
+
+BFIncrement::BFIncrement() { Amount = 1; }
+
+BFIncrement::BFIncrement(int amount) { Amount = amount; }
+
+BasicBlock *BFIncrement::compile(Module *, Function *, BasicBlock *BB) {
+    auto &Context = getGlobalContext();
+
+    IRBuilder<> Builder(Context);
+    Builder.SetInsertPoint(BB);
+
+    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+    Value *CurrentCellPtr =
+        Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+    Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
+    auto IncrementAmount =
+        ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, Amount));
+    Value *NewCellVal =
+        Builder.CreateAdd(CellVal, IncrementAmount, "cell_value");
+
+    Builder.CreateStore(NewCellVal, CurrentCellPtr);
+
+    return BB;
+}
+
+BFDataIncrement::BFDataIncrement() { Amount = 1; }
+BFDataIncrement::BFDataIncrement(int Amount_) { Amount = Amount_; };
+
+BasicBlock *BFDataIncrement::compile(Module *, Function *, BasicBlock *BB) {
+    auto &Context = getGlobalContext();
+
+    IRBuilder<> Builder(Context);
+    Builder.SetInsertPoint(BB);
+
+    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+    auto IncrementAmount = ConstantInt::get(Context, APInt(32, Amount));
+    Value *NewCellIndex =
+        Builder.CreateAdd(CellIndex, IncrementAmount, "new_cell_index");
+
+    Builder.CreateStore(NewCellIndex, CellIndexPtr);
+
+    return BB;
+}
+
+BasicBlock *BFRead::compile(Module *Mod, Function *, BasicBlock *BB) {
+    auto &Context = getGlobalContext();
+
+    IRBuilder<> Builder(Context);
+    Builder.SetInsertPoint(BB);
+
+    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+    Value *CurrentCellPtr =
+        Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+    Function *GetChar = Mod->getFunction("getchar");
+    Value *InputChar = Builder.CreateCall(GetChar, "input_char");
+    Value *InputByte =
+        Builder.CreateTrunc(InputChar, Type::getInt8Ty(Context), "input_byte");
+    Builder.CreateStore(InputByte, CurrentCellPtr);
+
+    return BB;
+}
+
+BasicBlock *BFWrite::compile(Module *Mod, Function *, BasicBlock *BB) {
+    auto &Context = getGlobalContext();
+
+    IRBuilder<> Builder(Context);
+    Builder.SetInsertPoint(BB);
+
+    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+    Value *CurrentCellPtr =
+        Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+    Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
+    Value *CellValAsChar = Builder.CreateSExt(
+        CellVal, Type::getInt32Ty(Context), "cell_val_as_char");
+
+    Function *PutChar = Mod->getFunction("putchar");
+    Builder.CreateCall(PutChar, CellValAsChar);
+
+    return BB;
+}
+
+BFLoop::BFLoop(BFSequence LoopBody_) { LoopBody = LoopBody_; }
+
+BasicBlock *BFLoop::compile(Module *Mod, Function *F, BasicBlock *BB) {
+    auto &Context = getGlobalContext();
+    IRBuilder<> Builder(Context);
+
+    BasicBlock *LoopHeader = BasicBlock::Create(Context, "loop_header", F);
+
+    // We start by entering the loop header from the previous
+    // instructions.
+    Builder.SetInsertPoint(BB);
+    Builder.CreateBr(LoopHeader);
+
+    BasicBlock *LoopBodyBlock = BasicBlock::Create(Context, "loop_body", F);
+    BasicBlock *LoopAfter = BasicBlock::Create(Context, "loop_after", F);
+
+    // loop_header:
+    //   %current_cell = ...
+    //   %current_cell_is_zero = icmp ...
+    //   br %current_cell_is_zero, %loop_after, %loop_body
+    Builder.SetInsertPoint(LoopHeader);
+    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+    Value *CurrentCellPtr =
+        Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+    Value *CellVal = Builder.CreateLoad(CurrentCellPtr, "cell_value");
+
+    auto Zero = ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, 0));
+    Value *CellValIsZero = Builder.CreateICmpEQ(CellVal, Zero);
+
+    Builder.CreateCondBr(CellValIsZero, LoopAfter, LoopBodyBlock);
+
+    for (auto I = LoopBody.begin(), E = LoopBody.end(); I != E; ++I) {
+        LoopBodyBlock = (*I)->compile(Mod, F, LoopBodyBlock);
+    }
+
+    Builder.SetInsertPoint(LoopBodyBlock);
+    Builder.CreateBr(LoopHeader);
+
+    return LoopAfter;
+}
+
+const int NUM_CELLS = 30000;
 
 Function *createMain(Module *Mod) {
     auto &Context = getGlobalContext();
