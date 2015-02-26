@@ -11,6 +11,8 @@
 #include <fstream>
 #include <regex>
 
+#include "bfir.h"
+
 using namespace llvm;
 
 std::string readSource(std::string programPath) {
@@ -35,7 +37,8 @@ std::string getOutputName(std::string ProgramName) {
     // Strip the extension "baz.bf" -> "baz"
     std::regex ExtensionPattern("\\.bf?$");
     std::string Replacement("");
-    std::string Name = std::regex_replace(FileName, ExtensionPattern, Replacement);
+    std::string Name =
+        std::regex_replace(FileName, ExtensionPattern, Replacement);
 
     return Name + ".ll";
 }

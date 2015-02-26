@@ -9,7 +9,7 @@ all: compiler
 compiler: compiler.cpp bfir.o
 	$(CC) $(CFLAGS) $< bfir.o $(LLVM_CONFIG) $(LLVM_OVERRIDE) $(LIBS_CONFIG) -o $@
 
-bfir.o: bfir.cpp
+bfir.o: bfir.cpp bfir.h
 	$(CC) $(CFLAGS) -c $< $(LLVM_CONFIG) $(LLVM_OVERRIDE) $(LIBS_CONFIG)
 
 test: test.cpp
