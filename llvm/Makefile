@@ -1,16 +1,17 @@
 CC = clang++
 CFLAGS = -Wall -Wextra -g
-LLVM_CONFIG := $(shell llvm-config --cxxflags --ldflags --system-libs --libs core)
+CXXFLAGS := $(shell llvm-config --cxxflags)
+LLVM_CONFIG := $(shell llvm-config --ldflags --system-libs --libs core)
 LLVM_OVERRIDE = -O0 -UNDEBUG -fexceptions
 LIBS_CONFIG = -lboost_filesystem -lboost_system
 
 all: compiler
 
 compiler: compiler.cpp bfir.o
-	$(CC) $(CFLAGS) $< bfir.o $(LLVM_CONFIG) $(LLVM_OVERRIDE) $(LIBS_CONFIG) -o $@
+	$(CC) $(CFLAGS) $< bfir.o $(CXXFLAGS) $(LLVM_CONFIG) $(LLVM_OVERRIDE) $(LIBS_CONFIG) -o $@
 
 bfir.o: bfir.cpp bfir.h
-	$(CC) $(CFLAGS) -c $< $(LLVM_CONFIG) $(LLVM_OVERRIDE) $(LIBS_CONFIG)
+	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_CONFIG) $(LLVM_OVERRIDE) $(LIBS_CONFIG)
 
 test: test.cpp
 	$(CC) $(CFLAGS) -lgtest $< bfir.o -o $@
