@@ -19,6 +19,9 @@ class BFInstruction {
     virtual ~BFInstruction(){};
 };
 
+bool operator==(const BFInstruction &X, const BFInstruction &Y);
+bool operator!=(const BFInstruction &X, const BFInstruction &Y);
+
 using BFInstPtr = std::shared_ptr<BFInstruction>;
 using BFSequence = std::vector<BFInstPtr>;
 

@@ -15,7 +15,7 @@ bfir.o: bfir.cpp bfir.h
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE)
 
 run_tests: run_tests.cpp bfir.o
-	$(CC) $(CFLAGS) $< bfir.o $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(TEST_LIBS) -o $@
+	$(CC) $(CFLAGS) $< bfir.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(TEST_LIBS) -o $@
 
 .PHONY: test
 test: run_tests

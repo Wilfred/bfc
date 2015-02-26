@@ -1,6 +1,24 @@
 #include "gtest/gtest.h"
 
-TEST(Category, Name) { EXPECT_EQ(1, 2); }
+#include "bfir.h"
+
+TEST(Instructions, SameInstructionEqual) {
+    BFSequence TestProgram;
+
+    BFRead Instruction1;
+    BFRead Instruction2;
+
+    ASSERT_EQ(Instruction1, Instruction2);
+}
+
+TEST(Instructions, DifferentInstructionNotEqual) {
+    BFSequence TestProgram;
+
+    BFRead Instruction1;
+    BFWrite Instruction2;
+
+    ASSERT_NE(Instruction1, Instruction2);
+}
 
 // todo: link to
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc

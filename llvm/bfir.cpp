@@ -15,6 +15,15 @@ Value *CellIndexPtr;
 
 const int CELL_SIZE_IN_BYTES = 1;
 
+bool operator==(const BFInstruction &X, const BFInstruction &Y) {
+    // todo: compare attribute in children classes too.
+    return typeid(X) == typeid(Y);
+}
+
+bool operator!=(const BFInstruction &X, const BFInstruction &Y) {
+    return !(X == Y);
+}
+
 BFIncrement::BFIncrement() { Amount = 1; }
 
 BFIncrement::BFIncrement(int amount) { Amount = amount; }
