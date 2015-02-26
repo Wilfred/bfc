@@ -4,6 +4,7 @@ CXXFLAGS := $(shell llvm-config --cxxflags)
 LLVM_LDFLAGS := $(shell llvm-config --ldflags --system-libs --libs core)
 LLVM_OVERRIDE = -O0 -UNDEBUG -fexceptions
 BOOST_LIBS = -lboost_filesystem -lboost_system
+TEST_LIBS = -lgtest
 
 all: compiler
 
@@ -14,7 +15,7 @@ bfir.o: bfir.cpp bfir.h
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE)
 
 test: test.cpp
-	$(CC) $(CFLAGS) -lgtest $< bfir.o -o $@
+	$(CC) $(CFLAGS) $(TEST_LIBS) $< bfir.o -o $@
 
 .PHONY: format
 format:
