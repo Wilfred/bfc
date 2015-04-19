@@ -1,20 +1,8 @@
-language: generic
+language: cpp
 before_install:
   - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main' >> /etc/apt/sources.list"
   - sudo apt-get update -qq
 script:
-  - cd java/brainfrack; mvn package -q
-  - cd ../..
-
-  - cd clojure/brainfrack; LEIN_SILENT=true lein compile
-  - cd ../..
-
-  - cd haskell; ghc Brainfrack.hs
-  - cd ..
-
-  - cd c; make
-  - cd ..
-
   - sudo apt-get install -y llvm-3.5 llvm-3.5-dev llvm-3.5-runtime libllvm3.5 libconfig++8-dev
   - cd llvm; make
 notifications:
