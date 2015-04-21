@@ -23,7 +23,8 @@ You will need LLVM and boost installed to compile bfc.
 ## Usage
 
 ```
-$ cd llvm
+$ make
+$ cd build
 $ ./compiler ../sample_programs/hello_world.bf
 $ lli hello_world.ll
 Hello World!

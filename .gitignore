@@ -1,14 +1,2 @@
-java/*.class
-java/brainfrack/target
-
-haskell/*.hi
-haskell/Brainfrack
-
-c/brainfrack
-
-llvm/compiler
-llvm/run_tests
+build
 .gdb_history
-
-*.o
-a.out
