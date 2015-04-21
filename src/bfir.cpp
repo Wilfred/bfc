@@ -16,8 +16,15 @@ Value *CellIndexPtr;
 const int CELL_SIZE_IN_BYTES = 1;
 
 bool operator==(const BFInstruction &X, const BFInstruction &Y) {
-    // todo: compare attribute in children classes too.
-    return typeid(X) == typeid(Y);
+    // TODO: compare for data pointer increment too.
+    try {
+        const BFIncrement &IncrX = dynamic_cast<const BFIncrement &>(X);
+        const BFIncrement &IncrY = dynamic_cast<const BFIncrement &>(Y);
+
+        return IncrX.Amount == IncrY.Amount;
+    } catch (const std::bad_cast &e) {
+        return typeid(X) == typeid(Y);
+    }
 }
 
 bool operator!=(const BFInstruction &X, const BFInstruction &Y) {

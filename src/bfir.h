@@ -26,10 +26,9 @@ using BFInstPtr = std::shared_ptr<BFInstruction>;
 using BFSequence = std::vector<BFInstPtr>;
 
 class BFIncrement : public BFInstruction {
-  private:
+  public:
     int Amount;
 
-  public:
     BFIncrement();
     BFIncrement(int);
 
