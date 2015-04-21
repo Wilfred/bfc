@@ -30,6 +30,12 @@ $ lli hello_world.ll
 Hello World!
 ```
 
+## Running tests
+
+```
+$ make test
+```
+
 ## Test programs
 
 There are a few test programs in this repo, but
