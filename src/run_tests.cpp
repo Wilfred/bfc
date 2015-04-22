@@ -26,6 +26,22 @@ TEST(Instructions, DifferentInstructionNotEqual) {
     ASSERT_NE(Incr1, Incr2);
 }
 
+TEST(Instructions, SequenceEquality) {
+    BFInstPtr Ptr(new BFDataIncrement(1));
+    BFSequence Seq1;
+    Seq1.push_back(Ptr);
+    
+    BFInstPtr Ptr2(new BFDataIncrement(1));
+    BFSequence Seq2;
+    Seq2.push_back(Ptr2);
+    
+    ASSERT_TRUE(equal(Seq1, Seq2));
+    
+    BFSequence Seq3;
+    
+    ASSERT_FALSE(equal(Seq1, Seq3));
+}
+
 // todo: link to
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc
 // insted.

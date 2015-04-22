@@ -25,6 +25,8 @@ bool operator!=(const BFInstruction &X, const BFInstruction &Y);
 using BFInstPtr = std::shared_ptr<BFInstruction>;
 using BFSequence = std::vector<BFInstPtr>;
 
+bool equal(const BFSequence &X, const BFSequence &Y);
+
 class BFIncrement : public BFInstruction {
   public:
     int Amount;

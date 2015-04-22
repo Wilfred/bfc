@@ -31,6 +31,13 @@ bool operator!=(const BFInstruction &X, const BFInstruction &Y) {
     return !(X == Y);
 }
 
+// TODO: override == properly
+// TODO: override << for our all our classes
+bool equal(const BFSequence &X, const BFSequence &Y) {
+    // TODO: actually compare elements
+    return X.size() == Y.size();
+}
+
 BFIncrement::BFIncrement() { Amount = 1; }
 
 BFIncrement::BFIncrement(int amount) { Amount = amount; }
@@ -346,4 +353,14 @@ BFSequence parseSourceBetween(std::string Source, size_t From, size_t To) {
 
 BFSequence parseSource(std::string Source) {
     return parseSourceBetween(Source, 0, Source.length());
+}
+
+BFSequence coalesceDataInstructions(BFSequence *Sequence) {
+    BFSequence Result;
+
+    for (auto I = Sequence->begin(), E = Sequence->end(); I != E; ++I) {
+        Result.push_back(*I);
+    }
+
+    return Result;
 }
