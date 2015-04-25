@@ -23,9 +23,20 @@ bool operator==(const BFInstruction &X, const BFInstruction &Y);
 bool operator!=(const BFInstruction &X, const BFInstruction &Y);
 
 using BFInstPtr = std::shared_ptr<BFInstruction>;
-using BFSequence = std::vector<BFInstPtr>;
 
-bool equal(const BFSequence &X, const BFSequence &Y);
+// Just like a normal vector, except we've overridden equality.
+class BFSequence {
+    std::vector<BFInstPtr> Instructions;
+public:
+    void push_back(BFInstPtr);
+    std::vector<BFInstPtr>::iterator begin();
+    std::vector<BFInstPtr>::iterator end();
+    std::vector<BFInstPtr>::size_type size() const;
+};
+
+bool operator==(const BFSequence &, const BFSequence &);
+
+bool operator!=(const BFSequence &, const BFSequence &);
 
 class BFIncrement : public BFInstruction {
   public:

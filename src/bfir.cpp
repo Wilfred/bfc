@@ -31,11 +31,30 @@ bool operator!=(const BFInstruction &X, const BFInstruction &Y) {
     return !(X == Y);
 }
 
-// TODO: override == properly
+void BFSequence::push_back(BFInstPtr P) {
+    Instructions.push_back(P);
+}
+
+std::vector<BFInstPtr>::iterator BFSequence::begin() {
+    return Instructions.begin();
+}
+
+std::vector<BFInstPtr>::iterator BFSequence::end() {
+    return Instructions.end();
+}
+
+std::vector<BFInstPtr>::size_type BFSequence::size() const {
+    return Instructions.size();
+}
+
 // TODO: override << for our all our classes
-bool equal(const BFSequence &X, const BFSequence &Y) {
+bool operator==(const BFSequence &X, const BFSequence &Y) {
     // TODO: actually compare elements
     return X.size() == Y.size();
+}
+
+bool operator!=(const BFSequence &X, const BFSequence &Y) {
+    return !(X == Y);
 }
 
 BFIncrement::BFIncrement() { Amount = 1; }

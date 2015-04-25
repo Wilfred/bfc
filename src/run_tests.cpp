@@ -35,11 +35,11 @@ TEST(Instructions, SequenceEquality) {
     BFSequence Seq2;
     Seq2.push_back(Ptr2);
     
-    ASSERT_TRUE(equal(Seq1, Seq2));
+    ASSERT_EQ(Seq1, Seq2);
     
     BFSequence Seq3;
     
-    ASSERT_FALSE(equal(Seq1, Seq3));
+    ASSERT_NE(Seq1, Seq3);
 }
 
 // todo: link to
