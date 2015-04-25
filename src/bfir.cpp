@@ -15,6 +15,25 @@ Value *CellIndexPtr;
 
 const int CELL_SIZE_IN_BYTES = 1;
 
+std::ostream &operator<<(std::ostream &os, const BFInstruction &Inst) {
+    return Inst.stream_write(os);
+}
+std::ostream &operator<<(std::ostream &os, const BFLoop &Inst) {
+    return Inst.stream_write(os);
+}
+std::ostream &operator<<(std::ostream &os, const BFDataIncrement &Inst) {
+    return Inst.stream_write(os);
+}
+std::ostream &operator<<(std::ostream &os, const BFIncrement &Inst) {
+    return Inst.stream_write(os);
+}
+std::ostream &operator<<(std::ostream &os, const BFRead &Inst) {
+    return Inst.stream_write(os);
+}
+std::ostream &operator<<(std::ostream &os, const BFWrite &Inst) {
+    return Inst.stream_write(os);
+}
+
 bool operator==(const BFInstruction &X, const BFInstruction &Y) {
     // TODO: compare for data pointer increment too.
     try {
@@ -45,13 +64,24 @@ std::vector<BFInstPtr>::size_type BFSequence::size() const {
     return Instructions.size();
 }
 
-// TODO: override << for our all our classes
+std::ostream &operator<<(std::ostream &os, const BFSequence &) {
+    // TODO: print content of sequence
+    os << "BFSequence";
+
+    return os;
+}
+
 bool operator==(const BFSequence &X, const BFSequence &Y) {
     // TODO: actually compare elements
     return X.size() == Y.size();
 }
 
 bool operator!=(const BFSequence &X, const BFSequence &Y) { return !(X == Y); }
+
+std::ostream &BFIncrement::stream_write(std::ostream &os) const {
+    os << "BFIncrement " << Amount;
+    return os;
+}
 
 BFIncrement::BFIncrement() { Amount = 1; }
 
@@ -78,6 +108,11 @@ BasicBlock *BFIncrement::compile(Module *, Function *, BasicBlock *BB) {
     return BB;
 }
 
+std::ostream &BFDataIncrement::stream_write(std::ostream &os) const {
+    os << "BFDataIncrement " << Amount;
+    return os;
+}
+
 BFDataIncrement::BFDataIncrement() { Amount = 1; }
 BFDataIncrement::BFDataIncrement(int Amount_) { Amount = Amount_; };
 
@@ -95,6 +130,11 @@ BasicBlock *BFDataIncrement::compile(Module *, Function *, BasicBlock *BB) {
     Builder.CreateStore(NewCellIndex, CellIndexPtr);
 
     return BB;
+}
+
+std::ostream &BFRead::stream_write(std::ostream &os) const {
+    os << "BFRead";
+    return os;
 }
 
 BasicBlock *BFRead::compile(Module *Mod, Function *, BasicBlock *BB) {
@@ -116,6 +156,11 @@ BasicBlock *BFRead::compile(Module *Mod, Function *, BasicBlock *BB) {
     return BB;
 }
 
+std::ostream &BFWrite::stream_write(std::ostream &os) const {
+    os << "BFWrite";
+    return os;
+}
+
 BasicBlock *BFWrite::compile(Module *Mod, Function *, BasicBlock *BB) {
     auto &Context = getGlobalContext();
 
@@ -134,6 +179,17 @@ BasicBlock *BFWrite::compile(Module *Mod, Function *, BasicBlock *BB) {
     Builder.CreateCall(PutChar, CellValAsChar);
 
     return BB;
+}
+
+std::ostream &BFLoop::stream_write(std::ostream &os) const {
+    os << "BFLoop\n";
+
+    auto LB = LoopBody;
+    for (auto I = LB.begin(), E = LB.end(); I != E; ++I) {
+        os << "  " << (**I) << "\n";
+    }
+
+    return os;
 }
 
 BFLoop::BFLoop(BFSequence LoopBody_) { LoopBody = LoopBody_; }

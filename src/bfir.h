@@ -11,6 +11,7 @@ using namespace llvm;
 
 class BFInstruction {
   public:
+    virtual std::ostream &stream_write(std::ostream &) const = 0;
     // Append the appropriate instructions to the given basic
     // block. We may also create new basic blocks, return the next
     // basic block we should append to.
@@ -19,6 +20,7 @@ class BFInstruction {
     virtual ~BFInstruction(){};
 };
 
+std::ostream &operator<<(std::ostream &, const BFInstruction &);
 bool operator==(const BFInstruction &X, const BFInstruction &Y);
 bool operator!=(const BFInstruction &X, const BFInstruction &Y);
 
@@ -29,11 +31,14 @@ class BFSequence {
     std::vector<BFInstPtr> Instructions;
 
   public:
+    std::ostream &stream_write(std::ostream &) const;
     void push_back(BFInstPtr);
     std::vector<BFInstPtr>::iterator begin();
     std::vector<BFInstPtr>::iterator end();
     std::vector<BFInstPtr>::size_type size() const;
 };
+
+std::ostream &operator<<(std::ostream &, const BFSequence &);
 
 bool operator==(const BFSequence &, const BFSequence &);
 
@@ -41,6 +46,8 @@ bool operator!=(const BFSequence &, const BFSequence &);
 
 class BFIncrement : public BFInstruction {
   public:
+    std::ostream &stream_write(std::ostream &) const;
+    // TODO: can this be private?
     int Amount;
 
     BFIncrement();
@@ -49,36 +56,50 @@ class BFIncrement : public BFInstruction {
     virtual BasicBlock *compile(Module *, Function *, BasicBlock *);
 };
 
+std::ostream &operator<<(std::ostream &, const BFIncrement &);
+
 class BFDataIncrement : public BFInstruction {
   private:
     int Amount;
 
   public:
+    std::ostream &stream_write(std::ostream &) const;
     BFDataIncrement();
     BFDataIncrement(int);
 
     virtual BasicBlock *compile(Module *, Function *, BasicBlock *BB);
 };
 
+std::ostream &operator<<(std::ostream &, const BFDataIncrement &);
+
 class BFRead : public BFInstruction {
   public:
+    std::ostream &stream_write(std::ostream &) const;
     virtual BasicBlock *compile(Module *Mod, Function *, BasicBlock *BB);
 };
 
+std::ostream &operator<<(std::ostream &, const BFRead &);
+
 class BFWrite : public BFInstruction {
   public:
+    std::ostream &stream_write(std::ostream &) const;
     virtual BasicBlock *compile(Module *Mod, Function *, BasicBlock *BB);
 };
+
+std::ostream &operator<<(std::ostream &, const BFWrite &);
 
 class BFLoop : public BFInstruction {
   private:
     BFSequence LoopBody;
 
   public:
+    std::ostream &stream_write(std::ostream &) const;
     BFLoop(BFSequence);
 
     virtual BasicBlock *compile(Module *Mod, Function *F, BasicBlock *BB);
 };
+
+std::ostream &operator<<(std::ostream &, const BFLoop &);
 
 BFSequence parseSource(std::string);
 
