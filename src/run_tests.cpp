@@ -46,7 +46,6 @@ TEST(Instructions, SequenceEquality) {
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc
 // insted.
 GTEST_API_ int main(int argc, char **argv) {
-    printf("Running main() from gtest_main.cc\n");
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
