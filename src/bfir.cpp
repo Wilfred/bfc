@@ -31,9 +31,7 @@ bool operator!=(const BFInstruction &X, const BFInstruction &Y) {
     return !(X == Y);
 }
 
-void BFSequence::push_back(BFInstPtr P) {
-    Instructions.push_back(P);
-}
+void BFSequence::push_back(BFInstPtr P) { Instructions.push_back(P); }
 
 std::vector<BFInstPtr>::iterator BFSequence::begin() {
     return Instructions.begin();
@@ -53,9 +51,7 @@ bool operator==(const BFSequence &X, const BFSequence &Y) {
     return X.size() == Y.size();
 }
 
-bool operator!=(const BFSequence &X, const BFSequence &Y) {
-    return !(X == Y);
-}
+bool operator!=(const BFSequence &X, const BFSequence &Y) { return !(X == Y); }
 
 BFIncrement::BFIncrement() { Amount = 1; }
 

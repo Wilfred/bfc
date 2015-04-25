@@ -30,15 +30,15 @@ TEST(Instructions, SequenceEquality) {
     BFInstPtr Ptr(new BFDataIncrement(1));
     BFSequence Seq1;
     Seq1.push_back(Ptr);
-    
+
     BFInstPtr Ptr2(new BFDataIncrement(1));
     BFSequence Seq2;
     Seq2.push_back(Ptr2);
-    
+
     ASSERT_EQ(Seq1, Seq2);
-    
+
     BFSequence Seq3;
-    
+
     ASSERT_NE(Seq1, Seq3);
 }
 

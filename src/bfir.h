@@ -27,7 +27,8 @@ using BFInstPtr = std::shared_ptr<BFInstruction>;
 // Just like a normal vector, except we've overridden equality.
 class BFSequence {
     std::vector<BFInstPtr> Instructions;
-public:
+
+  public:
     void push_back(BFInstPtr);
     std::vector<BFInstPtr>::iterator begin();
     std::vector<BFInstPtr>::iterator end();
