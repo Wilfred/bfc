@@ -291,27 +291,27 @@ BasicBlock *BFLoop::compile(Module &Mod, Function &F, BasicBlock &BB) {
 
 const int NUM_CELLS = 30000;
 
-Function *createMain(Module *Mod) {
+Function *createMain(Module &Mod) {
     auto &Context = getGlobalContext();
 
     FunctionType *FuncType =
         FunctionType::get(Type::getInt32Ty(Context), false);
 
     Function *Func =
-        Function::Create(FuncType, Function::ExternalLinkage, "main", Mod);
+        Function::Create(FuncType, Function::ExternalLinkage, "main", &Mod);
 
     return Func;
 }
 
 // Set up the cells and return a pointer to the cells as a Value.
-void addCellsInit(Module *Mod, BasicBlock &BB) {
+void addCellsInit(Module &Mod, BasicBlock &BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
     Builder.SetInsertPoint(&BB);
 
     // char *cells = calloc(3000);
-    Function *Calloc = Mod->getFunction("calloc");
+    Function *Calloc = Mod.getFunction("calloc");
     std::vector<Value *> CallocArgs = {
         ConstantInt::get(Context, APInt(32, NUM_CELLS)),
         ConstantInt::get(Context, APInt(32, CELL_SIZE_IN_BYTES))};
@@ -324,13 +324,13 @@ void addCellsInit(Module *Mod, BasicBlock &BB) {
     Builder.CreateStore(Zero, CellIndexPtr);
 }
 
-void addCellsCleanup(Module *Mod, BasicBlock &BB) {
+void addCellsCleanup(Module &Mod, BasicBlock &BB) {
     auto &Context = getGlobalContext();
     IRBuilder<> Builder(Context);
     Builder.SetInsertPoint(&BB);
 
     // free(cells);
-    Function *Free = Mod->getFunction("free");
+    Function *Free = Mod.getFunction("free");
     Builder.CreateCall(Free, CellsPtr);
 
     // exit(0);
@@ -338,47 +338,47 @@ void addCellsCleanup(Module *Mod, BasicBlock &BB) {
     Builder.CreateRet(Zero);
 }
 
-void declareCFunctions(Module *Mod) {
+void declareCFunctions(Module &Mod) {
     auto &Context = getGlobalContext();
 
     std::vector<Type *> CallocArgs = {Type::getInt32Ty(Context),
                                       Type::getInt32Ty(Context)};
     FunctionType *CallocType =
         FunctionType::get(Type::getInt8PtrTy(Context), CallocArgs, false);
-    Function::Create(CallocType, Function::ExternalLinkage, "calloc", Mod);
+    Function::Create(CallocType, Function::ExternalLinkage, "calloc", &Mod);
 
     std::vector<Type *> FreeArgs = {Type::getInt8PtrTy(Context)};
     FunctionType *FreeType =
         FunctionType::get(Type::getVoidTy(Context), FreeArgs, false);
-    Function::Create(FreeType, Function::ExternalLinkage, "free", Mod);
+    Function::Create(FreeType, Function::ExternalLinkage, "free", &Mod);
 
     std::vector<Type *> PutCharArgs = {Type::getInt32Ty(Context)};
     FunctionType *PutCharType =
         FunctionType::get(Type::getInt32Ty(Context), PutCharArgs, false);
-    Function::Create(PutCharType, Function::ExternalLinkage, "putchar", Mod);
+    Function::Create(PutCharType, Function::ExternalLinkage, "putchar", &Mod);
 
     std::vector<Type *> GetCharArgs;
     FunctionType *GetCharType =
         FunctionType::get(Type::getInt32Ty(Context), GetCharArgs, false);
-    Function::Create(GetCharType, Function::ExternalLinkage, "getchar", Mod);
+    Function::Create(GetCharType, Function::ExternalLinkage, "getchar", &Mod);
 }
 
 Module *compileProgram(BFProgram &Program) {
     auto &Context = getGlobalContext();
     Module *Mod = new Module("brainfrack test", Context);
 
-    declareCFunctions(Mod);
+    declareCFunctions(*Mod);
 
-    Function *Func = createMain(Mod);
+    Function *Func = createMain(*Mod);
     BasicBlock *BB = BasicBlock::Create(Context, "entry", Func);
 
-    addCellsInit(Mod, *BB);
+    addCellsInit(*Mod, *BB);
 
     for (auto I = Program.begin(), E = Program.end(); I != E; ++I) {
         BB = (*I)->compile(*Mod, *Func, *BB);
     }
 
-    addCellsCleanup(Mod, *BB);
+    addCellsCleanup(*Mod, *BB);
 
     return Mod;
 }
