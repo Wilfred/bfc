@@ -27,7 +27,7 @@ bool operator!=(const BFInstruction &X, const BFInstruction &Y);
 using BFInstPtr = std::shared_ptr<BFInstruction>;
 
 // Just like a normal vector, except we've overridden equality.
-class BFSequence {
+class BFProgram {
     std::vector<BFInstPtr> Instructions;
 
   public:
@@ -40,11 +40,11 @@ class BFSequence {
     std::vector<BFInstPtr>::size_type size() const;
 };
 
-std::ostream &operator<<(std::ostream &, const BFSequence &);
+std::ostream &operator<<(std::ostream &, const BFProgram &);
 
-bool operator==(const BFSequence &, const BFSequence &);
+bool operator==(const BFProgram &, const BFProgram &);
 
-bool operator!=(const BFSequence &, const BFSequence &);
+bool operator!=(const BFProgram &, const BFProgram &);
 
 class BFIncrement : public BFInstruction {
   public:
@@ -90,17 +90,17 @@ std::ostream &operator<<(std::ostream &, const BFWrite &);
 
 class BFLoop : public BFInstruction {
   public:
-    BFSequence LoopBody;
+    BFProgram LoopBody;
     std::ostream &stream_write(std::ostream &) const;
-    BFLoop(BFSequence);
+    BFLoop(BFProgram);
 
     virtual BasicBlock *compile(Module *Mod, Function *F, BasicBlock *BB);
 };
 
 std::ostream &operator<<(std::ostream &, const BFLoop &);
 
-BFSequence parseSource(std::string);
+BFProgram parseSource(std::string);
 
-Module *compileProgram(BFSequence *);
+Module *compileProgram(BFProgram *);
 
 #endif

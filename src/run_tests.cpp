@@ -40,25 +40,25 @@ TEST(Instructions, DataIncrementEquality) {
 
 TEST(Instructions, LoopEquality) {
     BFInstPtr Ptr(new BFDataIncrement(1));
-    BFSequence Seq1;
+    BFProgram Seq1;
     Seq1.push_back(Ptr);
     BFLoop Loop1(Seq1);
 
     BFInstPtr Ptr2(new BFDataIncrement(1));
-    BFSequence Seq2;
+    BFProgram Seq2;
     Seq2.push_back(Ptr2);
     BFLoop Loop2(Seq2);
 
     EXPECT_EQ(Loop1, Loop2);
 
     BFInstPtr Ptr3(new BFDataIncrement(2));
-    BFSequence Seq3;
+    BFProgram Seq3;
     Seq3.push_back(Ptr3);
     BFLoop Loop3(Seq3);
 
     EXPECT_NE(Loop1, Loop3);
 
-    BFSequence Seq4;
+    BFProgram Seq4;
     BFLoop Loop4(Seq4);
 
     EXPECT_NE(Loop1, Loop4);
@@ -66,26 +66,26 @@ TEST(Instructions, LoopEquality) {
 
 TEST(Instructions, SequenceEquality) {
     BFInstPtr Ptr(new BFDataIncrement(1));
-    BFSequence Seq1;
+    BFProgram Seq1;
     Seq1.push_back(Ptr);
 
     BFInstPtr Ptr2(new BFDataIncrement(1));
-    BFSequence Seq2;
+    BFProgram Seq2;
     Seq2.push_back(Ptr2);
 
     EXPECT_EQ(Seq1, Seq2);
 
-    BFSequence Seq3;
+    BFProgram Seq3;
 
     EXPECT_NE(Seq1, Seq3);
 
     BFInstPtr Ptr3(new BFDataIncrement(2));
-    BFSequence Seq4;
+    BFProgram Seq4;
     Seq4.push_back(Ptr3);
 
     EXPECT_NE(Seq1, Seq4);
 
-    BFSequence Seq5;
+    BFProgram Seq5;
     EXPECT_NE(Seq1, Seq5);
 }
 

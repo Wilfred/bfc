@@ -86,36 +86,36 @@ bool operator!=(const BFInstruction &X, const BFInstruction &Y) {
     return !(X == Y);
 }
 
-void BFSequence::push_back(BFInstPtr P) { Instructions.push_back(P); }
+void BFProgram::push_back(BFInstPtr P) { Instructions.push_back(P); }
 
-std::vector<BFInstPtr>::iterator BFSequence::begin() {
+std::vector<BFInstPtr>::iterator BFProgram::begin() {
     return Instructions.begin();
 }
 
-std::vector<BFInstPtr>::const_iterator BFSequence::begin() const {
+std::vector<BFInstPtr>::const_iterator BFProgram::begin() const {
     return Instructions.begin();
 }
 
-std::vector<BFInstPtr>::iterator BFSequence::end() {
+std::vector<BFInstPtr>::iterator BFProgram::end() {
     return Instructions.end();
 }
 
-std::vector<BFInstPtr>::const_iterator BFSequence::end() const {
+std::vector<BFInstPtr>::const_iterator BFProgram::end() const {
     return Instructions.end();
 }
 
-std::vector<BFInstPtr>::size_type BFSequence::size() const {
+std::vector<BFInstPtr>::size_type BFProgram::size() const {
     return Instructions.size();
 }
 
-std::ostream &operator<<(std::ostream &os, const BFSequence &) {
+std::ostream &operator<<(std::ostream &os, const BFProgram &) {
     // TODO: print content of sequence
-    os << "BFSequence";
+    os << "BFProgram";
 
     return os;
 }
 
-bool operator==(const BFSequence &X, const BFSequence &Y) {
+bool operator==(const BFProgram &X, const BFProgram &Y) {
     if (X.size() != Y.size()) {
         return false;
     }
@@ -134,7 +134,7 @@ bool operator==(const BFSequence &X, const BFSequence &Y) {
     return true;
 }
 
-bool operator!=(const BFSequence &X, const BFSequence &Y) { return !(X == Y); }
+bool operator!=(const BFProgram &X, const BFProgram &Y) { return !(X == Y); }
 
 std::ostream &BFIncrement::stream_write(std::ostream &os) const {
     os << "BFIncrement " << Amount;
@@ -250,7 +250,7 @@ std::ostream &BFLoop::stream_write(std::ostream &os) const {
     return os;
 }
 
-BFLoop::BFLoop(BFSequence LoopBody_) { LoopBody = LoopBody_; }
+BFLoop::BFLoop(BFProgram LoopBody_) { LoopBody = LoopBody_; }
 
 BasicBlock *BFLoop::compile(Module *Mod, Function *F, BasicBlock *BB) {
     auto &Context = getGlobalContext();
@@ -365,7 +365,7 @@ void declareCFunctions(Module *Mod) {
     Function::Create(GetCharType, Function::ExternalLinkage, "getchar", Mod);
 }
 
-Module *compileProgram(BFSequence *Program) {
+Module *compileProgram(BFProgram *Program) {
     auto &Context = getGlobalContext();
     Module *Mod = new Module("brainfrack test", Context);
 
@@ -411,8 +411,8 @@ ssize_t findMatchingClose(std::string Source, size_t OpenIndex) {
     return -1;
 }
 
-BFSequence parseSourceBetween(std::string Source, size_t From, size_t To) {
-    BFSequence Program;
+BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
+    BFProgram Program;
 
     size_t I = From;
     while (I < To) {
@@ -480,12 +480,12 @@ BFSequence parseSourceBetween(std::string Source, size_t From, size_t To) {
     return Program;
 }
 
-BFSequence parseSource(std::string Source) {
+BFProgram parseSource(std::string Source) {
     return parseSourceBetween(Source, 0, Source.length());
 }
 
-BFSequence coalesceDataInstructions(BFSequence *Sequence) {
-    BFSequence Result;
+BFProgram coalesceDataInstructions(BFProgram *Sequence) {
+    BFProgram Result;
 
     for (auto I = Sequence->begin(), E = Sequence->end(); I != E; ++I) {
         Result.push_back(*I);
