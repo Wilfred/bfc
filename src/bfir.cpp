@@ -110,7 +110,7 @@ std::ostream &operator<<(std::ostream &os, const BFProgram &Prog) {
     os << "BFProgram\n";
 
     auto Instructions = Prog.Instructions;
-    for (BFInstPtr I: Instructions) {
+    for (BFInstPtr I : Instructions) {
         os << "  " << (*I) << "\n";
     }
 
