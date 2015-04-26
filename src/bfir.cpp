@@ -143,7 +143,7 @@ BFIncrement::BFIncrement() { Amount = 1; }
 
 BFIncrement::BFIncrement(int amount) { Amount = amount; }
 
-BasicBlock *BFIncrement::compile(Module *, Function *, BasicBlock *BB) {
+BasicBlock *BFIncrement::compile(Module &, Function *, BasicBlock *BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
@@ -172,7 +172,7 @@ std::ostream &BFDataIncrement::stream_write(std::ostream &os) const {
 BFDataIncrement::BFDataIncrement() { Amount = 1; }
 BFDataIncrement::BFDataIncrement(int Amount_) { Amount = Amount_; };
 
-BasicBlock *BFDataIncrement::compile(Module *, Function *, BasicBlock *BB) {
+BasicBlock *BFDataIncrement::compile(Module &, Function *, BasicBlock *BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
@@ -193,7 +193,7 @@ std::ostream &BFRead::stream_write(std::ostream &os) const {
     return os;
 }
 
-BasicBlock *BFRead::compile(Module *Mod, Function *, BasicBlock *BB) {
+BasicBlock *BFRead::compile(Module &Mod, Function *, BasicBlock *BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
@@ -203,7 +203,7 @@ BasicBlock *BFRead::compile(Module *Mod, Function *, BasicBlock *BB) {
     Value *CurrentCellPtr =
         Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
 
-    Function *GetChar = Mod->getFunction("getchar");
+    Function *GetChar = Mod.getFunction("getchar");
     Value *InputChar = Builder.CreateCall(GetChar, "input_char");
     Value *InputByte =
         Builder.CreateTrunc(InputChar, Type::getInt8Ty(Context), "input_byte");
@@ -217,7 +217,7 @@ std::ostream &BFWrite::stream_write(std::ostream &os) const {
     return os;
 }
 
-BasicBlock *BFWrite::compile(Module *Mod, Function *, BasicBlock *BB) {
+BasicBlock *BFWrite::compile(Module &Mod, Function *, BasicBlock *BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
@@ -231,7 +231,7 @@ BasicBlock *BFWrite::compile(Module *Mod, Function *, BasicBlock *BB) {
     Value *CellValAsChar = Builder.CreateSExt(
         CellVal, Type::getInt32Ty(Context), "cell_val_as_char");
 
-    Function *PutChar = Mod->getFunction("putchar");
+    Function *PutChar = Mod.getFunction("putchar");
     Builder.CreateCall(PutChar, CellValAsChar);
 
     return BB;
@@ -250,7 +250,7 @@ std::ostream &BFLoop::stream_write(std::ostream &os) const {
 
 BFLoop::BFLoop(BFProgram LoopBody_) { LoopBody = LoopBody_; }
 
-BasicBlock *BFLoop::compile(Module *Mod, Function *F, BasicBlock *BB) {
+BasicBlock *BFLoop::compile(Module &Mod, Function *F, BasicBlock *BB) {
     auto &Context = getGlobalContext();
     IRBuilder<> Builder(Context);
 
@@ -363,7 +363,7 @@ void declareCFunctions(Module *Mod) {
     Function::Create(GetCharType, Function::ExternalLinkage, "getchar", Mod);
 }
 
-Module *compileProgram(BFProgram *Program) {
+Module *compileProgram(BFProgram &Program) {
     auto &Context = getGlobalContext();
     Module *Mod = new Module("brainfrack test", Context);
 
@@ -374,8 +374,8 @@ Module *compileProgram(BFProgram *Program) {
 
     addCellsInit(Mod, BB);
 
-    for (auto I = Program->begin(), E = Program->end(); I != E; ++I) {
-        BB = (*I)->compile(Mod, Func, BB);
+    for (auto I = Program.begin(), E = Program.end(); I != E; ++I) {
+        BB = (*I)->compile(*Mod, Func, BB);
     }
 
     addCellsCleanup(Mod, BB);
@@ -409,7 +409,7 @@ ssize_t findMatchingClose(std::string Source, size_t OpenIndex) {
     return -1;
 }
 
-BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
+BFProgram parseSourceBetween(std::string &Source, size_t From, size_t To) {
     BFProgram Program;
 
     size_t I = From;
@@ -478,7 +478,7 @@ BFProgram parseSourceBetween(std::string Source, size_t From, size_t To) {
     return Program;
 }
 
-BFProgram parseSource(std::string Source) {
+BFProgram parseSource(std::string &Source) {
     return parseSourceBetween(Source, 0, Source.length());
 }
 

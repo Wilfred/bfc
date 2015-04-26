@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     auto Source = readSource(ProgramPath);
     auto Program = parseSource(Source);
 
-    Module *Mod = compileProgram(&Program);
+    Module *Mod = compileProgram(Program);
 
     // Write the LLVM IR to a file.
     std::ofstream StdOutputFile(getOutputName(ProgramPath));
