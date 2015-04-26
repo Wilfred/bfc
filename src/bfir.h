@@ -61,10 +61,8 @@ class BFIncrement : public BFInstruction {
 std::ostream &operator<<(std::ostream &, const BFIncrement &);
 
 class BFDataIncrement : public BFInstruction {
-  private:
-    int Amount;
-
   public:
+    int Amount;
     std::ostream &stream_write(std::ostream &) const;
     BFDataIncrement();
     BFDataIncrement(int);
@@ -91,10 +89,8 @@ class BFWrite : public BFInstruction {
 std::ostream &operator<<(std::ostream &, const BFWrite &);
 
 class BFLoop : public BFInstruction {
-  private:
-    BFSequence LoopBody;
-
   public:
+    BFSequence LoopBody;
     std::ostream &stream_write(std::ostream &) const;
     BFLoop(BFSequence);
 

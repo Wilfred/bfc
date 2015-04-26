@@ -35,15 +35,51 @@ std::ostream &operator<<(std::ostream &os, const BFWrite &Inst) {
 }
 
 bool operator==(const BFInstruction &X, const BFInstruction &Y) {
-    // TODO: compare for data pointer increment too.
+    if (typeid(X) != typeid(Y)) {
+        return false;
+    }
+    
     try {
         const BFIncrement &IncrX = dynamic_cast<const BFIncrement &>(X);
         const BFIncrement &IncrY = dynamic_cast<const BFIncrement &>(Y);
 
         return IncrX.Amount == IncrY.Amount;
-    } catch (const std::bad_cast &e) {
-        return typeid(X) == typeid(Y);
+    } catch (const std::bad_cast &) {
     }
+
+    try {
+        const BFDataIncrement &IncrX = dynamic_cast<const BFDataIncrement &>(X);
+        const BFDataIncrement &IncrY = dynamic_cast<const BFDataIncrement &>(Y);
+
+        return IncrX.Amount == IncrY.Amount;
+    } catch (const std::bad_cast &) {
+    }
+
+    try {
+        const BFLoop &LoopX = dynamic_cast<const BFLoop &>(X);
+        const BFLoop &LoopY = dynamic_cast<const BFLoop &>(Y);
+
+        if (LoopX.LoopBody.size() != LoopY.LoopBody.size()) {
+            return false;
+        }
+
+        auto XLB = LoopX.LoopBody;
+        auto XI = XLB.begin();
+        auto XE = XLB.end();
+
+        auto YLB = LoopY.LoopBody;
+        auto YI = YLB.begin();
+
+        for (; XI != XE; ++XI, ++YI) {
+            if (**XI != **YI) {
+                return false;
+            }
+        }
+        
+    } catch (const std::bad_cast &) {
+    }
+
+    return true;
 }
 
 bool operator!=(const BFInstruction &X, const BFInstruction &Y) {
@@ -80,8 +116,22 @@ std::ostream &operator<<(std::ostream &os, const BFSequence &) {
 }
 
 bool operator==(const BFSequence &X, const BFSequence &Y) {
-    // TODO: actually compare elements
-    return X.size() == Y.size();
+    if (X.size() != Y.size()) {
+        return false;
+    }
+
+    auto XI = X.begin();
+    auto XE = X.end();
+
+    auto YI = Y.begin();
+
+    for (; XI != XE; ++XI, ++YI) {
+        if (**XI != **YI) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool operator!=(const BFSequence &X, const BFSequence &Y) { return !(X == Y); }
