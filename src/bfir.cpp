@@ -143,11 +143,11 @@ BFIncrement::BFIncrement() { Amount = 1; }
 
 BFIncrement::BFIncrement(int amount) { Amount = amount; }
 
-BasicBlock *BFIncrement::compile(Module &, Function *, BasicBlock *BB) {
+BasicBlock *BFIncrement::compile(Module &, Function &, BasicBlock &BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
-    Builder.SetInsertPoint(BB);
+    Builder.SetInsertPoint(&BB);
 
     Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
     Value *CurrentCellPtr =
@@ -161,7 +161,7 @@ BasicBlock *BFIncrement::compile(Module &, Function *, BasicBlock *BB) {
 
     Builder.CreateStore(NewCellVal, CurrentCellPtr);
 
-    return BB;
+    return &BB;
 }
 
 std::ostream &BFDataIncrement::stream_write(std::ostream &os) const {
@@ -172,11 +172,11 @@ std::ostream &BFDataIncrement::stream_write(std::ostream &os) const {
 BFDataIncrement::BFDataIncrement() { Amount = 1; }
 BFDataIncrement::BFDataIncrement(int Amount_) { Amount = Amount_; };
 
-BasicBlock *BFDataIncrement::compile(Module &, Function *, BasicBlock *BB) {
+BasicBlock *BFDataIncrement::compile(Module &, Function &, BasicBlock &BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
-    Builder.SetInsertPoint(BB);
+    Builder.SetInsertPoint(&BB);
 
     Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
     auto IncrementAmount = ConstantInt::get(Context, APInt(32, Amount));
@@ -185,7 +185,7 @@ BasicBlock *BFDataIncrement::compile(Module &, Function *, BasicBlock *BB) {
 
     Builder.CreateStore(NewCellIndex, CellIndexPtr);
 
-    return BB;
+    return &BB;
 }
 
 std::ostream &BFRead::stream_write(std::ostream &os) const {
@@ -193,11 +193,11 @@ std::ostream &BFRead::stream_write(std::ostream &os) const {
     return os;
 }
 
-BasicBlock *BFRead::compile(Module &Mod, Function *, BasicBlock *BB) {
+BasicBlock *BFRead::compile(Module &Mod, Function &, BasicBlock &BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
-    Builder.SetInsertPoint(BB);
+    Builder.SetInsertPoint(&BB);
 
     Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
     Value *CurrentCellPtr =
@@ -209,7 +209,7 @@ BasicBlock *BFRead::compile(Module &Mod, Function *, BasicBlock *BB) {
         Builder.CreateTrunc(InputChar, Type::getInt8Ty(Context), "input_byte");
     Builder.CreateStore(InputByte, CurrentCellPtr);
 
-    return BB;
+    return &BB;
 }
 
 std::ostream &BFWrite::stream_write(std::ostream &os) const {
@@ -217,11 +217,11 @@ std::ostream &BFWrite::stream_write(std::ostream &os) const {
     return os;
 }
 
-BasicBlock *BFWrite::compile(Module &Mod, Function *, BasicBlock *BB) {
+BasicBlock *BFWrite::compile(Module &Mod, Function &, BasicBlock &BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
-    Builder.SetInsertPoint(BB);
+    Builder.SetInsertPoint(&BB);
 
     Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
     Value *CurrentCellPtr =
@@ -234,7 +234,7 @@ BasicBlock *BFWrite::compile(Module &Mod, Function *, BasicBlock *BB) {
     Function *PutChar = Mod.getFunction("putchar");
     Builder.CreateCall(PutChar, CellValAsChar);
 
-    return BB;
+    return &BB;
 }
 
 std::ostream &BFLoop::stream_write(std::ostream &os) const {
@@ -250,19 +250,19 @@ std::ostream &BFLoop::stream_write(std::ostream &os) const {
 
 BFLoop::BFLoop(BFProgram LoopBody_) { LoopBody = LoopBody_; }
 
-BasicBlock *BFLoop::compile(Module &Mod, Function *F, BasicBlock *BB) {
+BasicBlock *BFLoop::compile(Module &Mod, Function &F, BasicBlock &BB) {
     auto &Context = getGlobalContext();
     IRBuilder<> Builder(Context);
 
-    BasicBlock *LoopHeader = BasicBlock::Create(Context, "loop_header", F);
+    BasicBlock *LoopHeader = BasicBlock::Create(Context, "loop_header", &F);
 
     // We start by entering the loop header from the previous
     // instructions.
-    Builder.SetInsertPoint(BB);
+    Builder.SetInsertPoint(&BB);
     Builder.CreateBr(LoopHeader);
 
-    BasicBlock *LoopBodyBlock = BasicBlock::Create(Context, "loop_body", F);
-    BasicBlock *LoopAfter = BasicBlock::Create(Context, "loop_after", F);
+    BasicBlock *LoopBodyBlock = BasicBlock::Create(Context, "loop_body", &F);
+    BasicBlock *LoopAfter = BasicBlock::Create(Context, "loop_after", &F);
 
     // loop_header:
     //   %current_cell = ...
@@ -280,7 +280,7 @@ BasicBlock *BFLoop::compile(Module &Mod, Function *F, BasicBlock *BB) {
     Builder.CreateCondBr(CellValIsZero, LoopAfter, LoopBodyBlock);
 
     for (auto I = LoopBody.begin(), E = LoopBody.end(); I != E; ++I) {
-        LoopBodyBlock = (*I)->compile(Mod, F, LoopBodyBlock);
+        LoopBodyBlock = (*I)->compile(Mod, F, *LoopBodyBlock);
     }
 
     Builder.SetInsertPoint(LoopBodyBlock);
@@ -304,11 +304,11 @@ Function *createMain(Module *Mod) {
 }
 
 // Set up the cells and return a pointer to the cells as a Value.
-void addCellsInit(Module *Mod, BasicBlock *BB) {
+void addCellsInit(Module *Mod, BasicBlock &BB) {
     auto &Context = getGlobalContext();
 
     IRBuilder<> Builder(Context);
-    Builder.SetInsertPoint(BB);
+    Builder.SetInsertPoint(&BB);
 
     // char *cells = calloc(3000);
     Function *Calloc = Mod->getFunction("calloc");
@@ -324,10 +324,10 @@ void addCellsInit(Module *Mod, BasicBlock *BB) {
     Builder.CreateStore(Zero, CellIndexPtr);
 }
 
-void addCellsCleanup(Module *Mod, BasicBlock *BB) {
+void addCellsCleanup(Module *Mod, BasicBlock &BB) {
     auto &Context = getGlobalContext();
     IRBuilder<> Builder(Context);
-    Builder.SetInsertPoint(BB);
+    Builder.SetInsertPoint(&BB);
 
     // free(cells);
     Function *Free = Mod->getFunction("free");
@@ -372,13 +372,13 @@ Module *compileProgram(BFProgram &Program) {
     Function *Func = createMain(Mod);
     BasicBlock *BB = BasicBlock::Create(Context, "entry", Func);
 
-    addCellsInit(Mod, BB);
+    addCellsInit(Mod, *BB);
 
     for (auto I = Program.begin(), E = Program.end(); I != E; ++I) {
-        BB = (*I)->compile(*Mod, Func, BB);
+        BB = (*I)->compile(*Mod, *Func, *BB);
     }
 
-    addCellsCleanup(Mod, BB);
+    addCellsCleanup(Mod, *BB);
 
     return Mod;
 }

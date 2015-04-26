@@ -15,7 +15,7 @@ class BFInstruction {
     // Append the appropriate instructions to the given basic
     // block. We may also create new basic blocks, return the next
     // basic block we should append to.
-    virtual BasicBlock *compile(Module &, Function *, BasicBlock *) = 0;
+    virtual BasicBlock *compile(Module &, Function &, BasicBlock &) = 0;
 
     virtual ~BFInstruction(){};
 };
@@ -55,7 +55,7 @@ class BFIncrement : public BFInstruction {
     BFIncrement();
     BFIncrement(int);
 
-    virtual BasicBlock *compile(Module &, Function *, BasicBlock *);
+    virtual BasicBlock *compile(Module &, Function &, BasicBlock &);
 };
 
 std::ostream &operator<<(std::ostream &, const BFIncrement &);
@@ -67,7 +67,7 @@ class BFDataIncrement : public BFInstruction {
     BFDataIncrement();
     BFDataIncrement(int);
 
-    virtual BasicBlock *compile(Module &, Function *, BasicBlock *BB);
+    virtual BasicBlock *compile(Module &, Function &, BasicBlock &BB);
 };
 
 std::ostream &operator<<(std::ostream &, const BFDataIncrement &);
@@ -75,7 +75,7 @@ std::ostream &operator<<(std::ostream &, const BFDataIncrement &);
 class BFRead : public BFInstruction {
   public:
     std::ostream &stream_write(std::ostream &) const;
-    virtual BasicBlock *compile(Module &Mod, Function *, BasicBlock *BB);
+    virtual BasicBlock *compile(Module &Mod, Function &, BasicBlock &BB);
 };
 
 std::ostream &operator<<(std::ostream &, const BFRead &);
@@ -83,7 +83,7 @@ std::ostream &operator<<(std::ostream &, const BFRead &);
 class BFWrite : public BFInstruction {
   public:
     std::ostream &stream_write(std::ostream &) const;
-    virtual BasicBlock *compile(Module &Mod, Function *, BasicBlock *BB);
+    virtual BasicBlock *compile(Module &Mod, Function &, BasicBlock &BB);
 };
 
 std::ostream &operator<<(std::ostream &, const BFWrite &);
@@ -94,7 +94,7 @@ class BFLoop : public BFInstruction {
     std::ostream &stream_write(std::ostream &) const;
     BFLoop(BFProgram);
 
-    virtual BasicBlock *compile(Module &Mod, Function *F, BasicBlock *BB);
+    virtual BasicBlock *compile(Module &Mod, Function &F, BasicBlock &BB);
 };
 
 std::ostream &operator<<(std::ostream &, const BFLoop &);
