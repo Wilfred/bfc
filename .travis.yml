@@ -9,6 +9,7 @@ install:
   - sudo apt-get --force-yes install llvm
 
 script:
+  - llvm-config --version
   - make
 notifications:
   email: false
