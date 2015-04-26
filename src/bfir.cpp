@@ -38,7 +38,7 @@ bool operator==(const BFInstruction &X, const BFInstruction &Y) {
     if (typeid(X) != typeid(Y)) {
         return false;
     }
-    
+
     try {
         const BFIncrement &IncrX = dynamic_cast<const BFIncrement &>(X);
         const BFIncrement &IncrY = dynamic_cast<const BFIncrement &>(Y);
@@ -75,7 +75,7 @@ bool operator==(const BFInstruction &X, const BFInstruction &Y) {
                 return false;
             }
         }
-        
+
     } catch (const std::bad_cast &) {
     }
 
@@ -96,9 +96,7 @@ std::vector<BFInstPtr>::const_iterator BFProgram::begin() const {
     return Instructions.begin();
 }
 
-std::vector<BFInstPtr>::iterator BFProgram::end() {
-    return Instructions.end();
-}
+std::vector<BFInstPtr>::iterator BFProgram::end() { return Instructions.end(); }
 
 std::vector<BFInstPtr>::const_iterator BFProgram::end() const {
     return Instructions.end();
