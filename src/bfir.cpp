@@ -486,6 +486,8 @@ BFProgram parseSource(std::string &Source) {
     return parseSourceBetween(Source, 0, Source.length());
 }
 
+// TODO: delete sequences that cancel out, such as '+-'.
+// TODO: run coalesce inside loop bodies too.
 BFProgram coalesceIncrements(BFProgram &Sequence) {
     BFProgram Result;
 
