@@ -56,7 +56,15 @@ std::vector<BFInstPtr>::iterator BFSequence::begin() {
     return Instructions.begin();
 }
 
+std::vector<BFInstPtr>::const_iterator BFSequence::begin() const {
+    return Instructions.begin();
+}
+
 std::vector<BFInstPtr>::iterator BFSequence::end() {
+    return Instructions.end();
+}
+
+std::vector<BFInstPtr>::const_iterator BFSequence::end() const {
     return Instructions.end();
 }
 

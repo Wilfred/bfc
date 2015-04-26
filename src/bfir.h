@@ -34,7 +34,9 @@ class BFSequence {
     std::ostream &stream_write(std::ostream &) const;
     void push_back(BFInstPtr);
     std::vector<BFInstPtr>::iterator begin();
+    std::vector<BFInstPtr>::const_iterator begin() const;
     std::vector<BFInstPtr>::iterator end();
+    std::vector<BFInstPtr>::const_iterator end() const;
     std::vector<BFInstPtr>::size_type size() const;
 };
 
