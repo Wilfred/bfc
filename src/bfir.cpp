@@ -486,11 +486,34 @@ BFProgram parseSource(std::string &Source) {
     return parseSourceBetween(Source, 0, Source.length());
 }
 
-BFProgram coalesceDataInstructions(BFProgram *Sequence) {
+BFProgram coalesceIncrements(BFProgram &Sequence) {
     BFProgram Result;
 
-    for (auto I = Sequence->begin(), E = Sequence->end(); I != E; ++I) {
-        Result.push_back(*I);
+    // TODO: use an option data type instead of a pointer to a pointer
+    // just for nullability.
+    BFInstPtr *Last = nullptr;
+
+    for (BFInstPtr Current : Sequence) {
+        if (Last == nullptr) {
+            Last = &Current;
+        } else {
+            try {
+                BFIncrement &Incr = dynamic_cast<BFIncrement &>(*Current);
+                BFIncrement &LastIncr = dynamic_cast<BFIncrement &>(**Last);
+
+                // TODO: should we wrap-around amounts at some point?
+                Last = new BFInstPtr(
+                    new BFIncrement(Incr.Amount + LastIncr.Amount));
+
+            } catch (const std::bad_cast &) {
+                Result.push_back(*Last);
+                Last = &Current;
+            }
+        }
+    }
+
+    if (Last != nullptr) {
+        Result.push_back(*Last);
     }
 
     return Result;

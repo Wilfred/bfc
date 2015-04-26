@@ -28,9 +28,9 @@ using BFInstPtr = std::shared_ptr<BFInstruction>;
 
 // Just like a normal vector, except we've overridden equality.
 class BFProgram {
+  public:
     std::vector<BFInstPtr> Instructions;
 
-  public:
     std::ostream &stream_write(std::ostream &) const;
     void push_back(BFInstPtr);
     std::vector<BFInstPtr>::iterator begin();
@@ -102,5 +102,7 @@ std::ostream &operator<<(std::ostream &, const BFLoop &);
 Module *compileProgram(BFProgram &);
 
 BFProgram parseSource(std::string &);
+
+BFProgram coalesceIncrements(BFProgram &);
 
 #endif

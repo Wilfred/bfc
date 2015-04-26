@@ -89,6 +89,23 @@ TEST(Instructions, SequenceEquality) {
     EXPECT_NE(Seq1, Seq5);
 }
 
+TEST(Optimisations, CoalesceIncrements) {
+    BFProgram InitialProgram;
+
+    BFInstPtr Ptr(new BFIncrement(1));
+    InitialProgram.push_back(Ptr);
+
+    BFInstPtr Ptr2(new BFIncrement(1));
+    InitialProgram.push_back(Ptr2);
+
+    BFProgram ExpectedProgram;
+
+    BFInstPtr Ptr3(new BFIncrement(2));
+    ExpectedProgram.push_back(Ptr3);
+
+    EXPECT_EQ(ExpectedProgram, coalesceIncrements(InitialProgram));
+}
+
 // todo: link to
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc
 // insted.
