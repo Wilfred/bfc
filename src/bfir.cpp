@@ -107,7 +107,6 @@ std::vector<BFInstPtr>::size_type BFProgram::size() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const BFProgram &Prog) {
-    // TODO: print content of sequence
     os << "BFProgram\n";
 
     auto Instructions = Prog.Instructions;
