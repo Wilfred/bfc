@@ -99,8 +99,8 @@ class BFLoop : public BFInstruction {
 
 std::ostream &operator<<(std::ostream &, const BFLoop &);
 
-BFProgram parseSource(std::string &);
-
 Module *compileProgram(BFProgram &);
+
+BFProgram parseSource(std::string &);
 
 #endif
