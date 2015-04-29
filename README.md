@@ -17,7 +17,6 @@ GPLv2 or later license.
 
 You will need LLVM and boost installed to compile bfc.
 
-    $ cd llvm
     $ make
 
 ## Usage
