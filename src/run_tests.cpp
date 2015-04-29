@@ -137,6 +137,44 @@ TEST(Optimisations, DontCoalesceDifferentIncrements) {
     InitialProgram.push_back(Ptr2);
 
     EXPECT_EQ(InitialProgram, coalesceIncrements(InitialProgram));
+    EXPECT_EQ(InitialProgram, coalesceDataIncrements(InitialProgram));
+}
+
+TEST(Optimisations, CoalesceDataIncrements) {
+    BFProgram InitialProgram;
+
+    BFInstPtr Ptr(new BFDataIncrement(1));
+    InitialProgram.push_back(Ptr);
+
+    BFInstPtr Ptr2(new BFDataIncrement(2));
+    InitialProgram.push_back(Ptr2);
+
+    BFProgram ExpectedProgram;
+
+    BFInstPtr Ptr3(new BFDataIncrement(3));
+    ExpectedProgram.push_back(Ptr3);
+
+    EXPECT_EQ(ExpectedProgram, coalesceDataIncrements(InitialProgram));
+}
+
+TEST(Optimisations, CoalesceAndRemoveDataIncrements) {
+    BFProgram InitialProgram;
+
+    BFInstPtr Ptr(new BFDataIncrement(1));
+    InitialProgram.push_back(Ptr);
+
+    BFInstPtr Ptr2(new BFDataIncrement(-1));
+    InitialProgram.push_back(Ptr2);
+
+    BFInstPtr Ptr3(new BFIncrement(1));
+    InitialProgram.push_back(Ptr3);
+
+    BFProgram ExpectedProgram;
+
+    BFInstPtr Ptr4(new BFIncrement(1));
+    ExpectedProgram.push_back(Ptr4);
+
+    EXPECT_EQ(ExpectedProgram, coalesceDataIncrements(InitialProgram));
 }
 
 // todo: link to

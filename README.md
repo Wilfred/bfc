@@ -79,7 +79,19 @@ If increments/decrements cancel out, we remove them entirely.
    Compile              Optimise
 +-   ->   BFIncrement  1    ->   # nothing!
           BFIncrement -1
-          BFIncrement  1
+```
+
+We do the same thing for data increments/decrements:
+
+```
+   Compile                 Optimise
+>>>  ->   BFDataIncrement 1   ->   BFDataIncrement 3
+          BFDataIncrement 1
+          BFDataIncrement 1
+
+   Compile                  Optimise
+><   ->   BFDataIncrement  1    ->   # nothing!
+          BFDataIncrement -1
 ```
 
 ## Other projects optimising BF

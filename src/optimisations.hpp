@@ -5,4 +5,6 @@
 
 BFProgram coalesceIncrements(BFProgram &);
 
+BFProgram coalesceDataIncrements(BFProgram &);
+
 #endif

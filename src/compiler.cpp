@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
     auto Program = parseSource(Source);
 
     Program = coalesceIncrements(Program);
+    Program = coalesceDataIncrements(Program);
 
     Module *Mod = compileProgram(Program);
 
@@ -73,4 +74,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
