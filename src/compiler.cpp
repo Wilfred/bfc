@@ -59,6 +59,8 @@ int main(int argc, char *argv[]) {
     auto Source = readSource(ProgramPath);
     auto Program = parseSource(Source);
 
+    Program = coalesceIncrements(Program);
+
     Module *Mod = compileProgram(Program);
 
     // Write the LLVM IR to a file.

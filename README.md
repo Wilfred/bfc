@@ -22,6 +22,7 @@ GPLv2 or later license.
     - [Running tests](#running-tests)
     - [Test programs](#test-programs)
     - [Optimisations](#optimisations)
+        - [Coalescing Increments](#coalescing-increments)
     - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
@@ -60,6 +61,17 @@ bfc can use LLVM's optimisations, but it offers some BF-specific
 optimisations. There's a roadmap in
 [optimisations.md](optimisations.md) of optimisations we will
 implement at the BFC IR level.
+
+### Coalescing Increments
+
+We collapse successive increments (currently excluding loop bodies).
+
+```
+   Compile             Optimise
++++  ->   BFIncrement 1   ->   BFIncrement 3
+          BFIncrement 1
+          BFIncrement 1
+```
 
 ## Other projects optimising BF
 
