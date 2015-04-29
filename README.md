@@ -13,6 +13,19 @@ BF source -> BFC IR -> LLVM IR -> x86_32 Binary
 
 GPLv2 or later license.
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
+**Table of Contents**
+
+- [An optimising compiler for BF](#an-optimising-compiler-for-bf)
+    - [Compiling](#compiling)
+    - [Usage](#usage)
+    - [Running tests](#running-tests)
+    - [Test programs](#test-programs)
+    - [Optimisations](#optimisations)
+
+<!-- markdown-toc end -->
+
+
 ## Compiling
 
 You will need LLVM and boost installed to compile bfc.
