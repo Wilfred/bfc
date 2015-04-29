@@ -6,7 +6,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-#include "bfir.h"
+#include "bfir.hpp"
 
 using namespace llvm;
 

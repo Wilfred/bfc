@@ -1,7 +1,7 @@
 #ifndef OPTIMISATIONS_HEADER
 #define OPTIMISATIONS_HEADER
 
-#include "bfir.h"
+#include "bfir.hpp"
 
 BFProgram coalesceIncrements(BFProgram &);
 

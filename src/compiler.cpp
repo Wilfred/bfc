@@ -11,8 +11,8 @@
 #include <fstream>
 #include <regex>
 
-#include "bfir.h"
-#include "optimisations.h"
+#include "bfir.hpp"
+#include "optimisations.hpp"
 
 using namespace llvm;
 

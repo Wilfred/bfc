@@ -1,4 +1,4 @@
-#include "bfir.h"
+#include "bfir.hpp"
 
 // TODO: run coalesce inside loop bodies too.
 BFProgram coalesceIncrements(BFProgram &Sequence) {

@@ -17,10 +17,10 @@ $(BUILD_DIR):
 $(BUILD_DIR)/compiler: compiler.cpp $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o
 	$(CC) $(CFLAGS) $< $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(BOOST_LIBS) -o $@
 
-$(BUILD_DIR)/bfir.o: bfir.cpp bfir.h
+$(BUILD_DIR)/bfir.o: bfir.cpp bfir.hpp
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE) -o $@
 
-$(BUILD_DIR)/optimisations.o: optimisations.cpp optimisations.h
+$(BUILD_DIR)/optimisations.o: optimisations.cpp optimisations.hpp
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE) -o $@
 
 $(BUILD_DIR)/run_tests: run_tests.cpp $(BUILD_DIR) $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o
@@ -32,7 +32,7 @@ test: $(BUILD_DIR)/run_tests
 
 .PHONY: format
 format:
-	find -name "*.cpp" -o -name "*.h" -type f | xargs clang-format -i
+	find -name "*.cpp" -o -name "*.hpp" -type f | xargs clang-format -i
 
 .PHONY: clean
 clean:
