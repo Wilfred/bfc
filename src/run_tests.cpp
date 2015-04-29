@@ -106,6 +106,26 @@ TEST(Optimisations, CoalesceIncrements) {
     EXPECT_EQ(ExpectedProgram, coalesceIncrements(InitialProgram));
 }
 
+TEST(Optimisations, CoalesceAndRemoveIncrements) {
+    BFProgram InitialProgram;
+
+    BFInstPtr Ptr(new BFIncrement(1));
+    InitialProgram.push_back(Ptr);
+
+    BFInstPtr Ptr2(new BFIncrement(-1));
+    InitialProgram.push_back(Ptr2);
+
+    BFInstPtr Ptr3(new BFDataIncrement(1));
+    InitialProgram.push_back(Ptr3);
+
+    BFProgram ExpectedProgram;
+
+    BFInstPtr Ptr4(new BFDataIncrement(3));
+    ExpectedProgram.push_back(Ptr4);
+
+    EXPECT_EQ(ExpectedProgram, coalesceIncrements(InitialProgram));
+}
+
 TEST(Optimisations, DontCoalesceDifferentIncrements) {
     BFProgram InitialProgram;
 

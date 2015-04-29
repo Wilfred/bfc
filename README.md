@@ -64,13 +64,22 @@ implement at the BFC IR level.
 
 ### Coalescing Increments
 
-We collapse successive increments (currently excluding loop bodies).
+We collapse successive increments/decrements (currently excluding loop bodies).
 
 ```
    Compile             Optimise
 +++  ->   BFIncrement 1   ->   BFIncrement 3
           BFIncrement 1
           BFIncrement 1
+```
+
+If increments/decrements cancel out, we remove them entirely.
+
+```
+   Compile              Optimise
++-   ->   BFIncrement  1    ->   # nothing!
+          BFIncrement -1
+          BFIncrement  1
 ```
 
 ## Other projects optimising BF

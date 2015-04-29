@@ -501,12 +501,17 @@ BFProgram coalesceIncrements(BFProgram &Sequence) {
         } else {
             try {
                 BFIncrement &LastIncr = dynamic_cast<BFIncrement &>(**Last);
-
-                // TODO: should we wrap-around amounts at some point?
-                Last = new BFInstPtr(
-                    new BFIncrement(CurrentIncr.Amount + LastIncr.Amount));
                 BFIncrement &CurrentIncr =
                     dynamic_cast<BFIncrement &>(*Current);
+
+                int Sum = CurrentIncr.Amount + LastIncr.Amount;
+                // TODO: we should wrap-around amounts at our maximum cell
+                // value.
+                if (Sum == 0) {
+                    Last = nullptr;
+                } else {
+                    Last = new BFInstPtr(new BFIncrement(Sum));
+                }
 
             } catch (const std::bad_cast &) {
                 Result.push_back(*Last);
