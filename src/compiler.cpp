@@ -12,6 +12,7 @@
 #include <regex>
 
 #include "bfir.h"
+#include "optimisations.h"
 
 using namespace llvm;
 
@@ -72,3 +73,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

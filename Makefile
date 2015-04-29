@@ -14,14 +14,17 @@ all: $(BUILD_DIR) $(BUILD_DIR)/compiler
 $(BUILD_DIR):
 	mkdir $@
 
-$(BUILD_DIR)/compiler: compiler.cpp $(BUILD_DIR)/bfir.o
-	$(CC) $(CFLAGS) $< $(BUILD_DIR)/bfir.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(BOOST_LIBS) -o $@
+$(BUILD_DIR)/compiler: compiler.cpp $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o
+	$(CC) $(CFLAGS) $< $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(BOOST_LIBS) -o $@
 
 $(BUILD_DIR)/bfir.o: bfir.cpp bfir.h
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE) -o $@
 
-$(BUILD_DIR)/run_tests: run_tests.cpp $(BUILD_DIR) $(BUILD_DIR)/bfir.o
-	$(CC) $(CFLAGS) $< $(BUILD_DIR)/bfir.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(TEST_LIBS) -o $@
+$(BUILD_DIR)/optimisations.o: optimisations.cpp optimisations.h
+	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE) -o $@
+
+$(BUILD_DIR)/run_tests: run_tests.cpp $(BUILD_DIR) $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o
+	$(CC) $(CFLAGS) $< $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(TEST_LIBS) -o $@
 
 .PHONY: test
 test: $(BUILD_DIR)/run_tests

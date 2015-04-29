@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bfir.h"
+#include "optimisations.h"
 
 TEST(Instructions, ReadEquality) {
     BFRead Read1;
