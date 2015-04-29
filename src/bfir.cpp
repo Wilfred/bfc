@@ -495,17 +495,18 @@ BFProgram coalesceIncrements(BFProgram &Sequence) {
     // just for nullability.
     BFInstPtr *Last = nullptr;
 
-    for (BFInstPtr& Current : Sequence) {
+    for (BFInstPtr &Current : Sequence) {
         if (Last == nullptr) {
             Last = &Current;
         } else {
             try {
                 BFIncrement &LastIncr = dynamic_cast<BFIncrement &>(**Last);
-                BFIncrement &CurrentIncr = dynamic_cast<BFIncrement &>(*Current);
 
                 // TODO: should we wrap-around amounts at some point?
                 Last = new BFInstPtr(
                     new BFIncrement(CurrentIncr.Amount + LastIncr.Amount));
+                BFIncrement &CurrentIncr =
+                    dynamic_cast<BFIncrement &>(*Current);
 
             } catch (const std::bad_cast &) {
                 Result.push_back(*Last);
