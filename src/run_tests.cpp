@@ -95,15 +95,27 @@ TEST(Optimisations, CoalesceIncrements) {
     BFInstPtr Ptr(new BFIncrement(1));
     InitialProgram.push_back(Ptr);
 
-    BFInstPtr Ptr2(new BFIncrement(1));
+    BFInstPtr Ptr2(new BFIncrement(2));
     InitialProgram.push_back(Ptr2);
 
     BFProgram ExpectedProgram;
 
-    BFInstPtr Ptr3(new BFIncrement(2));
+    BFInstPtr Ptr3(new BFIncrement(3));
     ExpectedProgram.push_back(Ptr3);
 
     EXPECT_EQ(ExpectedProgram, coalesceIncrements(InitialProgram));
+}
+
+TEST(Optimisations, DontCoalesceDifferentIncrements) {
+    BFProgram InitialProgram;
+
+    BFInstPtr Ptr(new BFIncrement(1));
+    InitialProgram.push_back(Ptr);
+
+    BFInstPtr Ptr2(new BFDataIncrement(1));
+    InitialProgram.push_back(Ptr2);
+
+    EXPECT_EQ(InitialProgram, coalesceIncrements(InitialProgram));
 }
 
 // todo: link to
