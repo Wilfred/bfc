@@ -22,6 +22,7 @@ GPLv2 or later license.
     - [Running tests](#running-tests)
     - [Test programs](#test-programs)
     - [Optimisations](#optimisations)
+    - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
 
@@ -55,8 +56,12 @@ collection of test BF programs.
 
 ## Optimisations
 
-Currently, bfc only uses LLVM's optimisations. There's a roadmap in
-compiler.md of optimisations we will implement at the BFC IR level.
+bfc can use LLVM's optimisations, but it offers some BF-specific
+optimisations. There's a roadmap in
+[optimisations.md](optimisations.md) of optimisations we will
+implement at the BFC IR level.
+
+## Other projects optimising BF
 
 There are also some interesting other projects for optimising BF
 programs:
