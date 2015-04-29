@@ -57,7 +57,7 @@ collection of test BF programs.
 
 ## Optimisations
 
-bfc can use LLVM's optimisations, but it offers some BF-specific
+bfc can use LLVM's optimisations, but it also offers some BF-specific
 optimisations. There's a roadmap in
 [optimisations.md](optimisations.md) of optimisations we will
 implement at the BFC IR level.
