@@ -120,7 +120,7 @@ TEST(Optimisations, CoalesceAndRemoveIncrements) {
 
     BFProgram ExpectedProgram;
 
-    BFInstPtr Ptr4(new BFDataIncrement(3));
+    BFInstPtr Ptr4(new BFDataIncrement(1));
     ExpectedProgram.push_back(Ptr4);
 
     EXPECT_EQ(ExpectedProgram, coalesceIncrements(InitialProgram));
