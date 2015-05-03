@@ -27,6 +27,9 @@ std::ostream &operator<<(std::ostream &os, const BFDataIncrement &Inst) {
 std::ostream &operator<<(std::ostream &os, const BFIncrement &Inst) {
     return Inst.stream_write(os, 0);
 }
+std::ostream &operator<<(std::ostream &os, const BFSet &Inst) {
+    return Inst.stream_write(os, 0);
+}
 std::ostream &operator<<(std::ostream &os, const BFRead &Inst) {
     return Inst.stream_write(os, 0);
 }
@@ -37,6 +40,14 @@ std::ostream &operator<<(std::ostream &os, const BFWrite &Inst) {
 bool operator==(const BFInstruction &X, const BFInstruction &Y) {
     if (typeid(X) != typeid(Y)) {
         return false;
+    }
+
+    try {
+        const BFSet &SetX = dynamic_cast<const BFSet &>(X);
+        const BFSet &SetY = dynamic_cast<const BFSet &>(Y);
+
+        return SetX.Amount == SetY.Amount;
+    } catch (const std::bad_cast &) {
     }
 
     try {
@@ -180,6 +191,34 @@ std::ostream &BFDataIncrement::stream_write(std::ostream &os,
     }
 
     os << "BFDataIncrement " << Amount;
+    return os;
+}
+
+BFSet::BFSet(int amount) { Amount = amount; }
+
+BasicBlock *BFSet::compile(Module &, Function &, BasicBlock &BB) {
+    auto &Context = getGlobalContext();
+
+    IRBuilder<> Builder(Context);
+    Builder.SetInsertPoint(&BB);
+
+    Value *CellIndex = Builder.CreateLoad(CellIndexPtr, "cell_index");
+    Value *CurrentCellPtr =
+        Builder.CreateGEP(CellsPtr, CellIndex, "current_cell_ptr");
+
+    auto NewValue =
+        ConstantInt::get(Context, APInt(CELL_SIZE_IN_BYTES * 8, Amount));
+    Builder.CreateStore(NewValue, CurrentCellPtr);
+
+    return &BB;
+}
+
+std::ostream &BFSet::stream_write(std::ostream &os, int indent) const {
+    for (int i = 0; i < indent; i++) {
+        os << "  ";
+    }
+
+    os << "BFSet " << Amount;
     return os;
 }
 

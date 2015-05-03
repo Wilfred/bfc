@@ -30,6 +30,15 @@ TEST(Instructions, IncrementEquality) {
     EXPECT_NE(Incr1, Incr3);
 }
 
+TEST(Instructions, SetEquality) {
+    BFSet Set1(1);
+    BFSet Set2(1);
+    EXPECT_EQ(Set1, Set2);
+
+    BFSet Set3(2);
+    EXPECT_NE(Set1, Set3);
+}
+
 TEST(Instructions, DataIncrementEquality) {
     BFDataIncrement Incr1(1);
     BFDataIncrement Incr2(1);

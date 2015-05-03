@@ -60,6 +60,19 @@ class BFIncrement : public BFInstruction {
 
 std::ostream &operator<<(std::ostream &, const BFIncrement &);
 
+class BFSet : public BFInstruction {
+  public:
+    std::ostream &stream_write(std::ostream &, int) const;
+    // TODO: can this be private?
+    int Amount;
+
+    BFSet(int);
+
+    virtual BasicBlock *compile(Module &, Function &, BasicBlock &);
+};
+
+std::ostream &operator<<(std::ostream &, const BFSet &);
+
 class BFDataIncrement : public BFInstruction {
   public:
     int Amount;
