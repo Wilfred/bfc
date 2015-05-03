@@ -114,8 +114,6 @@ std::ostream &operator<<(std::ostream &, const BFLoop &);
 
 Module *compileProgram(BFProgram &);
 
-BFProgram parseSource(std::string &);
-
 BFProgram coalesceIncrements(BFProgram &);
 
 #endif

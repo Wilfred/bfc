@@ -12,18 +12,11 @@
 #include <fstream>
 #include <regex>
 
+#include "parser.hpp"
 #include "bfir.hpp"
 #include "optimisations.hpp"
 
 using namespace llvm;
-
-std::string readSource(std::string programPath) {
-    std::ifstream stream(programPath);
-    std::string source((std::istreambuf_iterator<char>(stream)),
-                       std::istreambuf_iterator<char>());
-
-    return source;
-}
 
 void printUsage(std::string ProgramName) {
     errs() << "Usage: " << ProgramName << " <my-program.bf> \n";
