@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "parser.hpp"
 #include "bfir.hpp"
 #include "optimisations.hpp"
 
@@ -137,13 +138,8 @@ TEST(Optimisations, CoalesceAndRemoveIncrements) {
 }
 
 TEST(Optimisations, DontCoalesceDifferentIncrements) {
-    BFProgram InitialProgram;
-
-    BFInstPtr Ptr(new BFIncrement(1));
-    InitialProgram.push_back(Ptr);
-
-    BFInstPtr Ptr2(new BFDataIncrement(1));
-    InitialProgram.push_back(Ptr2);
+    std::string InitialProgramSrc = "+>";
+    BFProgram InitialProgram = parseSource(InitialProgramSrc);
 
     EXPECT_EQ(InitialProgram, coalesceIncrements(InitialProgram));
     EXPECT_EQ(InitialProgram, coalesceDataIncrements(InitialProgram));
@@ -167,21 +163,11 @@ TEST(Optimisations, CoalesceDataIncrements) {
 }
 
 TEST(Optimisations, CoalesceAndRemoveDataIncrements) {
-    BFProgram InitialProgram;
+    std::string InitialProgramSrc = "><>";
+    BFProgram InitialProgram = parseSource(InitialProgramSrc);
 
-    BFInstPtr Ptr(new BFDataIncrement(1));
-    InitialProgram.push_back(Ptr);
-
-    BFInstPtr Ptr2(new BFDataIncrement(-1));
-    InitialProgram.push_back(Ptr2);
-
-    BFInstPtr Ptr3(new BFIncrement(1));
-    InitialProgram.push_back(Ptr3);
-
-    BFProgram ExpectedProgram;
-
-    BFInstPtr Ptr4(new BFIncrement(1));
-    ExpectedProgram.push_back(Ptr4);
+    std::string ExpectedProgramSrc = ">";
+    BFProgram ExpectedProgram = parseSource(ExpectedProgramSrc);
 
     EXPECT_EQ(ExpectedProgram, coalesceDataIncrements(InitialProgram));
 }
