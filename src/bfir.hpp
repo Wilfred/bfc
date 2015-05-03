@@ -11,7 +11,7 @@ using namespace llvm;
 
 class BFInstruction {
   public:
-    virtual std::ostream &stream_write(std::ostream &) const = 0;
+    virtual std::ostream &stream_write(std::ostream &, int) const = 0;
     // Append the appropriate instructions to the given basic
     // block. We may also create new basic blocks, return the next
     // basic block we should append to.
@@ -31,7 +31,7 @@ class BFProgram {
   public:
     std::vector<BFInstPtr> Instructions;
 
-    std::ostream &stream_write(std::ostream &) const;
+    std::ostream &stream_write(std::ostream &, int) const;
     void push_back(BFInstPtr);
     std::vector<BFInstPtr>::iterator begin();
     std::vector<BFInstPtr>::const_iterator begin() const;
@@ -48,7 +48,7 @@ bool operator!=(const BFProgram &, const BFProgram &);
 
 class BFIncrement : public BFInstruction {
   public:
-    std::ostream &stream_write(std::ostream &) const;
+    std::ostream &stream_write(std::ostream &, int) const;
     // TODO: can this be private?
     int Amount;
 
@@ -63,7 +63,7 @@ std::ostream &operator<<(std::ostream &, const BFIncrement &);
 class BFDataIncrement : public BFInstruction {
   public:
     int Amount;
-    std::ostream &stream_write(std::ostream &) const;
+    std::ostream &stream_write(std::ostream &, int) const;
     BFDataIncrement();
     BFDataIncrement(int);
 
@@ -74,7 +74,7 @@ std::ostream &operator<<(std::ostream &, const BFDataIncrement &);
 
 class BFRead : public BFInstruction {
   public:
-    std::ostream &stream_write(std::ostream &) const;
+    std::ostream &stream_write(std::ostream &, int) const;
     virtual BasicBlock *compile(Module &Mod, Function &, BasicBlock &BB);
 };
 
@@ -82,7 +82,7 @@ std::ostream &operator<<(std::ostream &, const BFRead &);
 
 class BFWrite : public BFInstruction {
   public:
-    std::ostream &stream_write(std::ostream &) const;
+    std::ostream &stream_write(std::ostream &, int) const;
     virtual BasicBlock *compile(Module &Mod, Function &, BasicBlock &BB);
 };
 
@@ -91,7 +91,7 @@ std::ostream &operator<<(std::ostream &, const BFWrite &);
 class BFLoop : public BFInstruction {
   public:
     BFProgram LoopBody;
-    std::ostream &stream_write(std::ostream &) const;
+    std::ostream &stream_write(std::ostream &, int) const;
     BFLoop(BFProgram);
 
     virtual BasicBlock *compile(Module &Mod, Function &F, BasicBlock &BB);

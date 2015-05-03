@@ -16,22 +16,22 @@ Value *CellIndexPtr;
 const int CELL_SIZE_IN_BYTES = 1;
 
 std::ostream &operator<<(std::ostream &os, const BFInstruction &Inst) {
-    return Inst.stream_write(os);
+    return Inst.stream_write(os, 0);
 }
 std::ostream &operator<<(std::ostream &os, const BFLoop &Inst) {
-    return Inst.stream_write(os);
+    return Inst.stream_write(os, 0);
 }
 std::ostream &operator<<(std::ostream &os, const BFDataIncrement &Inst) {
-    return Inst.stream_write(os);
+    return Inst.stream_write(os, 0);
 }
 std::ostream &operator<<(std::ostream &os, const BFIncrement &Inst) {
-    return Inst.stream_write(os);
+    return Inst.stream_write(os, 0);
 }
 std::ostream &operator<<(std::ostream &os, const BFRead &Inst) {
-    return Inst.stream_write(os);
+    return Inst.stream_write(os, 0);
 }
 std::ostream &operator<<(std::ostream &os, const BFWrite &Inst) {
-    return Inst.stream_write(os);
+    return Inst.stream_write(os, 0);
 }
 
 bool operator==(const BFInstruction &X, const BFInstruction &Y) {
@@ -107,11 +107,12 @@ std::vector<BFInstPtr>::size_type BFProgram::size() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const BFProgram &Prog) {
-    os << "BFProgram\n";
+    os << "BFProgram";
 
     auto Instructions = Prog.Instructions;
     for (BFInstPtr I : Instructions) {
-        os << "  " << (*I) << "\n";
+        os << "\n";
+        (*I).stream_write(os, 1);
     }
 
     return os;
@@ -138,7 +139,11 @@ bool operator==(const BFProgram &X, const BFProgram &Y) {
 
 bool operator!=(const BFProgram &X, const BFProgram &Y) { return !(X == Y); }
 
-std::ostream &BFIncrement::stream_write(std::ostream &os) const {
+std::ostream &BFIncrement::stream_write(std::ostream &os, int indent) const {
+    for (int i = 0; i < indent; i++) {
+        os << "  ";
+    }
+
     os << "BFIncrement " << Amount;
     return os;
 }
@@ -168,7 +173,12 @@ BasicBlock *BFIncrement::compile(Module &, Function &, BasicBlock &BB) {
     return &BB;
 }
 
-std::ostream &BFDataIncrement::stream_write(std::ostream &os) const {
+std::ostream &BFDataIncrement::stream_write(std::ostream &os,
+                                            int indent) const {
+    for (int i = 0; i < indent; i++) {
+        os << "  ";
+    }
+
     os << "BFDataIncrement " << Amount;
     return os;
 }
@@ -192,7 +202,11 @@ BasicBlock *BFDataIncrement::compile(Module &, Function &, BasicBlock &BB) {
     return &BB;
 }
 
-std::ostream &BFRead::stream_write(std::ostream &os) const {
+std::ostream &BFRead::stream_write(std::ostream &os, int indent) const {
+    for (int i = 0; i < indent; i++) {
+        os << "  ";
+    }
+
     os << "BFRead";
     return os;
 }
@@ -216,7 +230,11 @@ BasicBlock *BFRead::compile(Module &Mod, Function &, BasicBlock &BB) {
     return &BB;
 }
 
-std::ostream &BFWrite::stream_write(std::ostream &os) const {
+std::ostream &BFWrite::stream_write(std::ostream &os, int indent) const {
+    for (int i = 0; i < indent; i++) {
+        os << "  ";
+    }
+
     os << "BFWrite";
     return os;
 }
@@ -241,12 +259,17 @@ BasicBlock *BFWrite::compile(Module &Mod, Function &, BasicBlock &BB) {
     return &BB;
 }
 
-std::ostream &BFLoop::stream_write(std::ostream &os) const {
-    os << "BFLoop\n";
+std::ostream &BFLoop::stream_write(std::ostream &os, int indent) const {
+    for (int i = 0; i < indent; i++) {
+        os << "  ";
+    }
+
+    os << "BFLoop";
 
     auto LB = LoopBody;
     for (auto I = LB.begin(), E = LB.end(); I != E; ++I) {
-        os << "  " << (**I) << "\n";
+        os << "\n";
+        (**I).stream_write(os, indent + 1);
     }
 
     return os;
