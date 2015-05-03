@@ -99,6 +99,10 @@ bool operator!=(const BFInstruction &X, const BFInstruction &Y) {
 
 void BFProgram::push_back(BFInstPtr P) { Instructions.push_back(P); }
 
+void BFProgram::insert(std::vector<BFInstPtr>::iterator I, BFInstPtr P) {
+    Instructions.insert(I, P);
+}
+
 std::vector<BFInstPtr>::iterator BFProgram::begin() {
     return Instructions.begin();
 }

@@ -33,6 +33,7 @@ class BFProgram {
 
     std::ostream &stream_write(std::ostream &, int) const;
     void push_back(BFInstPtr);
+    void insert(std::vector<BFInstPtr>::iterator, BFInstPtr);
     std::vector<BFInstPtr>::iterator begin();
     std::vector<BFInstPtr>::const_iterator begin() const;
     std::vector<BFInstPtr>::iterator end();

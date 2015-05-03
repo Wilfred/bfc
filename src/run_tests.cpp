@@ -172,6 +172,19 @@ TEST(Optimisations, CoalesceAndRemoveDataIncrements) {
     EXPECT_EQ(ExpectedProgram, coalesceDataIncrements(InitialProgram));
 }
 
+TEST(Optimisations, MarkZeroes) {
+    std::string InitialProgramSrc = "+";
+    BFProgram InitialProgram = parseSource(InitialProgramSrc);
+
+    BFProgram ExpectedProgram;
+    BFInstPtr Ptr1(new BFSet(0));
+    ExpectedProgram.push_back(Ptr1);
+    BFInstPtr Ptr2(new BFIncrement(1));
+    ExpectedProgram.push_back(Ptr2);
+
+    EXPECT_EQ(ExpectedProgram, markKnownZero(InitialProgram));
+}
+
 // todo: link to
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc
 // insted.

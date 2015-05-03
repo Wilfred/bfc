@@ -3,6 +3,8 @@
 
 #include "bfir.hpp"
 
+BFProgram markKnownZero(const BFProgram &);
+
 BFProgram coalesceIncrements(BFProgram &);
 
 BFProgram coalesceDataIncrements(BFProgram &);

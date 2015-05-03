@@ -1,5 +1,15 @@
 #include "bfir.hpp"
 
+BFProgram markKnownZero(const BFProgram &Sequence) {
+    BFProgram Result = Sequence;
+
+    // At the start of execution, cell #0 is 0.
+    BFInstPtr Ptr(new BFSet(0));
+    Result.insert(Result.begin(), Ptr);
+
+    return Result;
+}
+
 // TODO: run coalesce inside loop bodies too.
 BFProgram coalesceIncrements(BFProgram &Sequence) {
     BFProgram Result;
