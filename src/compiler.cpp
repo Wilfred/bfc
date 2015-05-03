@@ -8,6 +8,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include <iostream>
 #include <fstream>
 #include <regex>
 
@@ -62,6 +63,8 @@ int main(int argc, char *argv[]) {
 
     Program = coalesceIncrements(Program);
     Program = coalesceDataIncrements(Program);
+
+    std::cout << Program << std::endl;
 
     Module *Mod = compileProgram(Program);
 
