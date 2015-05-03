@@ -15,7 +15,7 @@ $(BUILD_DIR):
 	mkdir $@
 
 $(BUILD_DIR)/compiler: compiler.cpp $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(BUILD_DIR)/parser.o
-	$(CC) $(CFLAGS) $< $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(BUILD_DIR)/parser.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(BOOST_LIBS) -o $@
+	$(CC) $(CFLAGS) $^ $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(BOOST_LIBS) -o $@
 
 $(BUILD_DIR)/bfir.o: bfir.cpp bfir.hpp
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE) -o $@
@@ -26,12 +26,12 @@ $(BUILD_DIR)/parser.o: parser.cpp parser.hpp
 $(BUILD_DIR)/optimisations.o: optimisations.cpp optimisations.hpp
 	$(CC) $(CFLAGS) -c $< $(CXXFLAGS) $(LLVM_OVERRIDE) -o $@
 
-$(BUILD_DIR)/run_tests: run_tests.cpp $(BUILD_DIR) $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(BUILD_DIR)/parser.o
-	$(CC) $(CFLAGS) $< $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(TEST_LIBS) -o $@
+$(BUILD_DIR)/run_tests: run_tests.cpp $(BUILD_DIR)/bfir.o $(BUILD_DIR)/optimisations.o $(BUILD_DIR)/parser.o
+	$(CC) $(CFLAGS) $^ $(CXXFLAGS) $(LLVM_LDFLAGS) $(LLVM_OVERRIDE) $(TEST_LIBS) -o $@
 
 .PHONY: test
-test: $(BUILD_DIR)/run_tests
-	./$<
+test: $(BUILD_DIR) $(BUILD_DIR)/run_tests
+	./$(BUILD_DIR)/run_tests
 
 .PHONY: format
 format:
