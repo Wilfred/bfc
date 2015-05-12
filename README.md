@@ -67,8 +67,8 @@ implement at the BFC IR level.
 We combine successive increments/decrements (currently excluding loop bodies).
 
 ```
-   Compile             Optimise
-+++  ->   BFIncrement 1   ->   BFIncrement 3
+   Compile             Combine
++++  =>   BFIncrement 1   =>   BFIncrement 3
           BFIncrement 1
           BFIncrement 1
 ```
@@ -76,21 +76,21 @@ We combine successive increments/decrements (currently excluding loop bodies).
 If increments/decrements cancel out, we remove them entirely.
 
 ```
-   Compile              Optimise
-+-   ->   BFIncrement  1    ->   # nothing!
+   Compile              Combine
++-   =>   BFIncrement  1    =>   # nothing!
           BFIncrement -1
 ```
 
 We do the same thing for data increments/decrements:
 
 ```
-   Compile                 Optimise
->>>  ->   BFDataIncrement 1   ->   BFDataIncrement 3
+   Compile                 Combine
+>>>  =>   BFDataIncrement 1   =>   BFDataIncrement 3
           BFDataIncrement 1
           BFDataIncrement 1
 
-   Compile                  Optimise
-><   ->   BFDataIncrement  1    ->   # nothing!
+   Compile                  Combine
+><   =>   BFDataIncrement  1    =>   # nothing!
           BFDataIncrement -1
 ```
 
@@ -98,7 +98,7 @@ We combine sets and increments too:
 
 ```
   Compile            Known zero:         Combine
-+   ->   BFIncrement 1   ->   BFSet 0      ->   BFSet 1
++   =>   BFIncrement 1   =>   BFSet 0      =>   BFSet 1
                               BFIncrement 1
 
 ```
