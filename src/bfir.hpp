@@ -115,6 +115,4 @@ std::ostream &operator<<(std::ostream &, const BFLoop &);
 
 Module *compileProgram(BFProgram &);
 
-BFProgram coalesceIncrements(BFProgram &);
-
 #endif
