@@ -62,9 +62,9 @@ optimisations. There's a roadmap in
 [optimisations.md](optimisations.md) of optimisations we will
 implement at the BFC IR level.
 
-### Coalescing Increments
+### Combining Instructions
 
-We collapse successive increments/decrements (currently excluding loop bodies).
+We combine successive increments/decrements (currently excluding loop bodies).
 
 ```
    Compile             Optimise
