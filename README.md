@@ -94,6 +94,15 @@ We do the same thing for data increments/decrements:
           BFDataIncrement -1
 ```
 
+We combine sets and increments too:
+
+```
+  Compile            Known zero:         Combine
++   ->   BFIncrement 1   ->   BFSet 0      ->   BFSet 1
+                              BFIncrement 1
+
+```
+
 ## Other projects optimising BF
 
 There are also some interesting other projects for optimising BF

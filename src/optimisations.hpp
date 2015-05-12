@@ -9,4 +9,6 @@ BFProgram combineIncrements(BFProgram &);
 
 BFProgram combineDataIncrements(BFProgram &);
 
+BFProgram combineSetAndIncrements(BFProgram &);
+
 #endif

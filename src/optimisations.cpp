@@ -87,3 +87,35 @@ BFProgram combineDataIncrements(BFProgram &Sequence) {
 
     return Result;
 }
+
+BFProgram combineSetAndIncrements(BFProgram &Sequence) {
+    BFProgram Result;
+
+    BFInstPtr *Last = nullptr;
+
+    for (BFInstPtr &Current : Sequence) {
+        if (Last == nullptr) {
+            Last = &Current;
+        } else {
+            try {
+                BFSet &LastSet =
+                    dynamic_cast<BFSet &>(**Last);
+                BFIncrement &CurrentIncr =
+                    dynamic_cast<BFIncrement &>(*Current);
+
+                int Sum = LastSet.Amount + CurrentIncr.Amount;
+                Last = new BFInstPtr(new BFSet(Sum));
+
+            } catch (const std::bad_cast &) {
+                Result.push_back(*Last);
+                Last = &Current;
+            }
+        }
+    }
+
+    if (Last != nullptr) {
+        Result.push_back(*Last);
+    }
+
+    return Result;
+}

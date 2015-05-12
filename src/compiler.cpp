@@ -56,6 +56,8 @@ int main(int argc, char *argv[]) {
 
     Program = combineIncrements(Program);
     Program = combineDataIncrements(Program);
+    Program = markKnownZero(Program);
+    Program = combineSetAndIncrements(Program);
 
     std::cout << Program << std::endl;
 

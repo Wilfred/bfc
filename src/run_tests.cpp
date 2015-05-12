@@ -185,6 +185,20 @@ TEST(Optimisations, MarkZeroes) {
     EXPECT_EQ(ExpectedProgram, markKnownZero(InitialProgram));
 }
 
+TEST(Optimisations, CombineSetAndIncrement) {
+    std::string InitialProgramSrc = "+";
+    BFProgram Program = parseSource(InitialProgramSrc);
+
+    BFProgram ExpectedProgram;
+    BFInstPtr Ptr1(new BFSet(1));
+    ExpectedProgram.push_back(Ptr1);
+
+    Program = markKnownZero(Program);
+    Program = combineSetAndIncrements(Program);
+
+    EXPECT_EQ(ExpectedProgram, Program);
+}
+
 // todo: link to
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc
 // insted.
