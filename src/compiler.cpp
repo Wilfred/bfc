@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
     auto Source = readSource(ProgramPath);
     auto Program = parseSource(Source);
 
-    Program = coalesceIncrements(Program);
-    Program = coalesceDataIncrements(Program);
+    Program = combineIncrements(Program);
+    Program = combineDataIncrements(Program);
 
     std::cout << Program << std::endl;
 

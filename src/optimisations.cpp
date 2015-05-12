@@ -10,8 +10,8 @@ BFProgram markKnownZero(const BFProgram &Sequence) {
     return Result;
 }
 
-// TODO: run coalesce inside loop bodies too.
-BFProgram coalesceIncrements(BFProgram &Sequence) {
+// TODO: combine instructions inside loop bodies too.
+BFProgram combineIncrements(BFProgram &Sequence) {
     BFProgram Result;
 
     // TODO: use an option data type instead of a pointer to a pointer
@@ -50,7 +50,7 @@ BFProgram coalesceIncrements(BFProgram &Sequence) {
     return Result;
 }
 
-BFProgram coalesceDataIncrements(BFProgram &Sequence) {
+BFProgram combineDataIncrements(BFProgram &Sequence) {
     BFProgram Result;
 
     // TODO: use an option data type instead of a pointer to a pointer

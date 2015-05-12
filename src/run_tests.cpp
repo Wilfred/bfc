@@ -100,7 +100,7 @@ TEST(Instructions, SequenceEquality) {
     EXPECT_NE(Seq1, Seq5);
 }
 
-TEST(Optimisations, CoalesceIncrements) {
+TEST(Optimisations, CombineIncrements) {
     BFProgram InitialProgram;
 
     BFInstPtr Ptr(new BFIncrement(1));
@@ -114,10 +114,10 @@ TEST(Optimisations, CoalesceIncrements) {
     BFInstPtr Ptr3(new BFIncrement(3));
     ExpectedProgram.push_back(Ptr3);
 
-    EXPECT_EQ(ExpectedProgram, coalesceIncrements(InitialProgram));
+    EXPECT_EQ(ExpectedProgram, combineIncrements(InitialProgram));
 }
 
-TEST(Optimisations, CoalesceAndRemoveIncrements) {
+TEST(Optimisations, CombineAndRemoveIncrements) {
     BFProgram InitialProgram;
 
     BFInstPtr Ptr(new BFIncrement(1));
@@ -134,18 +134,18 @@ TEST(Optimisations, CoalesceAndRemoveIncrements) {
     BFInstPtr Ptr4(new BFDataIncrement(1));
     ExpectedProgram.push_back(Ptr4);
 
-    EXPECT_EQ(ExpectedProgram, coalesceIncrements(InitialProgram));
+    EXPECT_EQ(ExpectedProgram, combineIncrements(InitialProgram));
 }
 
-TEST(Optimisations, DontCoalesceDifferentIncrements) {
+TEST(Optimisations, DontCombineDifferentIncrements) {
     std::string InitialProgramSrc = "+>";
     BFProgram InitialProgram = parseSource(InitialProgramSrc);
 
-    EXPECT_EQ(InitialProgram, coalesceIncrements(InitialProgram));
-    EXPECT_EQ(InitialProgram, coalesceDataIncrements(InitialProgram));
+    EXPECT_EQ(InitialProgram, combineIncrements(InitialProgram));
+    EXPECT_EQ(InitialProgram, combineDataIncrements(InitialProgram));
 }
 
-TEST(Optimisations, CoalesceDataIncrements) {
+TEST(Optimisations, CombineDataIncrements) {
     BFProgram InitialProgram;
 
     BFInstPtr Ptr(new BFDataIncrement(1));
@@ -159,17 +159,17 @@ TEST(Optimisations, CoalesceDataIncrements) {
     BFInstPtr Ptr3(new BFDataIncrement(3));
     ExpectedProgram.push_back(Ptr3);
 
-    EXPECT_EQ(ExpectedProgram, coalesceDataIncrements(InitialProgram));
+    EXPECT_EQ(ExpectedProgram, combineDataIncrements(InitialProgram));
 }
 
-TEST(Optimisations, CoalesceAndRemoveDataIncrements) {
+TEST(Optimisations, CombineAndRemoveDataIncrements) {
     std::string InitialProgramSrc = "><>";
     BFProgram InitialProgram = parseSource(InitialProgramSrc);
 
     std::string ExpectedProgramSrc = ">";
     BFProgram ExpectedProgram = parseSource(ExpectedProgramSrc);
 
-    EXPECT_EQ(ExpectedProgram, coalesceDataIncrements(InitialProgram));
+    EXPECT_EQ(ExpectedProgram, combineDataIncrements(InitialProgram));
 }
 
 TEST(Optimisations, MarkZeroes) {

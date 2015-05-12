@@ -5,8 +5,8 @@
 
 BFProgram markKnownZero(const BFProgram &);
 
-BFProgram coalesceIncrements(BFProgram &);
+BFProgram combineIncrements(BFProgram &);
 
-BFProgram coalesceDataIncrements(BFProgram &);
+BFProgram combineDataIncrements(BFProgram &);
 
 #endif
