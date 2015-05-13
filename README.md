@@ -22,7 +22,8 @@ GPLv2 or later license.
     - [Running tests](#running-tests)
     - [Test programs](#test-programs)
     - [Optimisations](#optimisations)
-        - [Coalescing Increments](#coalescing-increments)
+        - [Combining Instructions](#combining-instructions)
+        - [Loop Simplification](#loop-simplification)
     - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
