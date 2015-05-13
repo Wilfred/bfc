@@ -11,6 +11,8 @@ BFProgram combineDataIncrements(const BFProgram &);
 
 BFProgram combineSetAndIncrements(const BFProgram &);
 
+BFProgram combineSets(const BFProgram &);
+
 BFProgram simplifyZeroingLoop(const BFProgram &);
 
 BFProgram applyAllPasses(const BFProgram &);

@@ -119,6 +119,37 @@ BFProgram combineSetAndIncrements(const BFProgram &Sequence) {
     return Result;
 }
 
+// BFSet 0 => BFSet 1
+// BFSet 1
+BFProgram combineSets(const BFProgram &Sequence) {
+    BFProgram Result;
+
+    BFInstPtr *Last = nullptr;
+
+    for (const BFInstPtr &Current : Sequence) {
+        if (Last == nullptr) {
+            Last = (BFInstPtr *)&Current;
+        } else {
+            try {
+                dynamic_cast<BFSet &>(**Last);
+                dynamic_cast<BFSet &>(*Current);
+
+                Last = (BFInstPtr *)&Current;
+
+            } catch (const std::bad_cast &) {
+                Result.push_back(*Last);
+                Last = (BFInstPtr *)&Current;
+            }
+        }
+    }
+
+    if (Last != nullptr) {
+        Result.push_back(*Last);
+    }
+
+    return Result;
+}
+
 BFProgram simplifyZeroingLoop(const BFProgram &Sequence) {
     BFProgram Result;
 
@@ -149,6 +180,9 @@ BFProgram applyAllPasses(const BFProgram &InitialProgram) {
     BFProgram Program = combineIncrements(InitialProgram);
     Program = combineDataIncrements(Program);
     Program = markKnownZero(Program);
+    // It's important we combine sets after markKnownZero, as that
+    // creates BFSet instructions.
+    Program = combineSets(Program);
     Program = simplifyZeroingLoop(Program);
     Program = combineSetAndIncrements(Program);
 

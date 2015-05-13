@@ -94,6 +94,15 @@ We do the same thing for data increments/decrements:
           BFDataIncrement -1
 ```
 
+We do the same thing for successive sets:
+
+```
+       Combine
+BFSet 1   =>   BFSet 2
+BFSet 2
+
+```
+
 We combine sets and increments too:
 
 ```

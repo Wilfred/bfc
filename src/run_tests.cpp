@@ -199,6 +199,26 @@ TEST(Optimisations, CombineSetAndIncrement) {
     EXPECT_EQ(ExpectedProgram, Program);
 }
 
+TEST(Optimisations, CombineRepeatedSet) {
+    BFProgram InitialProgram;
+    BFInstPtr Ptr1(new BFSet(0));
+    InitialProgram.push_back(Ptr1);
+    BFInstPtr Ptr2(new BFSet(1));
+    InitialProgram.push_back(Ptr2);
+    BFInstPtr Ptr3(new BFWrite);
+    InitialProgram.push_back(Ptr3);
+
+    BFProgram ExpectedProgram;
+    BFInstPtr Ptr4(new BFSet(1));
+    ExpectedProgram.push_back(Ptr4);
+    BFInstPtr Ptr5(new BFWrite);
+    ExpectedProgram.push_back(Ptr5);
+
+    BFProgram Program = applyAllPasses(InitialProgram);
+
+    EXPECT_EQ(ExpectedProgram, Program);
+}
+
 TEST(Optimisations, SimplyZeroingLoop) {
     std::string InitialProgramSrc = "[-]";
     BFProgram Program = parseSource(InitialProgramSrc);
