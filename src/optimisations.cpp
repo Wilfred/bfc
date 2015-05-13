@@ -144,3 +144,14 @@ BFProgram simplifyZeroingLoop(const BFProgram &Sequence) {
 
     return Result;
 }
+
+BFProgram applyAllPasses(const BFProgram &InitialProgram) {
+    BFProgram Program = combineIncrements(InitialProgram);
+    Program = combineDataIncrements(Program);
+    Program = markKnownZero(Program);
+    Program = simplifyZeroingLoop(Program);
+    Program = combineSetAndIncrements(Program);
+
+    return Program;
+}
+
