@@ -36,6 +36,7 @@ BFProgram parseSourceBetween(std::string &Source, size_t From, size_t To) {
     while (I < To) {
         switch (Source[I]) {
         case '+': {
+            // TODO: use std::make_shared instead.
             BFInstPtr ptr(new BFIncrement(1));
             Program.push_back(ptr);
             break;
