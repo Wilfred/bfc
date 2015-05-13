@@ -98,8 +98,7 @@ BFProgram combineSetAndIncrements(const BFProgram &Sequence) {
             Last = (BFInstPtr *)&Current;
         } else {
             try {
-                BFSet &LastSet =
-                    dynamic_cast<BFSet &>(**Last);
+                BFSet &LastSet = dynamic_cast<BFSet &>(**Last);
                 BFIncrement &CurrentIncr =
                     dynamic_cast<BFIncrement &>(*Current);
 
