@@ -199,6 +199,19 @@ TEST(Optimisations, CombineSetAndIncrement) {
     EXPECT_EQ(ExpectedProgram, Program);
 }
 
+TEST(Optimisations, SimplyZeroingLoop) {
+    std::string InitialProgramSrc = "[-]";
+    BFProgram Program = parseSource(InitialProgramSrc);
+
+    BFProgram ExpectedProgram;
+    BFInstPtr Ptr1(new BFSet(0));
+    ExpectedProgram.push_back(Ptr1);
+
+    Program = simplifyZeroingLoop(Program);
+
+    EXPECT_EQ(ExpectedProgram, Program);
+}
+
 // todo: link to
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc
 // insted.

@@ -103,6 +103,19 @@ We combine sets and increments too:
 
 ```
 
+### Loop Simplification
+
+`[-]` is a common BF idiom for zeroing cells. We replace that with
+`BFSet`, enabling further instruction combination.
+
+```
+   Compile                Simplify
+[-]  =>   BFLoop             =>   BFSet 0
+            BFIncrement -1
+
+
+```
+
 ## Other projects optimising BF
 
 There are also some interesting other projects for optimising BF

@@ -118,3 +118,29 @@ BFProgram combineSetAndIncrements(const BFProgram &Sequence) {
 
     return Result;
 }
+
+BFProgram simplifyZeroingLoop(const BFProgram &Sequence) {
+    BFProgram Result;
+
+    BFProgram ZeroingLoopBody;
+    BFInstPtr Ptr(new BFIncrement(-1));
+    ZeroingLoopBody.push_back(Ptr);
+
+    for (const BFInstPtr &Current : Sequence) {
+        try {
+            BFLoop &Loop = dynamic_cast<BFLoop &>(*Current);
+
+            if (Loop.LoopBody == ZeroingLoopBody) {
+                BFInstPtr SetPtr(new BFSet(0));
+                Result.push_back(SetPtr);
+            } else {
+                Result.push_back(Current);
+            }
+
+        } catch (const std::bad_cast &) {
+            Result.push_back(Current);
+        }
+    }
+
+    return Result;
+}
