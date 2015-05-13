@@ -21,19 +21,10 @@ The first line of the program will never executed.
 
 (Source-to source transformation, speed improvement.)
 
-## Removing redundant operations
+Likewise, if a loop is followed by another loop, that loop is dead.
 
-Programs of the form:
-
-    +-+
-
-or
-
-    ><>
-
-can be simplified at compile time.
-
-(Source-to source transformation, speed improvement.)
+Any non-loop instructions that aren't followed by output instructions
+are dead.
 
 ## Constant propagation
 
@@ -49,24 +40,6 @@ cells to the result.
 
 You could actually take this further, even evaluating `[]` sections if
 they perform no IO.
-
-(IR transformation, speed improvement.)
-
-## Arithmetic optimisations
-
-In the following program
-
-    +++
-
-Naive IR would generate the following:
-
-    cells[index] += 1
-    cells[index] += 1
-    cells[index] += 1
-
-It would be more efficient to do the following:
-
-    cells[index] += 3
 
 (IR transformation, speed improvement.)
 
