@@ -11,16 +11,16 @@ BFProgram markKnownZero(const BFProgram &Sequence) {
 }
 
 // TODO: combine instructions inside loop bodies too.
-BFProgram combineIncrements(BFProgram &Sequence) {
+BFProgram combineIncrements(const BFProgram &Sequence) {
     BFProgram Result;
 
     // TODO: use an option data type instead of a pointer to a pointer
     // just for nullability.
     BFInstPtr *Last = nullptr;
 
-    for (BFInstPtr &Current : Sequence) {
+    for (const BFInstPtr &Current : Sequence) {
         if (Last == nullptr) {
-            Last = &Current;
+            Last = (BFInstPtr *)&Current;
         } else {
             try {
                 BFIncrement &LastIncr = dynamic_cast<BFIncrement &>(**Last);
@@ -38,7 +38,7 @@ BFProgram combineIncrements(BFProgram &Sequence) {
 
             } catch (const std::bad_cast &) {
                 Result.push_back(*Last);
-                Last = &Current;
+                Last = (BFInstPtr *)&Current;
             }
         }
     }
@@ -50,16 +50,16 @@ BFProgram combineIncrements(BFProgram &Sequence) {
     return Result;
 }
 
-BFProgram combineDataIncrements(BFProgram &Sequence) {
+BFProgram combineDataIncrements(const BFProgram &Sequence) {
     BFProgram Result;
 
     // TODO: use an option data type instead of a pointer to a pointer
     // just for nullability.
     BFInstPtr *Last = nullptr;
 
-    for (BFInstPtr &Current : Sequence) {
+    for (const BFInstPtr &Current : Sequence) {
         if (Last == nullptr) {
-            Last = &Current;
+            Last = (BFInstPtr *)&Current;
         } else {
             try {
                 BFDataIncrement &LastIncr =
@@ -76,7 +76,7 @@ BFProgram combineDataIncrements(BFProgram &Sequence) {
 
             } catch (const std::bad_cast &) {
                 Result.push_back(*Last);
-                Last = &Current;
+                Last = (BFInstPtr *)&Current;
             }
         }
     }
@@ -88,14 +88,14 @@ BFProgram combineDataIncrements(BFProgram &Sequence) {
     return Result;
 }
 
-BFProgram combineSetAndIncrements(BFProgram &Sequence) {
+BFProgram combineSetAndIncrements(const BFProgram &Sequence) {
     BFProgram Result;
 
     BFInstPtr *Last = nullptr;
 
-    for (BFInstPtr &Current : Sequence) {
+    for (const BFInstPtr &Current : Sequence) {
         if (Last == nullptr) {
-            Last = &Current;
+            Last = (BFInstPtr *)&Current;
         } else {
             try {
                 BFSet &LastSet =
@@ -108,7 +108,7 @@ BFProgram combineSetAndIncrements(BFProgram &Sequence) {
 
             } catch (const std::bad_cast &) {
                 Result.push_back(*Last);
-                Last = &Current;
+                Last = (BFInstPtr *)&Current;
             }
         }
     }

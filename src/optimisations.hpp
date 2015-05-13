@@ -5,10 +5,10 @@
 
 BFProgram markKnownZero(const BFProgram &);
 
-BFProgram combineIncrements(BFProgram &);
+BFProgram combineIncrements(const BFProgram &);
 
-BFProgram combineDataIncrements(BFProgram &);
+BFProgram combineDataIncrements(const BFProgram &);
 
-BFProgram combineSetAndIncrements(BFProgram &);
+BFProgram combineSetAndIncrements(const BFProgram &);
 
 #endif
