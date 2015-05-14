@@ -1,11 +1,29 @@
 #include "bfir.hpp"
 
+// TODO: this can actually make BFIR programs longer. We should
+// annotate, apply any possible optimisations, then any annotations of
+// 'BFSet 0' where safe to do so.
 BFProgram markKnownZero(const BFProgram &Sequence) {
-    BFProgram Result = Sequence;
+    BFProgram Result;
 
     // At the start of execution, cell #0 is 0.
     BFInstPtr Ptr(new BFSet(0));
-    Result.insert(Result.begin(), Ptr);
+    Result.push_back(Ptr);
+
+    // After any loop, the current cell is 0.
+    for (const BFInstPtr &Current : Sequence) {
+        try {
+            dynamic_cast<BFLoop &>(*Current);
+
+            Result.push_back(Current);
+
+            BFInstPtr Ptr(new BFSet(0));
+            Result.push_back(Ptr);
+
+        } catch (const std::bad_cast &) {
+            Result.push_back(Current);
+        }
+    }
 
     return Result;
 }
@@ -151,6 +169,42 @@ BFProgram combineSets(const BFProgram &Sequence) {
 
     return Result;
 }
+
+BFProgram removeDeadLoops(const BFProgram &Sequence) {
+    BFProgram Result;
+
+    BFInstPtr *Last = nullptr;
+
+    for (const BFInstPtr &Current : Sequence) {
+        if (Last == nullptr) {
+            Last = (BFInstPtr *)&Current;
+        } else {
+            try {
+                BFSet &LastSet = dynamic_cast<BFSet &>(**Last);
+                dynamic_cast<BFLoop &>(*Current);
+
+                if (LastSet.Amount == 0) {
+                    // Keep Last, discard the loop.
+                } else {
+                    Result.push_back(*Last);
+                    Last = (BFInstPtr *)&Current;
+                }
+
+                Last = (BFInstPtr *)&Current;
+
+            } catch (const std::bad_cast &) {
+                Result.push_back(*Last);
+                Last = (BFInstPtr *)&Current;
+            }
+        }
+    }
+
+    if (Last != nullptr) {
+        Result.push_back(*Last);
+    }
+
+    return Result;
+}
 }
 
 BFProgram simplifyZeroingLoop(const BFProgram &Sequence) {
@@ -188,6 +242,7 @@ BFProgram applyAllPasses(const BFProgram &InitialProgram) {
     Program = combineSets(Program);
     Program = simplifyZeroingLoop(Program);
     Program = combineSetAndIncrements(Program);
+    Program = removeDeadLoops(Program);
 
     return Program;
 }

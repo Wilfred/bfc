@@ -126,6 +126,31 @@ We combine sets and increments too:
 
 ```
 
+### Dead Code Elimination
+
+We remove loops that we know are dead.
+
+For example, loops at the beginning of a program:
+
+```
+    Compile                    Known zero                 DCE
+[>]   =>    BFLoop                 =>     BFSet 0          => BFSet 0
+              BFDataIncrement 1           BFLoop
+                                            BFDataIncrement 
+```
+
+Loops following a clear cell loop:
+
+```
+      Compile                  Simplify                    DCE
+[-][>]   =>  BFLoop               =>    BFSet 0             => BFSet 0
+               BFIncrement -1           BFLoop
+             BFLoop                       BFDataIncrement -1
+               BFDataIncrement 1
+```
+
+
+
 ## Other projects optimising BF
 
 There are also some interesting other projects for optimising BF

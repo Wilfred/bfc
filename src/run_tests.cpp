@@ -232,6 +232,21 @@ TEST(Optimisations, SimplyZeroingLoop) {
     EXPECT_EQ(ExpectedProgram, Program);
 }
 
+TEST(Optimisations, RemoveDeadLoop) {
+    // We know that the second loop is dead, because the current cell
+    // will be zero when/if the previous loop terminates.
+    std::string InitialProgramSrc = "[>][+-,.<>]";
+    BFProgram Program = parseSource(InitialProgramSrc);
+
+    std::string EquivalentProgramSrc = "[>]";
+    BFProgram ExpectedProgram = parseSource(EquivalentProgramSrc);
+    ExpectedProgram = applyAllPasses(Program);
+
+    Program = applyAllPasses(Program);
+
+    EXPECT_EQ(ExpectedProgram, Program);
+}
+
 // todo: link to
 // https://code.google.com/p/googletest/source/browse/trunk/src/gtest_main.cc
 // insted.
