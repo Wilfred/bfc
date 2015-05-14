@@ -119,6 +119,8 @@ BFProgram combineSetAndIncrements(const BFProgram &Sequence) {
     return Result;
 }
 
+namespace {
+
 // BFSet 0 => BFSet 1
 // BFSet 1
 BFProgram combineSets(const BFProgram &Sequence) {
@@ -148,6 +150,8 @@ BFProgram combineSets(const BFProgram &Sequence) {
     }
 
     return Result;
+}
+
 }
 
 BFProgram simplifyZeroingLoop(const BFProgram &Sequence) {
@@ -188,4 +192,3 @@ BFProgram applyAllPasses(const BFProgram &InitialProgram) {
 
     return Program;
 }
-
