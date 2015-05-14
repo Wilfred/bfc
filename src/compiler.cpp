@@ -18,6 +18,8 @@
 
 using namespace llvm;
 
+namespace {
+
 void printUsage(std::string ProgramName) {
     errs() << "Usage: " << ProgramName << " <my-program.bf> \n";
 }
@@ -36,6 +38,7 @@ std::string getOutputName(std::string ProgramName) {
         std::regex_replace(FileName, ExtensionPattern, Replacement);
 
     return Name + ".ll";
+}
 }
 
 int main(int argc, char *argv[]) {

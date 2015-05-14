@@ -3,6 +3,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "bfir.hpp"
 
+namespace {
+
 // Return the index of the ']' that matches the '[' at OpenIndex, or -1
 // if we don't have one.
 ssize_t findMatchingClose(std::string Source, size_t OpenIndex) {
@@ -97,6 +99,7 @@ BFProgram parseSourceBetween(std::string &Source, size_t From, size_t To) {
     }
 
     return Program;
+}
 }
 
 BFProgram parseSource(std::string &Source) {

@@ -151,7 +151,6 @@ BFProgram combineSets(const BFProgram &Sequence) {
 
     return Result;
 }
-
 }
 
 BFProgram simplifyZeroingLoop(const BFProgram &Sequence) {
