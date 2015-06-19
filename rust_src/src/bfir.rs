@@ -1,6 +1,7 @@
 #[derive(PartialEq, Eq)]
 pub enum Instruction {
-    Increment(i32)
+    Increment(i32),
+    PointerIncrement(i32),
 }
 
 pub fn parse(source: &str) -> Vec<Instruction> {
@@ -12,6 +13,10 @@ pub fn parse(source: &str) -> Vec<Instruction> {
                 instructions.push(Instruction::Increment(1)),
             '-' => 
                 instructions.push(Instruction::Increment(-1)),
+            '>' => 
+                instructions.push(Instruction::PointerIncrement(1)),
+            '<' => 
+                instructions.push(Instruction::PointerIncrement(-1)),
             _ => ()
         }
     }
@@ -29,6 +34,16 @@ fn parse_increment() {
 #[test]
 fn parse_decrement() {
     assert!(parse("-") == [Instruction::Increment(-1)]);
+}
+
+#[test]
+fn parse_pointer_increment() {
+    assert!(parse(">") == [Instruction::PointerIncrement(1)]);
+}
+
+#[test]
+fn parse_pointer_decrement() {
+    assert!(parse("<") == [Instruction::PointerIncrement(-1)]);
 }
 
 #[test]
