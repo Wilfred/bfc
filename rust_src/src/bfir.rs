@@ -2,6 +2,8 @@
 pub enum Instruction {
     Increment(i32),
     PointerIncrement(i32),
+    Read,
+    Write
 }
 
 pub fn parse(source: &str) -> Vec<Instruction> {
@@ -17,6 +19,10 @@ pub fn parse(source: &str) -> Vec<Instruction> {
                 instructions.push(Instruction::PointerIncrement(1)),
             '<' => 
                 instructions.push(Instruction::PointerIncrement(-1)),
+            ',' => 
+                instructions.push(Instruction::Read),
+            '.' => 
+                instructions.push(Instruction::Write),
             _ => ()
         }
     }
@@ -44,6 +50,16 @@ fn parse_pointer_increment() {
 #[test]
 fn parse_pointer_decrement() {
     assert!(parse("<") == [Instruction::PointerIncrement(-1)]);
+}
+
+#[test]
+fn parse_read() {
+    assert!(parse(",") == [Instruction::Read]);
+}
+
+#[test]
+fn parse_write() {
+    assert!(parse(".") == [Instruction::Write]);
 }
 
 #[test]
