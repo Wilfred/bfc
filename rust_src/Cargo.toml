@@ -1,0 +1,7 @@
+[package]
+name = "bfc"
+version = "0.1.0"
+authors = ["Wilfred Hughes <me@wilfred.me.uk>"]
+
+[dependencies]
+llvm_sys = "0.1.3"
