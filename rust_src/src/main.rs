@@ -4,6 +4,8 @@ extern crate llvm_sys as llvm;
 
 use std::ptr;
 
+mod bfir;
+
 fn main() {
     unsafe {
         // Set up a context, module and builder in that context.
