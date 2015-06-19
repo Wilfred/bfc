@@ -10,6 +10,8 @@ pub fn parse(source: &str) -> Vec<Instruction> {
         match c {
             '+' => 
                 instructions.push(Instruction::Increment(1)),
+            '-' => 
+                instructions.push(Instruction::Increment(-1)),
             _ => ()
         }
     }
@@ -22,6 +24,11 @@ fn parse_increment() {
     assert!(parse("+") == [Instruction::Increment(1)]);
     assert!(parse("++") == [Instruction::Increment(1),
                             Instruction::Increment(1)]);
+}
+
+#[test]
+fn parse_decrement() {
+    assert!(parse("-") == [Instruction::Increment(-1)]);
 }
 
 #[test]
