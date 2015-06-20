@@ -6,6 +6,8 @@ pub enum Instruction {
     Write
 }
 
+/// Given a string of BF source code, parse and return our BF IR
+/// representation.
 pub fn parse(source: &str) -> Vec<Instruction> {
     let mut instructions = Vec::new();
 
