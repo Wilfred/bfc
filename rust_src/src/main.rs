@@ -6,6 +6,14 @@ use std::ptr;
 
 mod bfir;
 
+unsafe fn add_c_declarations(module: llvm::LLVMModule) {
+    let context = llvm::core::LLVMGetGlobalContext();
+
+    let calloc_args = [llvm::core::LLVMInt32TypeInContext(context),
+                       llvm::core::LLVMInt32TypeInContext(context)];
+    ();
+}
+
 unsafe fn emit_llvm_ir() {
     // Set up a context, module and builder in that context.
     let context = llvm::core::LLVMGetGlobalContext();
