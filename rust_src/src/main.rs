@@ -29,14 +29,27 @@ unsafe fn add_c_declarations(module: &mut llvm::LLVMModule) {
 }
 
 unsafe fn emit_llvm_ir() {
-    let module = LLVMModuleCreateWithName(
-        b"nop\0".as_ptr() as *const _);
+    let context = LLVMGetGlobalContext();
+    let module = LLVMModuleCreateWithName(b"nop\0".as_ptr() as *const _);
+    let builder = LLVMCreateBuilderInContext(context);
 
     add_c_declarations(&mut *module);
+
+    let mut main_args = vec![];
+    let main_type = LLVMFunctionType(
+        LLVMInt32Type(), main_args.as_mut_ptr(), 0, 0);
+    let main_fn = LLVMAddFunction(module, b"main\0".as_ptr() as *const _,
+                                  main_type);
+
+    let bb = LLVMAppendBasicBlockInContext(
+        context, main_fn, b"entry\0".as_ptr() as *const _);
+    LLVMPositionBuilderAtEnd(builder, bb);
+    LLVMBuildRetVoid(builder);
 
     // Dump the module as IR to stdout.
     LLVMDumpModule(module);
 
+    LLVMDisposeBuilder(builder);
     LLVMDisposeModule(module);
 }
 
