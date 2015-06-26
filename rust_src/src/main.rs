@@ -1,17 +1,20 @@
-//! Construct a function that does nothing in LLVM IR.
-
 extern crate llvm_sys as llvm;
 
 use std::ptr;
 
 mod bfir;
 
-unsafe fn add_c_declarations(module: llvm::LLVMModule) {
-    let context = llvm::core::LLVMGetGlobalContext();
-
-    let calloc_args = [llvm::core::LLVMInt32TypeInContext(context),
-                       llvm::core::LLVMInt32TypeInContext(context)];
-    ();
+unsafe fn add_c_declarations(module: &mut llvm::LLVMModule) {
+    let byte_pointer = llvm::core::LLVMPointerType(
+        llvm::core::LLVMInt8Type(), 0);
+    
+    let mut calloc_args = vec![llvm::core::LLVMInt32Type(),
+                           llvm::core::LLVMInt32Type()];
+    let calloc_type =
+        llvm::core::LLVMFunctionType(
+            byte_pointer, calloc_args.as_mut_ptr(), 2, 0);
+    llvm::core::LLVMAddFunction(module, b"calloc\0".as_ptr() as *const _,
+                                calloc_type);
 }
 
 unsafe fn emit_llvm_ir() {
@@ -20,21 +23,7 @@ unsafe fn emit_llvm_ir() {
     let module = llvm::core::LLVMModuleCreateWithName(b"nop\0".as_ptr() as *const _);
     let builder = llvm::core::LLVMCreateBuilderInContext(context);
 
-    // Get the type signature for void nop(void);
-    // Then create it in our module.
-    let void = llvm::core::LLVMVoidTypeInContext(context);
-    let function_type = llvm::core::LLVMFunctionType(void, ptr::null_mut(), 0, 0);
-    let function = llvm::core::LLVMAddFunction(module, b"nop\0".as_ptr() as *const _,
-                                               function_type);
-
-    // Create a basic block in the function and set our builder to generate
-    // code in it.
-    let bb = llvm::core::LLVMAppendBasicBlockInContext(context, function,
-                                                       b"entry\0".as_ptr() as *const _);
-    llvm::core::LLVMPositionBuilderAtEnd(builder, bb);
-
-    // Emit a `ret void` into the function
-    llvm::core::LLVMBuildRetVoid(builder);
+    add_c_declarations(&mut *module);
 
     // Dump the module as IR to stdout.
     llvm::core::LLVMDumpModule(module);
