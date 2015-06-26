@@ -15,6 +15,11 @@ unsafe fn add_c_declarations(module: &mut llvm::LLVMModule) {
             byte_pointer, calloc_args.as_mut_ptr(), 2, 0);
     llvm::core::LLVMAddFunction(module, b"calloc\0".as_ptr() as *const _,
                                 calloc_type);
+
+    let mut free_args = vec![byte_pointer];
+    let free_type = llvm::core::LLVMFunctionType(
+        llvm::core::LLVMVoidType(), free_args.as_mut_ptr(), 1, 0);
+    llvm::core::LLVMAddFunction(module, b"free\0".as_ptr() as *const _, free_type);
 }
 
 unsafe fn emit_llvm_ir() {
