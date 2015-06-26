@@ -29,18 +29,14 @@ unsafe fn add_c_declarations(module: &mut llvm::LLVMModule) {
 }
 
 unsafe fn emit_llvm_ir() {
-    // Set up a context, module and builder in that context.
-    let context = LLVMGetGlobalContext();
-    let module = LLVMModuleCreateWithName(b"nop\0".as_ptr() as *const _);
-    let builder = LLVMCreateBuilderInContext(context);
+    let module = LLVMModuleCreateWithName(
+        b"nop\0".as_ptr() as *const _);
 
     add_c_declarations(&mut *module);
 
     // Dump the module as IR to stdout.
     LLVMDumpModule(module);
 
-    // Clean up. Values created in the context mostly get cleaned up there.
-    LLVMDisposeBuilder(builder);
     LLVMDisposeModule(module);
 }
 
