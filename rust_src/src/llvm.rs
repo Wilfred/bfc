@@ -67,7 +67,6 @@ pub unsafe fn dump_ir(module_name: &str) {
     
     let context = LLVMGetGlobalContext();
     let module = LLVMModuleCreateWithName(c_mod_name.to_bytes_with_nul().as_ptr() as *const _);
-    let builder = LLVMCreateBuilderInContext(context);
 
     add_c_declarations(&mut *module);
 
@@ -81,6 +80,7 @@ pub unsafe fn dump_ir(module_name: &str) {
         context, main_fn, b"entry\0".as_ptr() as *const _);
     add_cells_init(&mut *module, &mut *bb);
     
+    let builder = LLVMCreateBuilderInContext(context);
     LLVMPositionBuilderAtEnd(builder, bb);
     LLVMBuildRetVoid(builder);
 
