@@ -72,7 +72,8 @@ fn main() {
         let ref file_name = args[1];
         match slurp(&file_name) {
             Ok(src) => {
-                println!("src: {}", src);
+                let instrs = bfir::parse(&src);
+                println!("{:?}", instrs);
             }
             Err(e) => {
                 println!("Could not open file: {}", e);
