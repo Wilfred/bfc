@@ -4,7 +4,7 @@ pub enum Instruction {
     PointerIncrement(i32),
     Read,
     Write,
-    Loop(Box<Vec<Instruction>>)
+    Loop(Vec<Instruction>)
 }
 
 /// Given a string of BF source code, parse and return our BF IR
@@ -41,7 +41,7 @@ fn parse_between(source: &str, start: usize, end: usize) -> Vec<Instruction> {
                 // TODO: handle unbalanced parens gracefully.
                 let close_index = find_close(source, index).unwrap();
                 let loop_body = parse_between(source, index + 1, close_index);
-                instructions.push(Instruction::Loop(Box::new(loop_body)));
+                instructions.push(Instruction::Loop(loop_body));
 
                 index = close_index;
             }
