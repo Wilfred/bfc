@@ -22,6 +22,7 @@ fn main() {
 
         // TODO: proper options parsing
         let dump_bf_ir = args.len() > 2 && args[2] == "--dump-bf-ir";
+        let dump_llvm = args.len() > 2 && args[2] == "--dump-llvm";
         
         let ref file_name = args[1];
         match slurp(&file_name) {
@@ -33,8 +34,10 @@ fn main() {
                     }
                 }
 
-                unsafe {
-                    llvm::dump_ir(&file_name);
+                if dump_llvm {
+                    unsafe {
+                        llvm::dump_ir(&file_name);
+                    }
                 }
 
             }
@@ -48,6 +51,7 @@ fn main() {
         println!("Examples:");
         println!("  {} foo.bf", args[0]);
         println!("  {} foo.bf --dump-bf-ir", args[0]);
+        println!("  {} foo.bf --dump-llvm", args[0]);
         std::process::exit(1);
     }
     
