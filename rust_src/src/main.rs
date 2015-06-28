@@ -26,6 +26,11 @@ fn main() {
                 for instr in instrs {
                     println!("{}", instr);
                 }
+
+                unsafe {
+                    llvm::dump_ir(&file_name);
+                }
+
             }
             Err(e) => {
                 println!("Could not open file: {}", e);
@@ -38,7 +43,4 @@ fn main() {
         std::process::exit(1);
     }
     
-    unsafe {
-        llvm::dump_ir();
-    }
 }

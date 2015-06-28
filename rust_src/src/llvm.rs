@@ -2,6 +2,8 @@ use llvm_sys::core::*;
 use llvm_sys::LLVMModule;
 use llvm_sys::prelude::LLVMTypeRef;
 
+use std::ffi::CString;
+
 unsafe fn add_function(module: &mut LLVMModule, fn_name: &[u8],
                        args: &mut Vec<LLVMTypeRef>, ret_type: LLVMTypeRef) {
     let fn_type = 
@@ -32,9 +34,11 @@ unsafe fn add_c_declarations(module: &mut LLVMModule) {
         &mut vec![], LLVMInt32Type());
 }
 
-pub unsafe fn dump_ir() {
+pub unsafe fn dump_ir(module_name: &str) {
+    let c_mod_name = CString::new(module_name).unwrap();
+    
     let context = LLVMGetGlobalContext();
-    let module = LLVMModuleCreateWithName(b"nop\0".as_ptr() as *const _);
+    let module = LLVMModuleCreateWithName(c_mod_name.to_bytes_with_nul().as_ptr() as *const _);
     let builder = LLVMCreateBuilderInContext(context);
 
     add_c_declarations(&mut *module);
