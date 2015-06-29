@@ -71,6 +71,15 @@ unsafe fn add_cells_cleanup(module: &mut LLVMModule, bb: &mut LLVMBasicBlock, ce
     // free(cells);
     let mut free_args = vec![cells];
     add_function_call(module, bb, "free", &mut free_args, "_");
+
+    let context = LLVMGetGlobalContext();
+    let builder = LLVMCreateBuilderInContext(context);
+    LLVMPositionBuilderAtEnd(builder, bb);
+
+    let five = LLVMConstInt(LLVMInt32Type(), 5, LLVM_FALSE);
+    LLVMBuildRet(builder, five);
+
+    LLVMDisposeBuilder(builder);
 }
 
 pub unsafe fn dump_ir(module_name: &str) {
@@ -92,13 +101,8 @@ pub unsafe fn dump_ir(module_name: &str) {
     let cells = add_cells_init(&mut *module, &mut *bb);
     add_cells_cleanup(&mut *module, &mut *bb, cells);
     
-    let builder = LLVMCreateBuilderInContext(context);
-    LLVMPositionBuilderAtEnd(builder, bb);
-    LLVMBuildRetVoid(builder);
-
     // Dump the module as IR to stdout.
     LLVMDumpModule(module);
 
-    LLVMDisposeBuilder(builder);
     LLVMDisposeModule(module);
 }
