@@ -1,13 +1,15 @@
 use llvm_sys::core::*;
 use llvm_sys::{LLVMModule,LLVMBasicBlock};
-use llvm_sys::prelude::{LLVMTypeRef,LLVMValueRef};
+use llvm_sys::prelude::*;
 
 use std::ffi::CString;
+
+const LLVM_FALSE: LLVMBool = 0;
 
 unsafe fn add_function(module: &mut LLVMModule, fn_name: &str,
                        args: &mut Vec<LLVMTypeRef>, ret_type: LLVMTypeRef) {
     let fn_type = 
-        LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, 0);
+        LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, LLVM_FALSE);
     let c_fn_name = CString::new(fn_name).unwrap();
     LLVMAddFunction(module, c_fn_name.to_bytes_with_nul().as_ptr() as *const _, fn_type);
 }
@@ -57,9 +59,8 @@ const CELL_SIZE_IN_BYTES: u64 = 1;
 unsafe fn add_cells_init(module: &mut LLVMModule, bb: &mut LLVMBasicBlock) {
     // calloc(30000, 1);
     let mut calloc_args = vec![
-        // TODO: define LLVM_FALSE as 0.
-        LLVMConstInt(LLVMInt32Type(), NUM_CELLS, 0),
-        LLVMConstInt(LLVMInt32Type(), CELL_SIZE_IN_BYTES, 0),
+        LLVMConstInt(LLVMInt32Type(), NUM_CELLS, LLVM_FALSE),
+        LLVMConstInt(LLVMInt32Type(), CELL_SIZE_IN_BYTES, LLVM_FALSE),
         ];
     add_function_call(module, bb, "calloc", &mut calloc_args, "cells");
 }
@@ -74,7 +75,7 @@ pub unsafe fn dump_ir(module_name: &str) {
 
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
-        LLVMInt32Type(), main_args.as_mut_ptr(), 0, 0);
+        LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
     let main_fn = LLVMAddFunction(module, b"main\0".as_ptr() as *const _,
                                   main_type);
 
