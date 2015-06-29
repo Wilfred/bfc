@@ -4,33 +4,31 @@ use llvm_sys::prelude::{LLVMTypeRef,LLVMValueRef};
 
 use std::ffi::CString;
 
-unsafe fn add_function(module: &mut LLVMModule, fn_name: &[u8],
+unsafe fn add_function(module: &mut LLVMModule, fn_name: &str,
                        args: &mut Vec<LLVMTypeRef>, ret_type: LLVMTypeRef) {
     let fn_type = 
         LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, 0);
-    // TODO: add_function should take rust strings and convert to
-    // null-terminated strings itself.
-    LLVMAddFunction(module, fn_name.as_ptr() as *const _, fn_type);
-    
+    let c_fn_name = CString::new(fn_name).unwrap();
+    LLVMAddFunction(module, c_fn_name.to_bytes_with_nul().as_ptr() as *const _, fn_type);
 }
 
 unsafe fn add_c_declarations(module: &mut LLVMModule) {
     let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
 
     add_function(
-        module, b"calloc\0",
+        module, "calloc",
         &mut vec![LLVMInt32Type(), LLVMInt32Type()], byte_pointer);
     
     add_function(
-        module, b"free\0",
+        module, "free",
         &mut vec![byte_pointer], LLVMVoidType());
     
     add_function(
-        module, b"putchar\0",
+        module, "putchar",
         &mut vec![LLVMInt32Type()], LLVMInt32Type());
     
     add_function(
-        module, b"getchar\0",
+        module, "getchar",
         &mut vec![], LLVMInt32Type());
 }
 
