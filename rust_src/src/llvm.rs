@@ -36,7 +36,7 @@ unsafe fn add_c_declarations(module: &mut LLVMModule) {
 
 unsafe fn add_function_call(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
                             fn_name: &str, args: &mut Vec<LLVMValueRef>,
-                            name: &str) {
+                            name: &str) -> LLVMValueRef {
     let context = LLVMGetGlobalContext();
 
     let builder = LLVMCreateBuilderInContext(context);
@@ -47,22 +47,30 @@ unsafe fn add_function_call(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
         module, c_fn_name.to_bytes_with_nul().as_ptr() as *const _);
 
     let c_name = CString::new(name).unwrap();
-    LLVMBuildCall(builder, function, args.as_mut_ptr(),
-                  args.len() as u32, c_name.to_bytes_with_nul().as_ptr() as *const _);
+    let result = LLVMBuildCall(
+        builder, function, args.as_mut_ptr(),
+        args.len() as u32, c_name.to_bytes_with_nul().as_ptr() as *const _);
 
     LLVMDisposeBuilder(builder);
+    result
 }
 
 const NUM_CELLS: u64 = 30000;
 const CELL_SIZE_IN_BYTES: u64 = 1;
 
-unsafe fn add_cells_init(module: &mut LLVMModule, bb: &mut LLVMBasicBlock) {
+unsafe fn add_cells_init(module: &mut LLVMModule, bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     // calloc(30000, 1);
     let mut calloc_args = vec![
         LLVMConstInt(LLVMInt32Type(), NUM_CELLS, LLVM_FALSE),
         LLVMConstInt(LLVMInt32Type(), CELL_SIZE_IN_BYTES, LLVM_FALSE),
         ];
-    add_function_call(module, bb, "calloc", &mut calloc_args, "cells");
+    add_function_call(module, bb, "calloc", &mut calloc_args, "cells")
+}
+
+unsafe fn add_cells_cleanup(module: &mut LLVMModule, bb: &mut LLVMBasicBlock, cells: LLVMValueRef) {
+    // free(cells);
+    let mut free_args = vec![cells];
+    add_function_call(module, bb, "free", &mut free_args, "_");
 }
 
 pub unsafe fn dump_ir(module_name: &str) {
@@ -81,7 +89,8 @@ pub unsafe fn dump_ir(module_name: &str) {
 
     let bb = LLVMAppendBasicBlockInContext(
         context, main_fn, b"entry\0".as_ptr() as *const _);
-    add_cells_init(&mut *module, &mut *bb);
+    let cells = add_cells_init(&mut *module, &mut *bb);
+    add_cells_cleanup(&mut *module, &mut *bb, cells);
     
     let builder = LLVMCreateBuilderInContext(context);
     LLVMPositionBuilderAtEnd(builder, bb);
