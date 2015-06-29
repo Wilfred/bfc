@@ -33,16 +33,20 @@ unsafe fn add_c_declarations(module: &mut LLVMModule) {
 }
 
 unsafe fn add_function_call(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
-                            fn_name: &[u8], args: &mut Vec<LLVMValueRef>,
-                            name: &[u8]) {
+                            fn_name: &str, args: &mut Vec<LLVMValueRef>,
+                            name: &str) {
     let context = LLVMGetGlobalContext();
 
     let builder = LLVMCreateBuilderInContext(context);
     LLVMPositionBuilderAtEnd(builder, bb);
 
-    let function = LLVMGetNamedFunction(module, fn_name.as_ptr() as *const _);
+    let c_fn_name = CString::new(fn_name).unwrap();
+    let function = LLVMGetNamedFunction(
+        module, c_fn_name.to_bytes_with_nul().as_ptr() as *const _);
+
+    let c_name = CString::new(name).unwrap();
     LLVMBuildCall(builder, function, args.as_mut_ptr(),
-                  args.len() as u32, name.as_ptr() as *const _);
+                  args.len() as u32, c_name.to_bytes_with_nul().as_ptr() as *const _);
 
     LLVMDisposeBuilder(builder);
 }
@@ -57,7 +61,7 @@ unsafe fn add_cells_init(module: &mut LLVMModule, bb: &mut LLVMBasicBlock) {
         LLVMConstInt(LLVMInt32Type(), NUM_CELLS, 0),
         LLVMConstInt(LLVMInt32Type(), CELL_SIZE_IN_BYTES, 0),
         ];
-    add_function_call(module, bb, b"calloc\0", &mut calloc_args, b"cells\0");
+    add_function_call(module, bb, "calloc", &mut calloc_args, "cells");
 }
 
 pub unsafe fn dump_ir(module_name: &str) {
