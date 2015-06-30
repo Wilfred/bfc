@@ -106,8 +106,8 @@ unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: L
     let builder = LLVMCreateBuilderInContext(context);
     LLVMPositionBuilderAtEnd(builder, bb);
 
-    let five = LLVMConstInt(LLVMInt32Type(), 5, LLVM_FALSE);
-    LLVMBuildRet(builder, five);
+    let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
+    LLVMBuildRet(builder, zero);
 
     LLVMDisposeBuilder(builder);
 }
