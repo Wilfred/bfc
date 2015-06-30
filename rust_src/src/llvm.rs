@@ -67,10 +67,40 @@ unsafe fn add_cells_init(module: &mut LLVMModule, bb: &mut LLVMBasicBlock) -> LL
     add_function_call(module, bb, "calloc", &mut calloc_args, "cells")
 }
 
-unsafe fn add_cells_cleanup(module: &mut LLVMModule, bb: &mut LLVMBasicBlock, cells: LLVMValueRef) {
+unsafe fn create_module(module_name: &str) -> *mut LLVMModule {
+    let c_mod_name = CString::new(module_name).unwrap();
+
+    let module = LLVMModuleCreateWithName(
+        c_mod_name.to_bytes_with_nul().as_ptr() as *const _);
+    add_c_declarations(&mut *module);
+
+    module
+}
+
+/// Define up the main function and add preamble. Return the main
+/// function and a reference to the cells.
+unsafe fn add_main_init(module: &mut LLVMModule) -> (LLVMValueRef, LLVMValueRef) {
+    let mut main_args = vec![];
+    let main_type = LLVMFunctionType(
+        LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
+    let main_fn = LLVMAddFunction(module, b"main\0".as_ptr() as *const _,
+                                  main_type);
+    
+    let context = LLVMGetGlobalContext();
+    let bb = LLVMAppendBasicBlockInContext(
+        context, main_fn, b"entry\0".as_ptr() as *const _);
+    let cells = add_cells_init(&mut *module, &mut *bb);
+
+    (main_fn, cells)
+}
+
+/// Add prologue to main function.
+unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: LLVMValueRef) {
+    let bb = LLVMGetLastBasicBlock(main);
+    
     // free(cells);
     let mut free_args = vec![cells];
-    add_function_call(module, bb, "free", &mut free_args, "_");
+    add_function_call(module, &mut *bb, "free", &mut free_args, "_");
 
     let context = LLVMGetGlobalContext();
     let builder = LLVMCreateBuilderInContext(context);
@@ -83,25 +113,11 @@ unsafe fn add_cells_cleanup(module: &mut LLVMModule, bb: &mut LLVMBasicBlock, ce
 }
 
 pub unsafe fn dump_ir(module_name: &str) -> CString {
-    let c_mod_name = CString::new(module_name).unwrap();
+    let module = create_module(module_name);
+
+    let (main_fn, cells) = add_main_init(&mut *module);
+    add_main_cleanup(&mut *module, main_fn, cells);
     
-    let context = LLVMGetGlobalContext();
-    let module = LLVMModuleCreateWithName(c_mod_name.to_bytes_with_nul().as_ptr() as *const _);
-
-    add_c_declarations(&mut *module);
-
-    let mut main_args = vec![];
-    let main_type = LLVMFunctionType(
-        LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
-    let main_fn = LLVMAddFunction(module, b"main\0".as_ptr() as *const _,
-                                  main_type);
-
-    let bb = LLVMAppendBasicBlockInContext(
-        context, main_fn, b"entry\0".as_ptr() as *const _);
-    let cells = add_cells_init(&mut *module, &mut *bb);
-    add_cells_cleanup(&mut *module, &mut *bb, cells);
-    
-    // Dump the module as IR to stdout.
     let llvm_ir = LLVMPrintModuleToString(module);
 
     LLVMDisposeModule(module);
