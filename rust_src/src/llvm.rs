@@ -78,8 +78,9 @@ unsafe fn create_module(module_name: &str) -> *mut LLVMModule {
 }
 
 /// Define up the main function and add preamble. Return the main
-/// function and a reference to the cells.
-unsafe fn add_main_init(module: &mut LLVMModule) -> (LLVMValueRef, LLVMValueRef) {
+/// function and a reference to the cells and their current index.
+unsafe fn add_main_init(module: &mut LLVMModule)
+                        -> (LLVMValueRef, LLVMValueRef, LLVMValueRef) {
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
         LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
@@ -87,11 +88,24 @@ unsafe fn add_main_init(module: &mut LLVMModule) -> (LLVMValueRef, LLVMValueRef)
                                   main_type);
     
     let context = LLVMGetGlobalContext();
+
     let bb = LLVMAppendBasicBlockInContext(
         context, main_fn, b"entry\0".as_ptr() as *const _);
     let cells = add_cells_init(&mut *module, &mut *bb);
 
-    (main_fn, cells)
+    let builder = LLVMCreateBuilderInContext(context);
+    LLVMPositionBuilderAtEnd(builder, bb);
+    
+    // int cell_index = 0;
+    let cell_index_ptr = LLVMBuildAlloca(
+        builder, LLVMInt32Type(),
+        b"cell_index_ptr\0".as_ptr() as *const _);
+    let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
+    LLVMBuildStore(builder, zero, cell_index_ptr);
+
+    LLVMDisposeBuilder(builder);
+
+    (main_fn, cells, cell_index_ptr)
 }
 
 /// Add prologue to main function.
@@ -112,10 +126,10 @@ unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: L
     LLVMDisposeBuilder(builder);
 }
 
-pub unsafe fn dump_ir(module_name: &str) -> CString {
+pub unsafe fn compile_to_ir(module_name: &str) -> CString {
     let module = create_module(module_name);
 
-    let (main_fn, cells) = add_main_init(&mut *module);
+    let (main_fn, cells, cell_index_ptr) = add_main_init(&mut *module);
     add_main_cleanup(&mut *module, main_fn, cells);
     
     let llvm_ir = LLVMPrintModuleToString(module);
