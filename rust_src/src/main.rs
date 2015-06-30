@@ -46,9 +46,10 @@ fn main() {
             Ok(src) => {
                 let instrs = bfir::parse(&src);
                 if dump_bf_ir {
-                    for instr in instrs {
+                    for instr in &instrs {
                         println!("{}", instr);
                     }
+                    return
                 }
 
                 unsafe {
