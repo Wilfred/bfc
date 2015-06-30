@@ -1,3 +1,5 @@
+#![feature(cstr_memory)]
+
 extern crate llvm_sys;
 
 use std::env;
@@ -34,9 +36,15 @@ fn main() {
                     }
                 }
 
-                if dump_llvm {
-                    unsafe {
-                        llvm::dump_ir(&file_name);
+                unsafe {
+                    let llvm_ir_raw = llvm::dump_ir(&file_name);
+                    let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
+
+                    if dump_llvm {
+                        println!("{}", llvm_ir);
+                    } else {
+                        // TODO: write to a temp file then call llc.
+                        println!("Write!");
                     }
                 }
 

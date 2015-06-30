@@ -82,7 +82,7 @@ unsafe fn add_cells_cleanup(module: &mut LLVMModule, bb: &mut LLVMBasicBlock, ce
     LLVMDisposeBuilder(builder);
 }
 
-pub unsafe fn dump_ir(module_name: &str) {
+pub unsafe fn dump_ir(module_name: &str) -> CString {
     let c_mod_name = CString::new(module_name).unwrap();
     
     let context = LLVMGetGlobalContext();
@@ -102,7 +102,9 @@ pub unsafe fn dump_ir(module_name: &str) {
     add_cells_cleanup(&mut *module, &mut *bb, cells);
     
     // Dump the module as IR to stdout.
-    LLVMDumpModule(module);
+    let llvm_ir = LLVMPrintModuleToString(module);
 
     LLVMDisposeModule(module);
+
+    CString::from_ptr(llvm_ir)
 }
