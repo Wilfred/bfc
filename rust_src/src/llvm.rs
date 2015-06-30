@@ -100,7 +100,7 @@ unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: L
     
     // free(cells);
     let mut free_args = vec![cells];
-    add_function_call(module, &mut *bb, "free", &mut free_args, "_");
+    add_function_call(module, &mut *bb, "free", &mut free_args, "");
 
     let context = LLVMGetGlobalContext();
     let builder = LLVMCreateBuilderInContext(context);
