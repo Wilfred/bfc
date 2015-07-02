@@ -4,6 +4,8 @@ use llvm_sys::prelude::*;
 
 use std::ffi::CString;
 
+use bfir::Instruction;
+
 const LLVM_FALSE: LLVMBool = 0;
 
 unsafe fn add_function(module: &mut LLVMModule, fn_name: &str,
@@ -126,10 +128,41 @@ unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: L
     LLVMDisposeBuilder(builder);
 }
 
+unsafe fn compile_instr(instr: Instruction, module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
+                        cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
+    let context = LLVMGetGlobalContext();
+    let builder = LLVMCreateBuilderInContext(context);
+    LLVMPositionBuilderAtEnd(builder, bb);
+
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
+                                   b"cell_index\0".as_ptr() as *const _);
+
+    let mut indices = vec![cell_index];
+    let current_cell_ptr = LLVMBuildGEP(builder, cell_index_ptr, indices.as_mut_ptr(), indices.len() as u32,
+                                        b"current_cell_ptr\0".as_ptr() as *const _);
+    let cell_val = LLVMBuildLoad(builder, current_cell_ptr,
+                                 b"cell_value\0".as_ptr() as *const _);
+
+    if let Instruction::Increment(amount) = instr {
+        let increment_amount = LLVMConstInt(LLVMInt32Type(), amount as u64, LLVM_FALSE);
+        let new_cell_val = LLVMBuildAdd(builder, cell_val, increment_amount,
+                                        b"new_cell_value\0".as_ptr() as *const _);
+
+        LLVMBuildStore(builder, new_cell_val, current_cell_ptr);
+    }
+
+    LLVMDisposeBuilder(builder);
+}
+
 pub unsafe fn compile_to_ir(module_name: &str) -> CString {
     let module = create_module(module_name);
 
     let (main_fn, cells, cell_index_ptr) = add_main_init(&mut *module);
+    let bb = LLVMGetLastBasicBlock(main_fn);
+
+    compile_instr(Instruction::Increment(1), &mut *module, &mut *bb,
+                  cells, cell_index_ptr);
+    
     add_main_cleanup(&mut *module, main_fn, cells);
     
     let llvm_ir = LLVMPrintModuleToString(module);
