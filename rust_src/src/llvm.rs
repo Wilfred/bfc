@@ -138,7 +138,7 @@ unsafe fn compile_instr(instr: Instruction, module: &mut LLVMModule, bb: &mut LL
                                    b"cell_index\0".as_ptr() as *const _);
 
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cell_index_ptr, indices.as_mut_ptr(), indices.len() as u32,
+    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(), indices.len() as u32,
                                         b"current_cell_ptr\0".as_ptr() as *const _);
     let cell_val = LLVMBuildLoad(builder, current_cell_ptr,
                                  b"cell_value\0".as_ptr() as *const _);
