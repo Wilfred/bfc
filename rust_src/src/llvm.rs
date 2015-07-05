@@ -152,11 +152,31 @@ unsafe fn compile_increment(amount: i32, bb: &mut LLVMBasicBlock,
     LLVMDisposeBuilder(builder);
 }
 
+unsafe fn compile_ptr_increment(amount: i32, bb: &mut LLVMBasicBlock,
+                                cell_index_ptr: LLVMValueRef) {
+    let context = LLVMGetGlobalContext();
+    let builder = LLVMCreateBuilderInContext(context);
+    LLVMPositionBuilderAtEnd(builder, bb);
+
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
+                                   b"cell_index\0".as_ptr() as *const _);
+
+    let increment_amount = LLVMConstInt(LLVMInt32Type(), amount as u64, LLVM_FALSE);
+    let new_cell_index = LLVMBuildAdd(builder, cell_index, increment_amount,
+                                      b"new_cell_index\0".as_ptr() as *const _);
+
+    LLVMBuildStore(builder, new_cell_index, cell_index_ptr);
+
+    LLVMDisposeBuilder(builder);
+}
+
 unsafe fn compile_instr(instr: Instruction, module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
                         cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
     match instr {
         Instruction::Increment(amount) =>
             compile_increment(amount, bb, cells, cell_index_ptr),
+        Instruction::PointerIncrement(amount) =>
+            compile_ptr_increment(amount, bb, cell_index_ptr),
         _ => unreachable!()
     }
 }
@@ -167,7 +187,7 @@ pub unsafe fn compile_to_ir(module_name: &str) -> CString {
     let (main_fn, cells, cell_index_ptr) = add_main_init(&mut *module);
     let bb = LLVMGetLastBasicBlock(main_fn);
 
-    compile_instr(Instruction::Increment(1), &mut *module, &mut *bb,
+    compile_instr(Instruction::PointerIncrement(1), &mut *module, &mut *bb,
                   cells, cell_index_ptr);
     
     add_main_cleanup(&mut *module, main_fn, cells);
