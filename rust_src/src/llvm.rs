@@ -193,6 +193,27 @@ unsafe fn compile_read(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
     LLVMDisposeBuilder(builder);
 }
 
+unsafe fn compile_write(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
+                        cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
+    let context = LLVMGetGlobalContext();
+    let builder = LLVMCreateBuilderInContext(context);
+    LLVMPositionBuilderAtEnd(builder, bb);
+
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
+                                   b"cell_index\0".as_ptr() as *const _);
+
+    let mut indices = vec![cell_index];
+    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(), indices.len() as u32,
+                                        b"current_cell_ptr\0".as_ptr() as *const _);
+    let cell_val = LLVMBuildLoad(builder, current_cell_ptr,
+                                 b"cell_value\0".as_ptr() as *const _);
+    
+    let mut putchar_args = vec![cell_val];
+    add_function_call(module, bb, "putchar", &mut putchar_args, "");
+
+    LLVMDisposeBuilder(builder);
+}
+
 unsafe fn compile_instr(instr: Instruction, module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
                         cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
     match instr {
@@ -202,6 +223,8 @@ unsafe fn compile_instr(instr: Instruction, module: &mut LLVMModule, bb: &mut LL
             compile_ptr_increment(amount, bb, cell_index_ptr),
         Instruction::Read =>
             compile_read(module, bb, cells, cell_index_ptr),
+        Instruction::Write =>
+            compile_write(module, bb, cells, cell_index_ptr),
         _ => unreachable!()
     }
 }
@@ -212,7 +235,7 @@ pub unsafe fn compile_to_ir(module_name: &str) -> CString {
     let (main_fn, cells, cell_index_ptr) = add_main_init(&mut *module);
     let bb = LLVMGetLastBasicBlock(main_fn);
 
-    compile_instr(Instruction::Read, &mut *module, &mut *bb,
+    compile_instr(Instruction::Write, &mut *module, &mut *bb,
                   cells, cell_index_ptr);
     
     add_main_cleanup(&mut *module, main_fn, cells);
