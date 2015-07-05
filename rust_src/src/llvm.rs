@@ -204,18 +204,21 @@ unsafe fn compile_write(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
     LLVMDisposeBuilder(builder);
 }
 
-unsafe fn compile_instr(instr: Instruction, module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
-                        cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
-    match instr {
-        Instruction::Increment(amount) =>
-            compile_increment(amount, bb, cells, cell_index_ptr),
-        Instruction::PointerIncrement(amount) =>
-            compile_ptr_increment(amount, bb, cell_index_ptr),
-        Instruction::Read =>
-            compile_read(module, bb, cells, cell_index_ptr),
-        Instruction::Write =>
-            compile_write(module, bb, cells, cell_index_ptr),
-        _ => unreachable!()
+unsafe fn compile_instrs(instrs: &Vec<Instruction>, module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
+                         cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
+
+    for instr in instrs {
+        match instr {
+            &Instruction::Increment(amount) =>
+                compile_increment(amount, bb, cells, cell_index_ptr),
+            &Instruction::PointerIncrement(amount) =>
+                compile_ptr_increment(amount, bb, cell_index_ptr),
+            &Instruction::Read =>
+                compile_read(module, bb, cells, cell_index_ptr),
+            &Instruction::Write =>
+                compile_write(module, bb, cells, cell_index_ptr),
+            _ => unreachable!()
+        }
     }
 }
 
@@ -225,8 +228,8 @@ pub unsafe fn compile_to_ir(module_name: &str) -> CString {
     let (main_fn, cells, cell_index_ptr) = add_main_init(&mut *module);
     let bb = LLVMGetLastBasicBlock(main_fn);
 
-    compile_instr(Instruction::Write, &mut *module, &mut *bb,
-                  cells, cell_index_ptr);
+    let instrs = vec![Instruction::Write];
+    compile_instrs(&instrs, &mut *module, &mut *bb, cells, cell_index_ptr);
     
     add_main_cleanup(&mut *module, main_fn, cells);
     
