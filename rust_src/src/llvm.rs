@@ -39,9 +39,7 @@ unsafe fn add_c_declarations(module: &mut LLVMModule) {
 unsafe fn add_function_call(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
                             fn_name: &str, args: &mut Vec<LLVMValueRef>,
                             name: &str) -> LLVMValueRef {
-    let context = LLVMGetGlobalContext();
-
-    let builder = LLVMCreateBuilderInContext(context);
+    let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
     let c_fn_name = CString::new(fn_name).unwrap();
@@ -89,13 +87,10 @@ unsafe fn add_main_init(module: &mut LLVMModule)
     let main_fn = LLVMAddFunction(module, b"main\0".as_ptr() as *const _,
                                   main_type);
     
-    let context = LLVMGetGlobalContext();
-
-    let bb = LLVMAppendBasicBlockInContext(
-        context, main_fn, b"entry\0".as_ptr() as *const _);
+    let bb = LLVMAppendBasicBlock(main_fn, b"entry\0".as_ptr() as *const _);
     let cells = add_cells_init(&mut *module, &mut *bb);
 
-    let builder = LLVMCreateBuilderInContext(context);
+    let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
     
     // int cell_index = 0;
@@ -118,8 +113,7 @@ unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: L
     let mut free_args = vec![cells];
     add_function_call(module, &mut *bb, "free", &mut free_args, "");
 
-    let context = LLVMGetGlobalContext();
-    let builder = LLVMCreateBuilderInContext(context);
+    let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
     let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
@@ -130,8 +124,7 @@ unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: L
 
 unsafe fn compile_increment(amount: i32, bb: &mut LLVMBasicBlock,
                             cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
-    let context = LLVMGetGlobalContext();
-    let builder = LLVMCreateBuilderInContext(context);
+    let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
     let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
@@ -154,8 +147,7 @@ unsafe fn compile_increment(amount: i32, bb: &mut LLVMBasicBlock,
 
 unsafe fn compile_ptr_increment(amount: i32, bb: &mut LLVMBasicBlock,
                                 cell_index_ptr: LLVMValueRef) {
-    let context = LLVMGetGlobalContext();
-    let builder = LLVMCreateBuilderInContext(context);
+    let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
     let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
@@ -172,8 +164,7 @@ unsafe fn compile_ptr_increment(amount: i32, bb: &mut LLVMBasicBlock,
 
 unsafe fn compile_read(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
                        cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
-    let context = LLVMGetGlobalContext();
-    let builder = LLVMCreateBuilderInContext(context);
+    let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
     let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
@@ -195,8 +186,7 @@ unsafe fn compile_read(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
 
 unsafe fn compile_write(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
                         cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
-    let context = LLVMGetGlobalContext();
-    let builder = LLVMCreateBuilderInContext(context);
+    let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
     let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
