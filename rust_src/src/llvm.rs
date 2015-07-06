@@ -182,8 +182,7 @@ unsafe fn compile_write(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
-                                   b"cell_index\0".as_ptr() as *const _);
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, cstr("cell_index"));
 
     let mut indices = vec![cell_index];
     let current_cell_ptr = LLVMBuildGEP(
