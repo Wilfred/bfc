@@ -196,7 +196,7 @@ unsafe fn compile_write<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
     let current_cell_ptr = LLVMBuildGEP(
         builder, cells, indices.as_mut_ptr(), indices.len() as u32,
         cstr("current_cell_ptr"));
-    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_vallue"));
+    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_value"));
     
     let mut putchar_args = vec![cell_val];
     add_function_call(module, bb, "putchar", &mut putchar_args, "");
