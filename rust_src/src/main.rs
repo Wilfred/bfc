@@ -53,7 +53,7 @@ fn main() {
                 }
 
                 unsafe {
-                    let llvm_ir_raw = llvm::compile_to_ir(&file_path);
+                    let llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs);
 
                     if dump_llvm {
                         let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());

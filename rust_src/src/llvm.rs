@@ -273,16 +273,16 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut LLVMModule, bb: &'
     }
 }
 
-pub unsafe fn compile_to_ir(module_name: &str) -> CString {
+pub unsafe fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>) -> CString {
     let module = create_module(module_name);
 
     let (main_fn, cells, cell_index_ptr) = add_main_init(&mut *module);
-    let bb = LLVMGetLastBasicBlock(main_fn);
+    let mut bb = LLVMGetLastBasicBlock(main_fn);
 
-    let loop_body = vec![Instruction::Read];
-    let instr = Instruction::Loop(loop_body);
-    compile_instr(&instr, &mut *module, &mut *bb, main_fn,
-                  cells, cell_index_ptr);
+    for instr in instrs {
+        bb = compile_instr(instr, &mut *module, &mut *bb, main_fn,
+                           cells, cell_index_ptr);
+    }
     
     add_main_cleanup(&mut *module, main_fn, cells);
     
