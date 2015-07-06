@@ -234,7 +234,7 @@ unsafe fn compile_loop<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
     let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_value"));
 
     // TODO: factor out a function for this.
-    let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
+    let zero = LLVMConstInt(LLVMInt8Type(), 0, LLVM_FALSE);
     let cell_val_is_zero = LLVMBuildICmp(builder, LLVMIntPredicate::LLVMIntEQ,
                                          zero, cell_val, cstr("cell_value_is_zero"));
     LLVMBuildCondBr(builder, cell_val_is_zero, loop_body_bb, loop_after);
