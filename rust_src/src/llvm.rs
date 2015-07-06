@@ -240,7 +240,7 @@ unsafe fn compile_loop<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
     let zero = LLVMConstInt(LLVMInt8Type(), 0, LLVM_FALSE);
     let cell_val_is_zero = LLVMBuildICmp(builder, LLVMIntPredicate::LLVMIntEQ,
                                          zero, cell_val, cstr("cell_value_is_zero"));
-    LLVMBuildCondBr(builder, cell_val_is_zero, loop_body_bb, loop_after);
+    LLVMBuildCondBr(builder, cell_val_is_zero, loop_after, loop_body_bb);
 
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
