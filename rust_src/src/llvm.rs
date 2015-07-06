@@ -1,5 +1,5 @@
 use llvm_sys::core::*;
-use llvm_sys::{LLVMModule,LLVMBasicBlock};
+use llvm_sys::{LLVMModule,LLVMBasicBlock,LLVMIntPredicate};
 use llvm_sys::prelude::*;
 
 use std::ffi::CString;
@@ -119,8 +119,9 @@ unsafe fn add_main_cleanup(module: &mut LLVMModule, main: LLVMValueRef, cells: L
     LLVMDisposeBuilder(builder);
 }
 
-unsafe fn compile_increment(amount: i32, bb: &mut LLVMBasicBlock,
-                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
+unsafe fn compile_increment<'a>(amount: i32, bb: &'a mut LLVMBasicBlock,
+                                cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
+                                -> &'a mut LLVMBasicBlock {
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
@@ -138,10 +139,12 @@ unsafe fn compile_increment(amount: i32, bb: &mut LLVMBasicBlock,
     LLVMBuildStore(builder, new_cell_val, current_cell_ptr);
 
     LLVMDisposeBuilder(builder);
+    bb
 }
 
-unsafe fn compile_ptr_increment(amount: i32, bb: &mut LLVMBasicBlock,
-                                cell_index_ptr: LLVMValueRef) {
+unsafe fn compile_ptr_increment<'a>(amount: i32, bb: &'a mut LLVMBasicBlock,
+                                    cell_index_ptr: LLVMValueRef)
+                                    -> &'a mut LLVMBasicBlock {
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
@@ -154,10 +157,13 @@ unsafe fn compile_ptr_increment(amount: i32, bb: &mut LLVMBasicBlock,
     LLVMBuildStore(builder, new_cell_index, cell_index_ptr);
 
     LLVMDisposeBuilder(builder);
+
+    bb
 }
 
-unsafe fn compile_read(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
-                       cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
+unsafe fn compile_read<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
+                           cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
+                           -> &'a mut LLVMBasicBlock {
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
@@ -175,10 +181,12 @@ unsafe fn compile_read(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
     LLVMBuildStore(builder, input_byte, current_cell_ptr);
 
     LLVMDisposeBuilder(builder);
+    bb
 }
 
-unsafe fn compile_write(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
-                        cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
+unsafe fn compile_write<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
+                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
+                            -> &'a mut LLVMBasicBlock {
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
@@ -194,22 +202,68 @@ unsafe fn compile_write(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
     add_function_call(module, bb, "putchar", &mut putchar_args, "");
 
     LLVMDisposeBuilder(builder);
+    bb
 }
 
-unsafe fn compile_instrs(instrs: &Vec<Instruction>, module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
-                         cells: LLVMValueRef, cell_index_ptr: LLVMValueRef) {
+unsafe fn compile_loop<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
+                           main_fn: LLVMValueRef,
+                           cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
+                           -> &'a mut LLVMBasicBlock {
+    let builder = LLVMCreateBuilder();
 
-    for instr in instrs {
-        match instr {
-            &Instruction::Increment(amount) =>
-                compile_increment(amount, bb, cells, cell_index_ptr),
-            &Instruction::PointerIncrement(amount) =>
-                compile_ptr_increment(amount, bb, cell_index_ptr),
-            &Instruction::Read =>
-                compile_read(module, bb, cells, cell_index_ptr),
-            &Instruction::Write =>
-                compile_write(module, bb, cells, cell_index_ptr),
-            _ => unreachable!()
+    // First, we branch into the loop header from the previous basic
+    // block.
+    let loop_header = LLVMAppendBasicBlock(main_fn, cstr("loop_header"));
+    LLVMPositionBuilderAtEnd(builder, bb);
+    LLVMBuildBr(builder, loop_header);
+
+    let loop_body_bb = LLVMAppendBasicBlock(main_fn, cstr("loop_body"));
+    let loop_after = LLVMAppendBasicBlock(main_fn, cstr("loop_after"));
+
+    // loop_header:
+    //   %cell_value = ...
+    //   %cell_value_is_zero = icmp ...
+    //   br %cell_value_is_zero, %loop_after, %loop_body
+    LLVMPositionBuilderAtEnd(builder, loop_header);
+    // TODO: we do this several times, factor out duplication.
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, cstr("cell_index"));
+    let mut indices = vec![cell_index];
+    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+                                        indices.len() as u32, cstr("current_cell_ptr"));
+    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_value"));
+
+    // TODO: factor out a function for this.
+    let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
+    let cell_val_is_zero = LLVMBuildICmp(builder, LLVMIntPredicate::LLVMIntEQ,
+                                         zero, cell_val, cstr("cell_value_is_zero"));
+    LLVMBuildCondBr(builder, cell_val_is_zero, loop_body_bb, loop_after);
+
+    // recurse.
+
+    // When the loop is finished, jump back to the beginning of the
+    // loop.
+    LLVMPositionBuilderAtEnd(builder, loop_body_bb);
+    LLVMBuildBr(builder, loop_header);
+
+    LLVMDisposeBuilder(builder);
+    bb
+}
+
+unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
+                            main_fn: LLVMValueRef,
+                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
+                            -> &'a mut LLVMBasicBlock {
+    match instr {
+        &Instruction::Increment(amount) =>
+            compile_increment(amount, bb, cells, cell_index_ptr),
+        &Instruction::PointerIncrement(amount) =>
+            compile_ptr_increment(amount, bb, cell_index_ptr),
+        &Instruction::Read =>
+            compile_read(module, bb, cells, cell_index_ptr),
+        &Instruction::Write =>
+            compile_write(module, bb, cells, cell_index_ptr),
+        &Instruction::Loop(ref body) => {
+            compile_loop(module, bb, main_fn, cells, cell_index_ptr)
         }
     }
 }
@@ -220,8 +274,10 @@ pub unsafe fn compile_to_ir(module_name: &str) -> CString {
     let (main_fn, cells, cell_index_ptr) = add_main_init(&mut *module);
     let bb = LLVMGetLastBasicBlock(main_fn);
 
-    let instrs = vec![Instruction::Write];
-    compile_instrs(&instrs, &mut *module, &mut *bb, cells, cell_index_ptr);
+    let loop_body = vec![Instruction::Read];
+    let instr = Instruction::Loop(loop_body);
+    compile_instr(&instr, &mut *module, &mut *bb, main_fn,
+                  cells, cell_index_ptr);
     
     add_main_cleanup(&mut *module, main_fn, cells);
     
