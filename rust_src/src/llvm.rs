@@ -197,8 +197,11 @@ unsafe fn compile_write<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
         builder, cells, indices.as_mut_ptr(), indices.len() as u32,
         cstr("current_cell_ptr"));
     let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_value"));
+
+    let cell_val_as_char = LLVMBuildSExt(builder, cell_val, LLVMInt32Type(),
+                                         cstr("cell_val_as_char"));
     
-    let mut putchar_args = vec![cell_val];
+    let mut putchar_args = vec![cell_val_as_char];
     add_function_call(module, bb, "putchar", &mut putchar_args, "");
 
     LLVMDisposeBuilder(builder);
