@@ -95,7 +95,7 @@ unsafe fn add_main_init(module: &mut LLVMModule)
     let cell_index_ptr = LLVMBuildAlloca(
         builder, LLVMInt32Type(), cstr("cell_index_ptr"));
     let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
-    LLVMBuildStore(builder, cell_index_ptr, zero);
+    LLVMBuildStore(builder, zero, cell_index_ptr);
 
     LLVMDisposeBuilder(builder);
 
