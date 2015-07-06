@@ -206,6 +206,7 @@ unsafe fn compile_write<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
 }
 
 unsafe fn compile_loop<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
+                           loop_body: &Vec<Instruction>,
                            main_fn: LLVMValueRef,
                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                            -> &'a mut LLVMBasicBlock {
@@ -217,7 +218,7 @@ unsafe fn compile_loop<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
     LLVMPositionBuilderAtEnd(builder, bb);
     LLVMBuildBr(builder, loop_header);
 
-    let loop_body_bb = LLVMAppendBasicBlock(main_fn, cstr("loop_body"));
+    let mut loop_body_bb = LLVMAppendBasicBlock(main_fn, cstr("loop_body"));
     let loop_after = LLVMAppendBasicBlock(main_fn, cstr("loop_after"));
 
     // loop_header:
@@ -238,7 +239,11 @@ unsafe fn compile_loop<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
                                          zero, cell_val, cstr("cell_value_is_zero"));
     LLVMBuildCondBr(builder, cell_val_is_zero, loop_body_bb, loop_after);
 
-    // recurse.
+    // Recursively compile instructions in the loop body.
+    for instr in loop_body {
+        loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb, main_fn, cells,
+                                     cell_index_ptr);
+    }
 
     // When the loop is finished, jump back to the beginning of the
     // loop.
@@ -263,7 +268,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut LLVMModule, bb: &'
         &Instruction::Write =>
             compile_write(module, bb, cells, cell_index_ptr),
         &Instruction::Loop(ref body) => {
-            compile_loop(module, bb, main_fn, cells, cell_index_ptr)
+            compile_loop(module, bb, body, main_fn, cells, cell_index_ptr)
         }
     }
 }
