@@ -8,12 +8,17 @@ use bfir::Instruction;
 
 const LLVM_FALSE: LLVMBool = 0;
 
+/// Convert a Rust string to a C char pointer.
+fn cstr(s: &str) -> *const i8 {
+    let cstring = CString::new(s).unwrap();
+    cstring.to_bytes_with_nul().as_ptr() as *const _
+}
+
 unsafe fn add_function(module: &mut LLVMModule, fn_name: &str,
                        args: &mut Vec<LLVMTypeRef>, ret_type: LLVMTypeRef) {
     let fn_type = 
         LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, LLVM_FALSE);
-    let c_fn_name = CString::new(fn_name).unwrap();
-    LLVMAddFunction(module, c_fn_name.to_bytes_with_nul().as_ptr() as *const _, fn_type);
+    LLVMAddFunction(module, cstr(fn_name), fn_type);
 }
 
 unsafe fn add_c_declarations(module: &mut LLVMModule) {
@@ -42,14 +47,10 @@ unsafe fn add_function_call(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
-    let c_fn_name = CString::new(fn_name).unwrap();
-    let function = LLVMGetNamedFunction(
-        module, c_fn_name.to_bytes_with_nul().as_ptr() as *const _);
+    let function = LLVMGetNamedFunction(module, cstr(fn_name));
 
-    let c_name = CString::new(name).unwrap();
-    let result = LLVMBuildCall(
-        builder, function, args.as_mut_ptr(),
-        args.len() as u32, c_name.to_bytes_with_nul().as_ptr() as *const _);
+    let result = LLVMBuildCall(builder, function, args.as_mut_ptr(),
+                               args.len() as u32, cstr(name));
 
     LLVMDisposeBuilder(builder);
     result
@@ -68,10 +69,7 @@ unsafe fn add_cells_init(module: &mut LLVMModule, bb: &mut LLVMBasicBlock) -> LL
 }
 
 unsafe fn create_module(module_name: &str) -> *mut LLVMModule {
-    let c_mod_name = CString::new(module_name).unwrap();
-
-    let module = LLVMModuleCreateWithName(
-        c_mod_name.to_bytes_with_nul().as_ptr() as *const _);
+    let module = LLVMModuleCreateWithName(cstr(module_name));
     add_c_declarations(&mut *module);
 
     module
@@ -84,10 +82,10 @@ unsafe fn add_main_init(module: &mut LLVMModule)
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
         LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
-    let main_fn = LLVMAddFunction(module, b"main\0".as_ptr() as *const _,
+    let main_fn = LLVMAddFunction(module, cstr("main"),
                                   main_type);
     
-    let bb = LLVMAppendBasicBlock(main_fn, b"entry\0".as_ptr() as *const _);
+    let bb = LLVMAppendBasicBlock(main_fn, cstr("entry"));
     let cells = add_cells_init(&mut *module, &mut *bb);
 
     let builder = LLVMCreateBuilder();
@@ -95,8 +93,7 @@ unsafe fn add_main_init(module: &mut LLVMModule)
     
     // int cell_index = 0;
     let cell_index_ptr = LLVMBuildAlloca(
-        builder, LLVMInt32Type(),
-        b"cell_index_ptr\0".as_ptr() as *const _);
+        builder, LLVMInt32Type(), cstr("cell_index_ptr"));
     let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
     LLVMBuildStore(builder, zero, cell_index_ptr);
 
@@ -127,18 +124,16 @@ unsafe fn compile_increment(amount: i32, bb: &mut LLVMBasicBlock,
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
-                                   b"cell_index\0".as_ptr() as *const _);
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, cstr("cell_index"));
 
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(), indices.len() as u32,
-                                        b"current_cell_ptr\0".as_ptr() as *const _);
-    let cell_val = LLVMBuildLoad(builder, current_cell_ptr,
-                                 b"cell_value\0".as_ptr() as *const _);
+    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+                                        indices.len() as u32, cstr("current_cell_ptr"));
+    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_value"));
 
     let increment_amount = LLVMConstInt(LLVMInt32Type(), amount as u64, LLVM_FALSE);
     let new_cell_val = LLVMBuildAdd(builder, cell_val, increment_amount,
-                                    b"new_cell_value\0".as_ptr() as *const _);
+                                    cstr("new_cell_value"));
 
     LLVMBuildStore(builder, new_cell_val, current_cell_ptr);
 
@@ -150,12 +145,11 @@ unsafe fn compile_ptr_increment(amount: i32, bb: &mut LLVMBasicBlock,
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
-                                   b"cell_index\0".as_ptr() as *const _);
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, cstr("cell_index"));
 
     let increment_amount = LLVMConstInt(LLVMInt32Type(), amount as u64, LLVM_FALSE);
     let new_cell_index = LLVMBuildAdd(builder, cell_index, increment_amount,
-                                      b"new_cell_index\0".as_ptr() as *const _);
+                                      cstr("new_cell_index"));
 
     LLVMBuildStore(builder, new_cell_index, cell_index_ptr);
 
@@ -167,17 +161,16 @@ unsafe fn compile_read(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
 
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr,
-                                   b"cell_index\0".as_ptr() as *const _);
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, cstr("cell_index"));
 
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(), indices.len() as u32,
-                                        b"current_cell_ptr\0".as_ptr() as *const _);
+    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+                                        indices.len() as u32, cstr("current_cell_ptr"));
 
     let mut getchar_args = vec![];
     let input_char = add_function_call(module, bb, "getchar", &mut getchar_args, "input_char");
     let input_byte = LLVMBuildTrunc(builder, input_char, LLVMInt8Type(),
-                                    b"input_byte\0".as_ptr() as *const _);
+                                    cstr("input_byte"));
 
     LLVMBuildStore(builder, input_byte, current_cell_ptr);
 
@@ -193,10 +186,10 @@ unsafe fn compile_write(module: &mut LLVMModule, bb: &mut LLVMBasicBlock,
                                    b"cell_index\0".as_ptr() as *const _);
 
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(), indices.len() as u32,
-                                        b"current_cell_ptr\0".as_ptr() as *const _);
-    let cell_val = LLVMBuildLoad(builder, current_cell_ptr,
-                                 b"cell_value\0".as_ptr() as *const _);
+    let current_cell_ptr = LLVMBuildGEP(
+        builder, cells, indices.as_mut_ptr(), indices.len() as u32,
+        cstr("current_cell_ptr"));
+    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_vallue"));
     
     let mut putchar_args = vec![cell_val];
     add_function_call(module, bb, "putchar", &mut putchar_args, "");
