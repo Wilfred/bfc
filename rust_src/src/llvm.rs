@@ -254,7 +254,7 @@ unsafe fn compile_loop<'a>(module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
     LLVMBuildBr(builder, loop_header);
 
     LLVMDisposeBuilder(builder);
-    bb
+    &mut *loop_after
 }
 
 unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut LLVMModule, bb: &'a mut LLVMBasicBlock,
