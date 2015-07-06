@@ -132,7 +132,7 @@ unsafe fn compile_increment<'a>(amount: i32, bb: &'a mut LLVMBasicBlock,
                                         indices.len() as u32, cstr("current_cell_ptr"));
     let cell_val = LLVMBuildLoad(builder, current_cell_ptr, cstr("cell_value"));
 
-    let increment_amount = LLVMConstInt(LLVMInt32Type(), amount as u64, LLVM_FALSE);
+    let increment_amount = LLVMConstInt(LLVMInt8Type(), amount as u64, LLVM_FALSE);
     let new_cell_val = LLVMBuildAdd(builder, cell_val, increment_amount,
                                     cstr("new_cell_value"));
 
