@@ -1,6 +1,6 @@
 use bfir::Instruction;
 
-fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
     let mut previous: Option<Instruction> = None;
 
@@ -11,7 +11,11 @@ fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
                 // and the current instruction was an increment:
                 if let Instruction::Increment(amount) = instr {
                     // then combine the two instructions.
-                    previous = Some(Instruction::Increment(amount + prev_amount));
+                    if amount + prev_amount == 0 {
+                        previous = None
+                    } else {
+                        previous = Some(Instruction::Increment(amount + prev_amount));
+                    }
                 } else {
                     // Otherwise, iterate as normal.
                     result.push(Instruction::Increment(prev_amount));
@@ -69,5 +73,12 @@ fn combine_increments_nested() {
     let expected = vec![Instruction::Loop(vec![
         Instruction::Increment(2)])];
     assert_eq!(combine_increments(initial), expected);
+}
+
+#[test]
+fn combine_increments_remove_redundant() {
+    let initial = vec![Instruction::Increment(-1),
+                       Instruction::Increment(1)];
+    assert_eq!(combine_increments(initial), vec![]);
 }
 
