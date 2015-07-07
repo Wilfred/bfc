@@ -10,6 +10,7 @@ use std::path::Path;
 
 mod bfir;
 mod llvm;
+mod optimize;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents.
