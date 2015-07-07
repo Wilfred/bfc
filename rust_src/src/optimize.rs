@@ -1,7 +1,7 @@
 use bfir::Instruction;
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    combine_increments(instrs)
+    combine_ptr_increments(combine_increments(instrs))
 }
 
 /// Combine consecutive increments into a single increment
@@ -88,3 +88,84 @@ fn combine_increments_remove_redundant() {
     assert_eq!(combine_increments(initial), vec![]);
 }
 
+fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut result = vec![];
+    let mut previous: Option<Instruction> = None;
+
+    for instr in instrs {
+        match previous {
+            // If the previous instruction was an increment:
+            Some(Instruction::PointerIncrement(prev_amount)) => {
+                // and the current instruction was an increment:
+                if let Instruction::PointerIncrement(amount) = instr {
+                    // then combine the two instructions.
+                    if amount + prev_amount == 0 {
+                        previous = None
+                    } else {
+                        previous = Some(Instruction::PointerIncrement(amount + prev_amount));
+                    }
+                } else {
+                    // Otherwise, iterate as normal.
+                    result.push(Instruction::PointerIncrement(prev_amount));
+                    previous = Some(instr);
+                }
+            },
+            Some(prev_instr) => {
+                result.push(prev_instr);
+                previous = Some(instr);
+            }
+            // First iteration.
+            None => {
+                previous = Some(instr);
+            }
+        }
+    }
+    if let Some(instr) = previous {
+        result.push(instr);
+    }
+
+    // Combine increments in nested loops too.
+    result.into_iter().map(|instr| {
+        match instr {
+            Instruction::Loop(body) => {
+                Instruction::Loop(combine_ptr_increments(body))
+            },
+            i => i
+        }
+    }).collect()
+}
+
+#[test]
+fn combine_ptr_increments_flat() {
+    let initial = vec![Instruction::PointerIncrement(1),
+                       Instruction::PointerIncrement(1)];
+    let expected = vec![Instruction::PointerIncrement(2)];
+    assert_eq!(combine_ptr_increments(initial), expected);
+}
+
+#[test]
+fn combine_ptr_increments_unrelated() {
+    let initial = vec![Instruction::PointerIncrement(1),
+                       Instruction::Increment(1),
+                       Instruction::PointerIncrement(1),
+                       Instruction::Write];
+    let expected = initial.clone();
+    assert_eq!(combine_ptr_increments(initial), expected);
+}
+
+#[test]
+fn combine_ptr_increments_nested() {
+    let initial = vec![Instruction::Loop(vec![
+        Instruction::PointerIncrement(1),
+        Instruction::PointerIncrement(1)])];
+    let expected = vec![Instruction::Loop(vec![
+        Instruction::PointerIncrement(2)])];
+    assert_eq!(combine_ptr_increments(initial), expected);
+}
+
+#[test]
+fn combine_ptr_increments_remove_redundant() {
+    let initial = vec![Instruction::PointerIncrement(-1),
+                       Instruction::PointerIncrement(1)];
+    assert_eq!(combine_ptr_increments(initial), vec![]);
+}
