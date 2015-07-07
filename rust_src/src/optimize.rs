@@ -32,7 +32,15 @@ fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         result.push(instr);
     }
 
-    result
+    // Combine increments in nested loops too.
+    result.into_iter().map(|instr| {
+        match instr {
+            Instruction::Loop(body) => {
+                Instruction::Loop(combine_increments(body))
+            },
+            i => i
+        }
+    }).collect()
 }
 
 #[test]
@@ -52,3 +60,14 @@ fn combine_increments_unrelated() {
     let expected = initial.clone();
     assert_eq!(combine_increments(initial), expected);
 }
+
+#[test]
+fn combine_increments_nested() {
+    let initial = vec![Instruction::Loop(vec![
+        Instruction::Increment(1),
+        Instruction::Increment(1)])];
+    let expected = vec![Instruction::Loop(vec![
+        Instruction::Increment(2)])];
+    assert_eq!(combine_increments(initial), expected);
+}
+
