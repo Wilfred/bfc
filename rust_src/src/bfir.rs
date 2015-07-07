@@ -140,14 +140,14 @@ fn parse_write() {
 
 #[test]
 fn parse_empty_loop() {
-    let expected = [Instruction::Loop(Box::new(vec![]))];
+    let expected = [Instruction::Loop(vec![])];
     assert_eq!(parse("[]"), expected);
 }
 
 #[test]
 fn parse_simple_loop() {
     let loop_body = vec![Instruction::Increment(1)];
-    let expected = [Instruction::Loop(Box::new(loop_body))];
+    let expected = [Instruction::Loop(loop_body)];
     assert_eq!(parse("[+]"), expected);
 }
 
@@ -155,7 +155,7 @@ fn parse_simple_loop() {
 fn parse_complex_loop() {
     let loop_body = vec![Instruction::Read, Instruction::Increment(1)];
     let expected = [Instruction::Write,
-                    Instruction::Loop(Box::new(loop_body)),
+                    Instruction::Loop(loop_body),
                     Instruction::Increment(-1)];
     assert_eq!(parse(".[,+]-"), expected);
 }
