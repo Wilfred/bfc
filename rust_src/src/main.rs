@@ -47,7 +47,7 @@ fn main() {
             Ok(src) => {
                 let mut instrs = bfir::parse(&src);
                 // TODO: allow users to specify optimisation level.
-                instrs = optimize::combine_increments(instrs);
+                instrs = optimize::optimize(instrs);
 
                 if dump_bf_ir {
                     for instr in &instrs {

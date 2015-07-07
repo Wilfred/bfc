@@ -1,6 +1,12 @@
 use bfir::Instruction;
 
-pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    combine_increments(instrs)
+}
+
+/// Combine consecutive increments into a single increment
+/// instruction.
+fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
     let mut previous: Option<Instruction> = None;
 
