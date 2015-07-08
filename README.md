@@ -65,7 +65,7 @@ implement at the BFC IR level.
 
 ### Combining Instructions
 
-We combine successive increments/decrements (currently excluding loop bodies).
+We combine successive increments/decrements:
 
 ```
    Compile             Combine
