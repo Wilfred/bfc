@@ -34,6 +34,7 @@ fn ll_file_name(bf_file_name: &str) -> String {
     name_parts.connect(".")
 }
 
+#[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args: Vec<_> = env::args().collect();
     if args.len() > 1 {
