@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use bfir::Instruction;
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -7,43 +9,24 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Combine consecutive increments into a single increment
 /// instruction.
 fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let mut result = vec![];
-    let mut previous: Option<Instruction> = None;
-
-    for instr in instrs {
-        match previous {
-            // If the previous instruction was an increment:
-            Some(Instruction::Increment(prev_amount)) => {
-                // and the current instruction was an increment:
-                if let Instruction::Increment(amount) = instr {
-                    // then combine the two instructions.
-                    if amount + prev_amount == 0 {
-                        previous = None
-                    } else {
-                        previous = Some(Instruction::Increment(amount + prev_amount));
-                    }
-                } else {
-                    // Otherwise, iterate as normal.
-                    result.push(Instruction::Increment(prev_amount));
-                    previous = Some(instr);
-                }
-            },
-            Some(prev_instr) => {
-                result.push(prev_instr);
-                previous = Some(instr);
-            }
-            // First iteration.
-            None => {
-                previous = Some(instr);
+    instrs.into_iter().coalesce(|prev_instr, instr| {
+        // Collapse consecutive increments.
+        if let (Instruction::Increment(prev_amount), Instruction::Increment(amount)) = (prev_instr.clone(), instr.clone()) {
+            Ok(Instruction::Increment(amount + prev_amount))
+        } else {
+            Err((prev_instr, instr))
+        }
+    }).filter(|instr| {
+        // Remove any increments of 0.
+        if let &Instruction::Increment(amount) = instr {
+            println!("amount: {}", amount);
+            if amount == 0 {
+                return false;
             }
         }
-    }
-    if let Some(instr) = previous {
-        result.push(instr);
-    }
-
-    // Combine increments in nested loops too.
-    result.into_iter().map(|instr| {
+        true
+    }).map(|instr| {
+        // Combine increments in nested loops too.
         match instr {
             Instruction::Loop(body) => {
                 Instruction::Loop(combine_increments(body))
@@ -89,43 +72,23 @@ fn combine_increments_remove_redundant() {
 }
 
 fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let mut result = vec![];
-    let mut previous: Option<Instruction> = None;
-
-    for instr in instrs {
-        match previous {
-            // If the previous instruction was an increment:
-            Some(Instruction::PointerIncrement(prev_amount)) => {
-                // and the current instruction was an increment:
-                if let Instruction::PointerIncrement(amount) = instr {
-                    // then combine the two instructions.
-                    if amount + prev_amount == 0 {
-                        previous = None
-                    } else {
-                        previous = Some(Instruction::PointerIncrement(amount + prev_amount));
-                    }
-                } else {
-                    // Otherwise, iterate as normal.
-                    result.push(Instruction::PointerIncrement(prev_amount));
-                    previous = Some(instr);
-                }
-            },
-            Some(prev_instr) => {
-                result.push(prev_instr);
-                previous = Some(instr);
-            }
-            // First iteration.
-            None => {
-                previous = Some(instr);
+    instrs.into_iter().coalesce(|prev_instr, instr| {
+        // Collapse consecutive increments.
+        if let (Instruction::PointerIncrement(prev_amount), Instruction::PointerIncrement(amount)) = (prev_instr.clone(), instr.clone()) {
+            Ok(Instruction::PointerIncrement(amount + prev_amount))
+        } else {
+            Err((prev_instr, instr))
+        }
+    }).filter(|instr| {
+        // Remove any increments of 0.
+        if let &Instruction::PointerIncrement(amount) = instr {
+            if amount == 0 {
+                return false;
             }
         }
-    }
-    if let Some(instr) = previous {
-        result.push(instr);
-    }
-
-    // Combine increments in nested loops too.
-    result.into_iter().map(|instr| {
+        true
+    }).map(|instr| {
+        // Combine increments in nested loops too.
         match instr {
             Instruction::Loop(body) => {
                 Instruction::Loop(combine_ptr_increments(body))

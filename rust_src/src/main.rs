@@ -1,6 +1,7 @@
 #![feature(cstr_memory)]
 
 extern crate llvm_sys;
+extern crate itertools;
 
 use std::env;
 use std::fs::File;
