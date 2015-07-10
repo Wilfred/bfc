@@ -5,3 +5,4 @@ authors = ["Wilfred Hughes <me@wilfred.me.uk>"]
 
 [dependencies]
 llvm_sys = "0.1.3"
+itertools = "*"
