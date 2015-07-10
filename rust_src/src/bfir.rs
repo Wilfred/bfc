@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
     Increment(i32),
+    Set(i32),
     PointerIncrement(i32),
     Read,
     Write,

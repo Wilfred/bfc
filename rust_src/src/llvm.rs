@@ -142,6 +142,25 @@ unsafe fn compile_increment<'a>(amount: i32, bb: &'a mut LLVMBasicBlock,
     bb
 }
 
+unsafe fn compile_set<'a>(amount: i32, bb: &'a mut LLVMBasicBlock,
+                          cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
+                          -> &'a mut LLVMBasicBlock {
+    let builder = LLVMCreateBuilder();
+    LLVMPositionBuilderAtEnd(builder, bb);
+
+    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, cstr("cell_index"));
+
+    let mut indices = vec![cell_index];
+    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+                                        indices.len() as u32, cstr("current_cell_ptr"));
+
+    let new_cell_val = LLVMConstInt(LLVMInt8Type(), amount as u64, LLVM_FALSE);
+    LLVMBuildStore(builder, new_cell_val, current_cell_ptr);
+
+    LLVMDisposeBuilder(builder);
+    bb
+}
+
 unsafe fn compile_ptr_increment<'a>(amount: i32, bb: &'a mut LLVMBasicBlock,
                                     cell_index_ptr: LLVMValueRef)
                                     -> &'a mut LLVMBasicBlock {
@@ -264,6 +283,8 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut LLVMModule, bb: &'
     match instr {
         &Instruction::Increment(amount) =>
             compile_increment(amount, bb, cells, cell_index_ptr),
+        &Instruction::Set(amount) =>
+            compile_set(amount, bb, cells, cell_index_ptr),
         &Instruction::PointerIncrement(amount) =>
             compile_ptr_increment(amount, bb, cell_index_ptr),
         &Instruction::Read =>
