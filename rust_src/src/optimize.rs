@@ -40,21 +40,21 @@ fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 #[test]
 fn combine_increments_flat() {
-    let initial = parse("++");
+    let initial = parse("++").unwrap();
     let expected = vec![Instruction::Increment(2)];
     assert_eq!(combine_increments(initial), expected);
 }
 
 #[test]
 fn combine_increments_unrelated() {
-    let initial = parse("+>+.");
+    let initial = parse("+>+.").unwrap();
     let expected = initial.clone();
     assert_eq!(combine_increments(initial), expected);
 }
 
 #[test]
 fn combine_increments_nested() {
-    let initial = parse("[++]");
+    let initial = parse("[++]").unwrap();
     let expected = vec![Instruction::Loop(vec![
         Instruction::Increment(2)])];
     assert_eq!(combine_increments(initial), expected);
@@ -62,7 +62,7 @@ fn combine_increments_nested() {
 
 #[test]
 fn combine_increments_remove_redundant() {
-    let initial = parse("+-");
+    let initial = parse("+-").unwrap();
     assert_eq!(combine_increments(initial), vec![]);
 }
 
@@ -95,21 +95,21 @@ fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 #[test]
 fn combine_ptr_increments_flat() {
-    let initial = parse(">>");
+    let initial = parse(">>").unwrap();
     let expected = vec![Instruction::PointerIncrement(2)];
     assert_eq!(combine_ptr_increments(initial), expected);
 }
 
 #[test]
 fn combine_ptr_increments_unrelated() {
-    let initial = parse(">+>.");
+    let initial = parse(">+>.").unwrap();
     let expected = initial.clone();
     assert_eq!(combine_ptr_increments(initial), expected);
 }
 
 #[test]
 fn combine_ptr_increments_nested() {
-    let initial = parse("[>>]");
+    let initial = parse("[>>]").unwrap();
     let expected = vec![Instruction::Loop(vec![
         Instruction::PointerIncrement(2)])];
     assert_eq!(combine_ptr_increments(initial), expected);
@@ -117,7 +117,7 @@ fn combine_ptr_increments_nested() {
 
 #[test]
 fn combine_ptr_increments_remove_redundant() {
-    let initial = parse("><");
+    let initial = parse("><").unwrap();
     assert_eq!(combine_ptr_increments(initial), vec![]);
 }
 
@@ -142,14 +142,14 @@ fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 #[test]
 fn simplify_zeroing_loop() {
-    let initial = parse("[-]");
+    let initial = parse("[-]").unwrap();
     let expected = vec![Instruction::Set(0)];
     assert_eq!(simplify_loops(initial), expected);
 }
 
 #[test]
 fn simplify_nested_zeroing_loop() {
-    let initial = parse("[[-]]");
+    let initial = parse("[[-]]").unwrap();
     let expected = vec![Instruction::Loop(vec![Instruction::Set(0)])];
     assert_eq!(simplify_loops(initial), expected);
 }
@@ -159,7 +159,7 @@ fn dont_simplify_multiple_decrement_loop() {
     // A user who wrote this probably meant '[-]'. However, if the
     // current cell has the value 3, we would actually wrap around
     // (although BF does not specify this).
-    let initial = parse("[--]");
+    let initial = parse("[--]").unwrap();
     assert_eq!(simplify_loops(initial.clone()), initial);
 }
 
@@ -318,7 +318,7 @@ fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 #[test]
 fn should_annotate_known_zero() {
-    let initial = parse("+[]");
+    let initial = parse("+[]").unwrap();
     let expected = vec![
         Instruction::Set(0),
         Instruction::Increment(1),

@@ -47,7 +47,16 @@ fn main() {
         let ref file_path = args[1];
         match slurp(&file_path) {
             Ok(src) => {
-                let mut instrs = bfir::parse(&src);
+                let mut instrs;
+                match bfir::parse(&src) {
+                    Ok(instrs_) => {
+                        instrs = instrs_;
+                    },
+                    Err(message) => {
+                        println!("{}", message);
+                        std::process::exit(1);
+                    }
+                }
                 // TODO: allow users to specify optimisation level.
                 instrs = optimize::optimize(instrs);
 

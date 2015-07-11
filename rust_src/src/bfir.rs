@@ -39,13 +39,13 @@ impl fmt::Display for Instruction {
 
 /// Given a string of BF source code, parse and return our BF IR
 /// representation.
-pub fn parse(source: &str) -> Vec<Instruction> {
+pub fn parse(source: &str) -> Result<Vec<Instruction>,String> {
     parse_between(source, 0, source.chars().count())
 }
 
 /// Parse BF source code from index `start` up to (but excluding)
 /// index `end`.
-fn parse_between(source: &str, start: usize, end: usize) -> Vec<Instruction> {
+fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instruction>,String> {
     let chars: Vec<_> = source.chars().collect();
     assert!(start <= end);
     assert!(end <= chars.len());
@@ -68,12 +68,14 @@ fn parse_between(source: &str, start: usize, end: usize) -> Vec<Instruction> {
             '.' => 
                 instructions.push(Instruction::Write),
             '[' => {
-                // TODO: handle unbalanced parens gracefully.
-                let close_index = find_close(source, index).unwrap();
-                let loop_body = parse_between(source, index + 1, close_index);
+                let close_index = try!(find_close(source, index));
+                let loop_body = try!(parse_between(source, index + 1, close_index));
                 instructions.push(Instruction::Loop(loop_body));
 
                 index = close_index;
+            },
+            ']' => {
+                return Err(format!("Unmatched ] at index {}.", index));
             }
             _ => ()
         }
@@ -81,11 +83,11 @@ fn parse_between(source: &str, start: usize, end: usize) -> Vec<Instruction> {
         index += 1;
     }
 
-    instructions
+    Ok(instructions)
 }
 
 /// Find the index of the `]` that matches the `[` at `open_index`.
-fn find_close(source: &str, open_index: usize) -> Option<usize> {
+fn find_close(source: &str, open_index: usize) -> Result<usize, String> {
     assert_eq!(source.chars().nth(open_index), Some('['));
 
     let mut nesting_depth = 0;
@@ -101,55 +103,56 @@ fn find_close(source: &str, open_index: usize) -> Option<usize> {
         }
 
         if nesting_depth == 0 {
-            return Some(index)
+            return Ok(index)
         }
     }
-    None
+    // TODO: show line number
+    Err(format!("Could not find matching ] for [ at index {}.", open_index))
 }
 
 #[test]
 fn parse_increment() {
-    assert_eq!(parse("+"), [Instruction::Increment(1)]);
-    assert_eq!(parse("++"), [Instruction::Increment(1),
+    assert_eq!(parse("+").unwrap(), [Instruction::Increment(1)]);
+    assert_eq!(parse("++").unwrap(), [Instruction::Increment(1),
                             Instruction::Increment(1)]);
 }
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("-"), [Instruction::Increment(-1)]);
+    assert_eq!(parse("-").unwrap(), [Instruction::Increment(-1)]);
 }
 
 #[test]
 fn parse_pointer_increment() {
-    assert_eq!(parse(">"), [Instruction::PointerIncrement(1)]);
+    assert_eq!(parse(">").unwrap(), [Instruction::PointerIncrement(1)]);
 }
 
 #[test]
 fn parse_pointer_decrement() {
-    assert_eq!(parse("<"), [Instruction::PointerIncrement(-1)]);
+    assert_eq!(parse("<").unwrap(), [Instruction::PointerIncrement(-1)]);
 }
 
 #[test]
 fn parse_read() {
-    assert_eq!(parse(","), [Instruction::Read]);
+    assert_eq!(parse(",").unwrap(), [Instruction::Read]);
 }
 
 #[test]
 fn parse_write() {
-    assert_eq!(parse("."), [Instruction::Write]);
+    assert_eq!(parse(".").unwrap(), [Instruction::Write]);
 }
 
 #[test]
 fn parse_empty_loop() {
     let expected = [Instruction::Loop(vec![])];
-    assert_eq!(parse("[]"), expected);
+    assert_eq!(parse("[]").unwrap(), expected);
 }
 
 #[test]
 fn parse_simple_loop() {
     let loop_body = vec![Instruction::Increment(1)];
     let expected = [Instruction::Loop(loop_body)];
-    assert_eq!(parse("[+]"), expected);
+    assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
@@ -158,10 +161,16 @@ fn parse_complex_loop() {
     let expected = [Instruction::Write,
                     Instruction::Loop(loop_body),
                     Instruction::Increment(-1)];
-    assert_eq!(parse(".[,+]-"), expected);
+    assert_eq!(parse(".[,+]-").unwrap(), expected);
+}
+
+#[test]
+fn parse_unbalanced_loop() {
+    assert!(parse("[").is_err());
+    assert!(parse("]").is_err());
 }
 
 #[test]
 fn parse_comment() {
-    assert_eq!(parse("foo! "), []);
+    assert_eq!(parse("foo! ").unwrap(), []);
 }
