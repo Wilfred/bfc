@@ -307,10 +307,23 @@ fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
     // cell is zero at the start of execution.
     result.push(Instruction::Set(0));
 
+    result.extend(annotate_known_zero_inner(instrs));
+    result
+}
+
+fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut result = vec![];
+
     for instr in instrs {
-        result.push(instr.clone());
-        if let Instruction::Loop(_) = instr {
-            result.push(Instruction::Set(0));
+        match instr {
+            // After a loop, we know the cell is currently zero.
+            Instruction::Loop(body) => {
+                result.push(Instruction::Loop(annotate_known_zero_inner(body)));
+                result.push(Instruction::Set(0))
+            },
+            i => {
+                result.push(i);
+            }
         }
     }
     result
@@ -323,6 +336,18 @@ fn should_annotate_known_zero() {
         Instruction::Set(0),
         Instruction::Increment(1),
         Instruction::Loop(vec![]),
+        Instruction::Set(0)];
+    assert_eq!(annotate_known_zero(initial), expected);
+}
+
+#[test]
+fn should_annotate_known_zero_nested() {
+    let initial = parse("[[]]").unwrap();
+    let expected = vec![
+        Instruction::Set(0),
+        Instruction::Loop(vec![
+            Instruction::Loop(vec![]),
+            Instruction::Set(0)]),
         Instruction::Set(0)];
     assert_eq!(annotate_known_zero(initial), expected);
 }
