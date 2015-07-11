@@ -113,6 +113,15 @@ We combine sets and increments too:
 
 ```
 
+We remove increments when there's a set immediately after:
+
+```
+             Combine
+BFIncrement 1   =>   BFSet 2
+BFSet 2
+
+```
+
 ### Loop Simplification
 
 `[-]` is a common BF idiom for zeroing cells. We replace that with

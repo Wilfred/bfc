@@ -4,7 +4,7 @@ use bfir::{Instruction,parse};
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
-    remove_dead_loops(simplify_loops(combined))
+    remove_dead_loops(combine_set_and_increments(simplify_loops(combined)))
 }
 
 /// Combine consecutive increments into a single increment
@@ -201,4 +201,71 @@ fn should_remove_dead_loops_nested() {
         Instruction::Loop(vec![
             Instruction::Set(0)])];
     assert_eq!(remove_dead_loops(initial), expected);
+}
+
+/// Combine set instructions with other set instructions or
+/// increments.
+fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    instrs.into_iter().coalesce(|prev_instr, instr| {
+        if let (Instruction::Set(_), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
+            return Ok(Instruction::Set(amount));
+        }
+        Err((prev_instr, instr))
+    }).coalesce(|prev_instr, instr| {
+        if let (Instruction::Set(set_amount), Instruction::Increment(inc_amount)) = (prev_instr.clone(), instr.clone()) {
+            return Ok(Instruction::Set(set_amount + inc_amount));
+        }
+        Err((prev_instr, instr))
+    }).coalesce(|prev_instr, instr| {
+        if let (Instruction::Increment(_), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
+            return Ok(Instruction::Set(amount));
+        }
+        Err((prev_instr, instr))
+    }).map(|instr| {
+        match instr {
+            Instruction::Loop(body) => {
+                Instruction::Loop(combine_set_and_increments(body))
+            },
+            i => i
+        }
+    }).collect()
+}
+
+#[test]
+fn should_combine_set_and_increment() {
+    let initial = vec![
+        Instruction::Set(0),
+        Instruction::Increment(1)];
+    let expected = vec![Instruction::Set(1)];
+    assert_eq!(combine_set_and_increments(initial), expected);
+}
+
+#[test]
+fn should_combine_set_and_set() {
+    let initial = vec![
+        Instruction::Set(0),
+        Instruction::Set(1)];
+    let expected = vec![Instruction::Set(1)];
+    assert_eq!(combine_set_and_increments(initial), expected);
+}
+
+#[test]
+fn should_combine_set_and_set_nested() {
+    let initial = vec![
+        Instruction::Loop(vec![
+            Instruction::Set(0),
+            Instruction::Set(1)])];
+    let expected = vec![
+        Instruction::Loop(vec![
+            Instruction::Set(1)])];
+    assert_eq!(combine_set_and_increments(initial), expected);
+}
+
+#[test]
+fn should_combine_increment_and_set() {
+    let initial = vec![
+        Instruction::Increment(2),
+        Instruction::Set(3)];
+    let expected = vec![Instruction::Set(3)];
+    assert_eq!(combine_set_and_increments(initial), expected);
 }
