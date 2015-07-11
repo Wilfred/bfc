@@ -39,27 +39,21 @@ fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 #[test]
 fn combine_increments_flat() {
-    let initial = vec![Instruction::Increment(1),
-                       Instruction::Increment(1)];
+    let initial = parse("++");
     let expected = vec![Instruction::Increment(2)];
     assert_eq!(combine_increments(initial), expected);
 }
 
 #[test]
 fn combine_increments_unrelated() {
-    let initial = vec![Instruction::Increment(1),
-                       Instruction::PointerIncrement(1),
-                       Instruction::Increment(1),
-                       Instruction::Write];
+    let initial = parse("+>+.");
     let expected = initial.clone();
     assert_eq!(combine_increments(initial), expected);
 }
 
 #[test]
 fn combine_increments_nested() {
-    let initial = vec![Instruction::Loop(vec![
-        Instruction::Increment(1),
-        Instruction::Increment(1)])];
+    let initial = parse("+[++]");
     let expected = vec![Instruction::Loop(vec![
         Instruction::Increment(2)])];
     assert_eq!(combine_increments(initial), expected);
@@ -67,8 +61,7 @@ fn combine_increments_nested() {
 
 #[test]
 fn combine_increments_remove_redundant() {
-    let initial = vec![Instruction::Increment(-1),
-                       Instruction::Increment(1)];
+    let initial = parse("+-");
     assert_eq!(combine_increments(initial), vec![]);
 }
 
@@ -101,6 +94,7 @@ fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 #[test]
 fn combine_ptr_increments_flat() {
+    let initial = parse(">>");
     let initial = vec![Instruction::PointerIncrement(1),
                        Instruction::PointerIncrement(1)];
     let expected = vec![Instruction::PointerIncrement(2)];
@@ -109,19 +103,14 @@ fn combine_ptr_increments_flat() {
 
 #[test]
 fn combine_ptr_increments_unrelated() {
-    let initial = vec![Instruction::PointerIncrement(1),
-                       Instruction::Increment(1),
-                       Instruction::PointerIncrement(1),
-                       Instruction::Write];
+    let initial = parse(">+>.");
     let expected = initial.clone();
     assert_eq!(combine_ptr_increments(initial), expected);
 }
 
 #[test]
 fn combine_ptr_increments_nested() {
-    let initial = vec![Instruction::Loop(vec![
-        Instruction::PointerIncrement(1),
-        Instruction::PointerIncrement(1)])];
+    let initial = parse("[>>]");
     let expected = vec![Instruction::Loop(vec![
         Instruction::PointerIncrement(2)])];
     assert_eq!(combine_ptr_increments(initial), expected);
@@ -129,8 +118,7 @@ fn combine_ptr_increments_nested() {
 
 #[test]
 fn combine_ptr_increments_remove_redundant() {
-    let initial = vec![Instruction::PointerIncrement(-1),
-                       Instruction::PointerIncrement(1)];
+    let initial = parse("><");
     assert_eq!(combine_ptr_increments(initial), vec![]);
 }
 
