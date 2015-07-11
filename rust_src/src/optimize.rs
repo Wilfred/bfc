@@ -171,6 +171,13 @@ fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
             }
         }
         Err((prev_instr, instr))
+    }).map(|instr| {
+        match instr {
+            Instruction::Loop(body) => {
+                Instruction::Loop(remove_dead_loops(body))
+            },
+            i => i
+        }
     }).collect()
 }
 
@@ -184,3 +191,14 @@ fn should_remove_dead_loops() {
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
+#[test]
+fn should_remove_dead_loops_nested() {
+    let initial = vec![
+        Instruction::Loop(vec![
+            Instruction::Set(0),
+            Instruction::Loop(vec![])])];
+    let expected = vec![
+        Instruction::Loop(vec![
+            Instruction::Set(0)])];
+    assert_eq!(remove_dead_loops(initial), expected);
+}
