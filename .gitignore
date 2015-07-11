@@ -1,5 +1,4 @@
-build
 .gdb_history
 TAGS
 
-rust_src/target
+target
