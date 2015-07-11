@@ -5,7 +5,7 @@
 BFC is an optimising compiler for
 [BF](https://en.wikipedia.org/wiki/Brainfuck).
 
-It is written in C++ and uses LLVM.
+It is written in Rust and uses LLVM.
 
 ```
 BF source -> BFC IR -> LLVM IR -> x86_32 Binary
@@ -31,15 +31,14 @@ GPLv2 or later license.
 
 ## Compiling
 
-You will need LLVM and boost installed to compile bfc.
+You will need LLVM and Rust beta installed to compile bfc.
 
-    $ make
+    $ cargo build
 
 ## Usage
 
 ```
-$ make
-$ build/compiler sample_programs/hello_world.bf
+$ cargo run -- sample_programs/hello_world.bf
 $ lli hello_world.ll
 Hello World!
 ```
@@ -47,7 +46,7 @@ Hello World!
 ## Running tests
 
 ```
-$ make test
+$ cargo test
 ```
 
 ## Test programs
