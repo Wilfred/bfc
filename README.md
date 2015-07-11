@@ -131,8 +131,6 @@ BFSet 2
    Compile                Simplify
 [-]  =>   BFLoop             =>   BFSet 0
             BFIncrement -1
-
-
 ```
 
 ### Dead Code Elimination
