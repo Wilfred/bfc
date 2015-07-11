@@ -4,7 +4,8 @@ use bfir::{Instruction,parse};
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
-    remove_dead_loops(combine_set_and_increments(simplify_loops(combined)))
+    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(combined)));
+    remove_redundant_sets(simplified)
 }
 
 /// Combine consecutive increments into a single increment
@@ -268,4 +269,32 @@ fn should_combine_increment_and_set() {
         Instruction::Set(3)];
     let expected = vec![Instruction::Set(3)];
     assert_eq!(combine_set_and_increments(initial), expected);
+}
+
+fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    instrs.into_iter().coalesce(|prev_instr, instr| {
+        if let (Instruction::Loop(body), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
+            if amount == 0 {
+                return Ok(Instruction::Loop(body));
+            }
+        }
+        Err((prev_instr, instr))
+    }).map(|instr| {
+        match instr {
+            Instruction::Loop(body) => {
+                Instruction::Loop(remove_redundant_sets(body))
+            },
+            i => i
+        }
+    }).collect()
+}
+
+#[test]
+fn should_remove_redundant_set() {
+    let initial = vec![
+        Instruction::Loop(vec![]),
+        Instruction::Set(0)];
+    let expected = vec![
+        Instruction::Loop(vec![])];
+    assert_eq!(remove_redundant_sets(initial), expected);
 }
