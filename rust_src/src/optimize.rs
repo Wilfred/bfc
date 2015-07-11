@@ -20,7 +20,6 @@ fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).filter(|instr| {
         // Remove any increments of 0.
         if let &Instruction::Increment(amount) = instr {
-            println!("amount: {}", amount);
             if amount == 0 {
                 return false;
             }
@@ -53,7 +52,7 @@ fn combine_increments_unrelated() {
 
 #[test]
 fn combine_increments_nested() {
-    let initial = parse("+[++]");
+    let initial = parse("[++]");
     let expected = vec![Instruction::Loop(vec![
         Instruction::Increment(2)])];
     assert_eq!(combine_increments(initial), expected);
