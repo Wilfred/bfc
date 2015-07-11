@@ -4,7 +4,7 @@ use bfir::{Instruction,parse};
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
-    simplify_loops(combined)
+    remove_dead_loops(simplify_loops(combined))
 }
 
 /// Combine consecutive increments into a single increment
@@ -161,3 +161,27 @@ fn dont_simplify_multiple_decrement_loop() {
     let initial = parse("[--]");
     assert_eq!(simplify_loops(initial.clone()), initial);
 }
+
+/// Remove any loops where we know the current cell is zero.
+fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    // TODO: nested dead loops.
+    instrs.into_iter().coalesce(|prev_instr, instr| {
+        if let (Instruction::Set(amount), Instruction::Loop(_)) = (prev_instr.clone(), instr.clone()) {
+            if amount == 0 {
+                return Ok(Instruction::Set(amount));
+            }
+        }
+        Err((prev_instr, instr))
+    }).collect()
+}
+
+#[test]
+fn should_remove_dead_loops() {
+    let initial = vec![
+        Instruction::Set(0),
+        Instruction::Loop(vec![]),
+        Instruction::Loop(vec![])];
+    let expected = vec![Instruction::Set(0)];
+    assert_eq!(remove_dead_loops(initial), expected);
+}
+
