@@ -1,9 +1,10 @@
 use itertools::Itertools;
 
-use bfir::Instruction;
+use bfir::{Instruction,parse};
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    combine_ptr_increments(combine_increments(instrs))
+    let combined = combine_ptr_increments(combine_increments(instrs));
+    simplify_loops(combined)
 }
 
 /// Combine consecutive increments into a single increment
@@ -131,4 +132,46 @@ fn combine_ptr_increments_remove_redundant() {
     let initial = vec![Instruction::PointerIncrement(-1),
                        Instruction::PointerIncrement(1)];
     assert_eq!(combine_ptr_increments(initial), vec![]);
+}
+
+fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    instrs.into_iter().map(|instr| {
+        if let Instruction::Loop(body) = instr.clone() {
+            if body == vec![Instruction::Increment(-1)] {
+                return Instruction::Set(0)
+            }
+        }
+        instr
+    }).map(|instr| {
+        // Simplify zeroing loops nested in other loops.
+        match instr {
+            Instruction::Loop(body) => {
+                Instruction::Loop(simplify_loops(body))
+            },
+            i => i
+        }
+    }).collect()
+}
+
+#[test]
+fn simplify_zeroing_loop() {
+    let initial = parse("[-]");
+    let expected = vec![Instruction::Set(0)];
+    assert_eq!(simplify_loops(initial), expected);
+}
+
+#[test]
+fn simplify_nested_zeroing_loop() {
+    let initial = parse("[[-]]");
+    let expected = vec![Instruction::Loop(vec![Instruction::Set(0)])];
+    assert_eq!(simplify_loops(initial), expected);
+}
+
+#[test]
+fn dont_simplify_multiple_decrement_loop() {
+    // A user who wrote this probably meant '[-]'. However, if the
+    // current cell has the value 3, we would actually wrap around
+    // (although BF does not specify this).
+    let initial = parse("[--]");
+    assert_eq!(simplify_loops(initial.clone()), initial);
 }
