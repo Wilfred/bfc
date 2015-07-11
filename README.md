@@ -148,7 +148,7 @@ For example, loops at the beginning of a program:
                                             BFDataIncrement 
 ```
 
-Loops following a clear cell loop:
+Loops following a clear cell loop (TODO: any consecutive loops):
 
 ```
       Compile                  Simplify                    DCE
