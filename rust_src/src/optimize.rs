@@ -4,7 +4,8 @@ use bfir::{Instruction,parse};
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
-    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(combined)));
+    let annotated = annotate_known_zero(combined);
+    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(annotated)));
     remove_redundant_sets(simplified)
 }
 
@@ -297,4 +298,31 @@ fn should_remove_redundant_set() {
     let expected = vec![
         Instruction::Loop(vec![])];
     assert_eq!(remove_redundant_sets(initial), expected);
+}
+
+fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut result = vec![];
+
+    // Cells in BF are initialised to zero, so we know the current
+    // cell is zero at the start of execution.
+    result.push(Instruction::Set(0));
+
+    for instr in instrs {
+        result.push(instr.clone());
+        if let Instruction::Loop(_) = instr {
+            result.push(Instruction::Set(0));
+        }
+    }
+    result
+}
+
+#[test]
+fn should_annotate_known_zero() {
+    let initial = parse("+[]");
+    let expected = vec![
+        Instruction::Set(0),
+        Instruction::Increment(1),
+        Instruction::Loop(vec![]),
+        Instruction::Set(0)];
+    assert_eq!(annotate_known_zero(initial), expected);
 }
