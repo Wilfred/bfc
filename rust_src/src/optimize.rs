@@ -95,8 +95,6 @@ fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 #[test]
 fn combine_ptr_increments_flat() {
     let initial = parse(">>");
-    let initial = vec![Instruction::PointerIncrement(1),
-                       Instruction::PointerIncrement(1)];
     let expected = vec![Instruction::PointerIncrement(2)];
     assert_eq!(combine_ptr_increments(initial), expected);
 }
