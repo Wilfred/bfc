@@ -169,6 +169,14 @@ BFSet 0
 
 ```
 
+We also remove dead code at the end of a program.
+
+```
+            Remove pure code
+BFWrite         =>           BFWrite
+BFIncrement 1
+```
+
 ## Other projects optimising BF
 
 There are also some interesting other projects for optimising BF

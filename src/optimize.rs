@@ -6,7 +6,7 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(annotated)));
-    remove_redundant_sets(simplified)
+    remove_pure_code(remove_redundant_sets(simplified))
 }
 
 /// Combine consecutive increments into a single increment
@@ -350,4 +350,39 @@ fn should_annotate_known_zero_nested() {
             Instruction::Set(0)]),
         Instruction::Set(0)];
     assert_eq!(annotate_known_zero(initial), expected);
+}
+
+/// Remove code at the end of the program that has no side
+/// effects. This means we have no write commands afterwards, nor
+/// loops (which may not terminate so we should not remove).
+fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut seen_side_effect = false;
+    let truncated: Vec<Instruction> = instrs.into_iter().rev().skip_while(|instr| {
+        match instr {
+            &Instruction::Write => {
+                seen_side_effect = true;
+            },
+            &Instruction::Read => {
+                seen_side_effect = true;
+            },
+            &Instruction::Loop(_) => {
+                seen_side_effect = true;
+            }
+            _ => {}
+        }
+        !seen_side_effect
+    }).collect();
+
+    truncated.into_iter().rev().collect()
+}
+
+#[test]
+fn should_remove_pure_code() {
+    // The final increment here is side-effect free and can be
+    // removed.
+    let initial = parse("+.+").unwrap();
+    let expected = vec![
+        Instruction::Set(1),
+        Instruction::Write];
+    assert_eq!(optimize(initial), expected);
 }
