@@ -8,7 +8,7 @@ BFC is an optimising compiler for
 It is written in Rust and uses LLVM.
 
 ```
-BF source -> BFC IR -> LLVM IR -> x86_32 Binary
+BF source -> BF IR -> LLVM IR -> x86_32 Binary
 ```
 
 GPLv2 or later license.
@@ -21,13 +21,13 @@ GPLv2 or later license.
     - [Usage](#usage)
     - [Running tests](#running-tests)
     - [Test programs](#test-programs)
-    - [Optimisations](#optimisations)
+    - [Peephole optimisations](#peephole-optimisations)
         - [Combining Instructions](#combining-instructions)
         - [Loop Simplification](#loop-simplification)
+        - [Dead Code Elimination](#dead-code-elimination)
     - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
-
 
 ## Compiling
 
@@ -55,51 +55,51 @@ There are a few test programs in this repo, but
 http://www.hevanet.com/cristofd/brainfuck/tests.b is also an excellent
 collection of test BF programs.
 
-## Optimisations
+## Peephole optimisations
 
 bfc can use LLVM's optimisations, but it also offers some BF-specific
 optimisations. There's a roadmap in
 [optimisations.md](optimisations.md) of optimisations we will
-implement at the BFC IR level.
+implement at the BF IR level.
 
 ### Combining Instructions
 
 We combine successive increments/decrements:
 
 ```
-   Compile             Combine
-+++  =>   BFIncrement 1   =>   BFIncrement 3
-          BFIncrement 1
-          BFIncrement 1
+   Compile            Combine
++++  =>   Increment 1   =>   Increment 3
+          Increment 1
+          Increment 1
 ```
 
 If increments/decrements cancel out, we remove them entirely.
 
 ```
-   Compile              Combine
-+-   =>   BFIncrement  1    =>   # nothing!
-          BFIncrement -1
+   Compile             Combine
++-   =>   Increment  1    =>   # nothing!
+          Increment -1
 ```
 
 We do the same thing for data increments/decrements:
 
 ```
-   Compile                 Combine
->>>  =>   BFDataIncrement 1   =>   BFDataIncrement 3
-          BFDataIncrement 1
-          BFDataIncrement 1
+   Compile                Combine
+>>>  =>   DataIncrement 1   =>   DataIncrement 3
+          DataIncrement 1
+          DataIncrement 1
 
-   Compile                  Combine
-><   =>   BFDataIncrement  1    =>   # nothing!
-          BFDataIncrement -1
+   Compile                 Combine
+><   =>   DataIncrement  1    =>   # nothing!
+          DataIncrement -1
 ```
 
 We do the same thing for successive sets:
 
 ```
-       Combine
-BFSet 1   =>   BFSet 2
-BFSet 2
+      Combine
+Set 1   =>   Set 2
+Set 2
 
 ```
 
@@ -107,29 +107,29 @@ We combine sets and increments too:
 
 ```
   Compile            Known zero:         Combine
-+   =>   BFIncrement 1   =>   BFSet 0      =>   BFSet 1
-                              BFIncrement 1
++   =>   Increment 1   =>   Set 0      =>   Set 1
+                              Increment 1
 
 ```
 
 We remove increments when there's a set immediately after:
 
 ```
-             Combine
-BFIncrement 1   =>   BFSet 2
-BFSet 2
+            Combine
+Increment 1   =>   Set 2
+Set 2
 
 ```
 
 ### Loop Simplification
 
 `[-]` is a common BF idiom for zeroing cells. We replace that with
-`BFSet`, enabling further instruction combination.
+`Set`, enabling further instruction combination.
 
 ```
-   Compile                Simplify
-[-]  =>   BFLoop             =>   BFSet 0
-            BFIncrement -1
+   Compile              Simplify
+[-]  =>   Loop             =>   Set 0
+            Increment -1
 ```
 
 ### Dead Code Elimination
@@ -139,10 +139,10 @@ We remove loops that we know are dead.
 For example, loops at the beginning of a program:
 
 ```
-    Compile                    Known zero                 DCE
-[>]   =>    BFLoop                 =>     BFSet 0          => BFSet 0
-              BFDataIncrement 1           BFLoop
-                                            BFDataIncrement 
+    Compile                  Known zero               DCE
+[>]   =>    Loop                 =>     Set 0          => Set 0
+              DataIncrement 1           Loop
+                                            DataIncrement 
 ```
 
 
@@ -150,31 +150,31 @@ Loops following another loop (one BF technique for comments is
 `[-][this, is+a comment.]`).
 
 ```
-      Compile                   Annotate                   DCE
-[>][>]   =>  BFLoop                =>   BFLoop              =>   BFLoop
-               BFDataIncrement 1          BFDataIncrement 1        BFDataIncrement 1
-             BFLoop                     BFSet 0                  BFSet 0
-               BFDataIncrement 1        BFLoop
-                                          BFDataIncrement 1
+      Compile                 Annotate                 DCE
+[>][>]   =>  Loop                =>   Loop              =>   Loop
+               DataIncrement 1          DataIncrement 1        DataIncrement 1
+             Loop                     Set 0                  Set 0
+               DataIncrement 1        Loop
+                                          DataIncrement 1
 ```
 
 We remove redundant set commands after loops (often generated by loop
 annotation as above).
 
 ```
-         Remove redundant set
-BFLoop           =>   BFLoop
-  BFIncrement -1        BFIncrement -1
-BFSet 0
+       Remove redundant set
+Loop           =>   Loop
+  Increment -1        Increment -1
+Set 0
 
 ```
 
 We also remove dead code at the end of a program.
 
 ```
-            Remove pure code
-BFWrite         =>           BFWrite
-BFIncrement 1
+        Remove pure code
+Write         =>           Write
+Increment 1
 ```
 
 ## Other projects optimising BF
