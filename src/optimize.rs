@@ -1,6 +1,10 @@
 use itertools::Itertools;
 
-use bfir::{Instruction,parse};
+use bfir::Instruction;
+
+// TODO: mark this as unused only when we're not running tests.
+#[allow(unused_imports)]
+use bfir::parse;
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
