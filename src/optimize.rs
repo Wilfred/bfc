@@ -6,7 +6,7 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(annotated)));
-    remove_pure_code(remove_redundant_sets(simplified))
+    remove_pure_code(remove_redundant_sets(combine_before_read(simplified)))
 }
 
 /// Combine consecutive increments into a single increment
@@ -119,6 +119,51 @@ fn combine_ptr_increments_nested() {
 fn combine_ptr_increments_remove_redundant() {
     let initial = parse("><").unwrap();
     assert_eq!(combine_ptr_increments(initial), vec![]);
+}
+
+#[test]
+fn should_combine_before_read() {
+    // The increment before the read is dead and can be removed.
+    let initial = parse("+,.").unwrap();
+    let expected = vec![
+        Instruction::Read,
+        Instruction::Write];
+    assert_eq!(optimize(initial), expected);
+}
+
+#[test]
+fn should_combine_before_read_nested() {
+    let initial = parse("+[+,]").unwrap();
+    let expected = vec![
+        Instruction::Set(1),
+        Instruction::Loop(vec![
+            Instruction::Read])];
+    assert_eq!(optimize(initial), expected);
+}
+
+fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    instrs.into_iter().coalesce(|prev_instr, instr| {
+        // Remove dead code before a read.
+        match (prev_instr.clone(), instr.clone()) {
+            (Instruction::Increment(_), Instruction::Read) => {
+                Ok(Instruction::Read)
+            },
+            (Instruction::Set(_), Instruction::Read) => {
+                Ok(Instruction::Read)
+            },
+            _ => {
+                Err((prev_instr, instr))
+            }
+        }
+    }).map(|instr| {
+        // Do the same in nested loops.
+        match instr {
+            Instruction::Loop(body) => {
+                Instruction::Loop(combine_before_read(body))
+            },
+            i => i
+        }
+    }).collect()
 }
 
 fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {

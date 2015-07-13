@@ -121,6 +121,16 @@ Set 2
 
 ```
 
+We remove both increments and sets if there's a read immediately
+after:
+
+```
+            Combine
+Increment 1   =>   Read
+Read
+
+```
+
 ### Loop Simplification
 
 `[-]` is a common BF idiom for zeroing cells. We replace that with
