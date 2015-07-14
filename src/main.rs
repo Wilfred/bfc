@@ -67,25 +67,26 @@ fn main() {
                     return
                 }
 
+                let llvm_ir_raw;
                 unsafe {
-                    let llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs);
+                    llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs);
+                }
 
-                    if dump_llvm {
-                        let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
-                        println!("{}", llvm_ir);
-                    } else {
-                        // TODO: write to a temp file then call llc.
-                        let bf_name = Path::new(file_path).file_name().unwrap();
-                        let ll_name = ll_file_name(bf_name.to_str().unwrap());
-                        match File::create(&ll_name) {
-                            Ok(mut f) => {
-                                let _ = f.write(llvm_ir_raw.as_bytes());
-                                println!("Wrote {}", ll_name);
-                            }
-                            Err(e) => {
-                                println!("Could not create file: {}", e);
-                                std::process::exit(1);
-                            }
+                if dump_llvm {
+                    let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
+                    println!("{}", llvm_ir);
+                } else {
+                    // TODO: write to a temp file then call llc.
+                    let bf_name = Path::new(file_path).file_name().unwrap();
+                    let ll_name = ll_file_name(bf_name.to_str().unwrap());
+                    match File::create(&ll_name) {
+                        Ok(mut f) => {
+                            let _ = f.write(llvm_ir_raw.as_bytes());
+                            println!("Wrote {}", ll_name);
+                        }
+                        Err(e) => {
+                            println!("Could not create file: {}", e);
+                            std::process::exit(1);
                         }
                     }
                 }
