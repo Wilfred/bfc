@@ -21,7 +21,7 @@ impl ModuleWithContext {
     /// Assumes s is pure-ASCII.
     fn new_string_ptr(&mut self, s: &str) -> *const i8 {
         let cstring = CString::new(s).unwrap();
-        let ptr = cstring.to_bytes_with_nul().as_ptr() as *const _;
+        let ptr = cstring.as_ptr() as *const _;
         self.strings.push(cstring);
         ptr
     }
