@@ -321,6 +321,8 @@ pub unsafe fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>) -> CSt
     let (main_fn, cells, cell_index_ptr) = add_main_init(&mut module);
     let mut bb = LLVMGetLastBasicBlock(main_fn);
 
+    // TODO: don't bother with init/cleanup if we have an empty
+    // program.
     for instr in instrs {
         bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
                            cells, cell_index_ptr);
