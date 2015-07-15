@@ -120,10 +120,8 @@ unsafe fn add_main_init(module: &mut ModuleWithContext)
 }
 
 /// Add prologue to main function.
-unsafe fn add_main_cleanup(module: &mut ModuleWithContext, main: LLVMValueRef,
+unsafe fn add_main_cleanup(module: &mut ModuleWithContext, bb: &mut LLVMBasicBlock,
                            cells: LLVMValueRef) {
-    let bb = LLVMGetLastBasicBlock(main);
-    
     // free(cells);
     let mut free_args = vec![cells];
     add_function_call(module, &mut *bb, "free", &mut free_args, "");
@@ -328,7 +326,7 @@ pub unsafe fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>) -> CSt
                            cells, cell_index_ptr);
     }
     
-    add_main_cleanup(&mut module, main_fn, cells);
+    add_main_cleanup(&mut module, &mut *bb, cells);
     
     let llvm_ir = LLVMPrintModuleToString(module.module);
 
