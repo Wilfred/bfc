@@ -12,6 +12,7 @@ use std::path::Path;
 mod bfir;
 mod llvm;
 mod optimize;
+mod bounds;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents.
