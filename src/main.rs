@@ -1,12 +1,17 @@
 #![feature(cstr_memory)]
+#![feature(plugin)]
+#![plugin(quickcheck_macros)]
 
 extern crate llvm_sys;
 extern crate itertools;
+extern crate quickcheck;
+extern crate rand;
 
 use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::io::prelude::Read;
+use std::mem::forget;
 use std::path::Path;
 
 mod bfir;

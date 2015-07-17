@@ -2,9 +2,11 @@ use itertools::Itertools;
 
 use bfir::Instruction;
 
-// TODO: mark this as unused only when we're not running tests.
+// TODO: mark these as unused only when we're not running tests.
 #[allow(unused_imports)]
+use rand::Rng;
 use bfir::parse;
+use quickcheck::{Arbitrary,Gen,TestResult};
 
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
@@ -40,6 +42,24 @@ fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
             i => i
         }
     }).collect()
+}
+
+impl Arbitrary for Instruction {
+    fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
+        let i = g.next_u32();
+        match i % 6 {
+            0 => Instruction::Increment(
+                Arbitrary::arbitrary(g)),
+            1 => Instruction::PointerIncrement(
+                Arbitrary::arbitrary(g)),
+            2 => Instruction::Set(
+                Arbitrary::arbitrary(g)),
+            3 => Instruction::Read,
+            4 => Instruction::Write,
+            5 => Instruction::Loop(vec![]),
+            _ => unreachable!()
+        }
+    }
 }
 
 #[test]
@@ -378,6 +398,34 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     result
 }
 
+fn is_pure(instrs: &Vec<Instruction>) -> bool {
+    for instr in instrs {
+        match instr {
+            &Instruction::Loop(_) => {
+                return false;
+            },
+            &Instruction::Read => {
+                return false;
+            },
+            &Instruction::Write => {
+                return false;
+            },
+            _ => ()
+        }
+    }
+    true
+}
+
+#[quickcheck]
+fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
+    let annotated = annotate_known_zero(instrs);
+
+    match annotated[0] {
+        Instruction::Set(0) => TestResult::from_bool(true),
+        _ => TestResult::from_bool(false)
+    }
+}
+
 #[test]
 fn should_annotate_known_zero() {
     let initial = parse("+[]").unwrap();
@@ -434,4 +482,12 @@ fn should_remove_pure_code() {
         Instruction::Set(1),
         Instruction::Write];
     assert_eq!(optimize(initial), expected);
+}
+
+#[quickcheck]
+fn should_remove_dead_pure_code(instrs: Vec<Instruction>) -> TestResult {
+    if !is_pure(&instrs) {
+        return TestResult::discard();
+    }
+    return TestResult::from_bool(optimize(instrs) == vec![]);
 }
