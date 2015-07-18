@@ -2,7 +2,7 @@ use llvm_sys::core::*;
 use llvm_sys::{LLVMModule,LLVMBasicBlock,LLVMIntPredicate};
 use llvm_sys::prelude::*;
 
-use std::ffi::CString;
+use std::ffi::{CString,CStr};
 
 use bfir::Instruction;
 
@@ -327,10 +327,18 @@ pub unsafe fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>) -> CSt
     }
     
     add_main_cleanup(&mut module, &mut *bb, cells);
-    
-    let llvm_ir = LLVMPrintModuleToString(module.module);
 
+    // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
+    // as borrowed.
+    let llvm_ir_ptr = LLVMPrintModuleToString(module.module);
+    let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
+
+    // Make an owned copy of the string in our memory space.
+    let llvm_ir_owned = CString::new(llvm_ir.to_bytes().clone()).unwrap();
+
+    // Cleanup module and borrowed string.
     LLVMDisposeModule(module.module);
+    LLVMDisposeMessage(llvm_ir_ptr);
 
-    CString::from_ptr(llvm_ir)
+    llvm_ir_owned
 }

@@ -11,7 +11,6 @@ use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::io::prelude::Read;
-use std::mem::forget;
 use std::path::Path;
 
 mod bfir;
