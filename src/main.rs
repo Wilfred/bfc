@@ -1,4 +1,3 @@
-#![feature(cstr_memory)]
 #![feature(plugin)]
 #![plugin(quickcheck_macros)]
 
