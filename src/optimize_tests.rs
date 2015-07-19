@@ -144,22 +144,24 @@ fn should_remove_dead_loops_nested() {
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
-#[test]
-fn should_combine_set_and_increment() {
+#[quickcheck]
+fn should_combine_set_and_increment(set_amount: i32, increment_amount: i32)
+                                    -> bool {
     let initial = vec![
-        Instruction::Set(0),
-        Instruction::Increment(1)];
-    let expected = vec![Instruction::Set(1)];
-    assert_eq!(combine_set_and_increments(initial), expected);
+        Instruction::Set(set_amount),
+        Instruction::Increment(increment_amount)];
+    let expected = vec![Instruction::Set(set_amount + increment_amount)];
+    return combine_set_and_increments(initial) == expected;
 }
 
-#[test]
-fn should_combine_set_and_set() {
+#[quickcheck]
+fn should_combine_set_and_set(set_amount_before: i32, set_amount_after: i32)
+                              -> bool {
     let initial = vec![
-        Instruction::Set(0),
-        Instruction::Set(1)];
-    let expected = vec![Instruction::Set(1)];
-    assert_eq!(combine_set_and_increments(initial), expected);
+        Instruction::Set(set_amount_before),
+        Instruction::Set(set_amount_after)];
+    let expected = vec![Instruction::Set(set_amount_after)];
+    return combine_set_and_increments(initial) == expected;
 }
 
 #[test]
