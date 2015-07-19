@@ -2,12 +2,6 @@ use itertools::Itertools;
 
 use bfir::Instruction;
 
-// TODO: mark these as unused only when we're not running tests.
-#[allow(unused_imports)]
-use rand::Rng;
-use bfir::parse;
-use quickcheck::{Arbitrary,Gen,TestResult};
-
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
@@ -17,7 +11,7 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Combine consecutive increments into a single increment
 /// instruction.
-fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
         if let (Instruction::Increment(prev_amount), Instruction::Increment(amount)) = (prev_instr.clone(), instr.clone()) {
@@ -44,53 +38,7 @@ fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect()
 }
 
-impl Arbitrary for Instruction {
-    fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
-        let i = g.next_u32();
-        match i % 6 {
-            0 => Instruction::Increment(
-                Arbitrary::arbitrary(g)),
-            1 => Instruction::PointerIncrement(
-                Arbitrary::arbitrary(g)),
-            2 => Instruction::Set(
-                Arbitrary::arbitrary(g)),
-            3 => Instruction::Read,
-            4 => Instruction::Write,
-            5 => Instruction::Loop(vec![]),
-            _ => unreachable!()
-        }
-    }
-}
-
-#[test]
-fn combine_increments_flat() {
-    let initial = parse("++").unwrap();
-    let expected = vec![Instruction::Increment(2)];
-    assert_eq!(combine_increments(initial), expected);
-}
-
-#[test]
-fn combine_increments_unrelated() {
-    let initial = parse("+>+.").unwrap();
-    let expected = initial.clone();
-    assert_eq!(combine_increments(initial), expected);
-}
-
-#[test]
-fn combine_increments_nested() {
-    let initial = parse("[++]").unwrap();
-    let expected = vec![Instruction::Loop(vec![
-        Instruction::Increment(2)])];
-    assert_eq!(combine_increments(initial), expected);
-}
-
-#[test]
-fn combine_increments_remove_redundant() {
-    let initial = parse("+-").unwrap();
-    assert_eq!(combine_increments(initial), vec![]);
-}
-
-fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
         if let (Instruction::PointerIncrement(prev_amount), Instruction::PointerIncrement(amount)) = (prev_instr.clone(), instr.clone()) {
@@ -115,54 +63,6 @@ fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
             i => i
         }
     }).collect()
-}
-
-#[test]
-fn combine_ptr_increments_flat() {
-    let initial = parse(">>").unwrap();
-    let expected = vec![Instruction::PointerIncrement(2)];
-    assert_eq!(combine_ptr_increments(initial), expected);
-}
-
-#[test]
-fn combine_ptr_increments_unrelated() {
-    let initial = parse(">+>.").unwrap();
-    let expected = initial.clone();
-    assert_eq!(combine_ptr_increments(initial), expected);
-}
-
-#[test]
-fn combine_ptr_increments_nested() {
-    let initial = parse("[>>]").unwrap();
-    let expected = vec![Instruction::Loop(vec![
-        Instruction::PointerIncrement(2)])];
-    assert_eq!(combine_ptr_increments(initial), expected);
-}
-
-#[test]
-fn combine_ptr_increments_remove_redundant() {
-    let initial = parse("><").unwrap();
-    assert_eq!(combine_ptr_increments(initial), vec![]);
-}
-
-#[test]
-fn should_combine_before_read() {
-    // The increment before the read is dead and can be removed.
-    let initial = parse("+,.").unwrap();
-    let expected = vec![
-        Instruction::Read,
-        Instruction::Write];
-    assert_eq!(optimize(initial), expected);
-}
-
-#[test]
-fn should_combine_before_read_nested() {
-    let initial = parse("+[+,]").unwrap();
-    let expected = vec![
-        Instruction::Set(1),
-        Instruction::Loop(vec![
-            Instruction::Read])];
-    assert_eq!(optimize(initial), expected);
 }
 
 fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -190,7 +90,7 @@ fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect()
 }
 
-fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
         if let Instruction::Loop(body) = instr.clone() {
             if body == vec![Instruction::Increment(-1)] {
@@ -209,31 +109,8 @@ fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect()
 }
 
-#[test]
-fn simplify_zeroing_loop() {
-    let initial = parse("[-]").unwrap();
-    let expected = vec![Instruction::Set(0)];
-    assert_eq!(simplify_loops(initial), expected);
-}
-
-#[test]
-fn simplify_nested_zeroing_loop() {
-    let initial = parse("[[-]]").unwrap();
-    let expected = vec![Instruction::Loop(vec![Instruction::Set(0)])];
-    assert_eq!(simplify_loops(initial), expected);
-}
-
-#[test]
-fn dont_simplify_multiple_decrement_loop() {
-    // A user who wrote this probably meant '[-]'. However, if the
-    // current cell has the value 3, we would actually wrap around
-    // (although BF does not specify this).
-    let initial = parse("[--]").unwrap();
-    assert_eq!(simplify_loops(initial.clone()), initial);
-}
-
 /// Remove any loops where we know the current cell is zero.
-fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     // TODO: nested dead loops.
     instrs.into_iter().coalesce(|prev_instr, instr| {
         if let (Instruction::Set(amount), Instruction::Loop(_)) = (prev_instr.clone(), instr.clone()) {
@@ -252,31 +129,9 @@ fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect()
 }
 
-#[test]
-fn should_remove_dead_loops() {
-    let initial = vec![
-        Instruction::Set(0),
-        Instruction::Loop(vec![]),
-        Instruction::Loop(vec![])];
-    let expected = vec![Instruction::Set(0)];
-    assert_eq!(remove_dead_loops(initial), expected);
-}
-
-#[test]
-fn should_remove_dead_loops_nested() {
-    let initial = vec![
-        Instruction::Loop(vec![
-            Instruction::Set(0),
-            Instruction::Loop(vec![])])];
-    let expected = vec![
-        Instruction::Loop(vec![
-            Instruction::Set(0)])];
-    assert_eq!(remove_dead_loops(initial), expected);
-}
-
 /// Combine set instructions with other set instructions or
 /// increments.
-fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         if let (Instruction::Set(_), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
             return Ok(Instruction::Set(amount));
@@ -302,46 +157,7 @@ fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect()
 }
 
-#[test]
-fn should_combine_set_and_increment() {
-    let initial = vec![
-        Instruction::Set(0),
-        Instruction::Increment(1)];
-    let expected = vec![Instruction::Set(1)];
-    assert_eq!(combine_set_and_increments(initial), expected);
-}
-
-#[test]
-fn should_combine_set_and_set() {
-    let initial = vec![
-        Instruction::Set(0),
-        Instruction::Set(1)];
-    let expected = vec![Instruction::Set(1)];
-    assert_eq!(combine_set_and_increments(initial), expected);
-}
-
-#[test]
-fn should_combine_set_and_set_nested() {
-    let initial = vec![
-        Instruction::Loop(vec![
-            Instruction::Set(0),
-            Instruction::Set(1)])];
-    let expected = vec![
-        Instruction::Loop(vec![
-            Instruction::Set(1)])];
-    assert_eq!(combine_set_and_increments(initial), expected);
-}
-
-#[test]
-fn should_combine_increment_and_set() {
-    let initial = vec![
-        Instruction::Increment(2),
-        Instruction::Set(3)];
-    let expected = vec![Instruction::Set(3)];
-    assert_eq!(combine_set_and_increments(initial), expected);
-}
-
-fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         if let (Instruction::Loop(body), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
             if amount == 0 {
@@ -359,17 +175,7 @@ fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect()
 }
 
-#[test]
-fn should_remove_redundant_set() {
-    let initial = vec![
-        Instruction::Loop(vec![]),
-        Instruction::Set(0)];
-    let expected = vec![
-        Instruction::Loop(vec![])];
-    assert_eq!(remove_redundant_sets(initial), expected);
-}
-
-fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
 
     // Cells in BF are initialised to zero, so we know the current
@@ -398,57 +204,6 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     result
 }
 
-fn is_pure(instrs: &Vec<Instruction>) -> bool {
-    for instr in instrs {
-        match instr {
-            &Instruction::Loop(_) => {
-                return false;
-            },
-            &Instruction::Read => {
-                return false;
-            },
-            &Instruction::Write => {
-                return false;
-            },
-            _ => ()
-        }
-    }
-    true
-}
-
-#[quickcheck]
-fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
-    let annotated = annotate_known_zero(instrs);
-
-    match annotated[0] {
-        Instruction::Set(0) => TestResult::from_bool(true),
-        _ => TestResult::from_bool(false)
-    }
-}
-
-#[test]
-fn should_annotate_known_zero() {
-    let initial = parse("+[]").unwrap();
-    let expected = vec![
-        Instruction::Set(0),
-        Instruction::Increment(1),
-        Instruction::Loop(vec![]),
-        Instruction::Set(0)];
-    assert_eq!(annotate_known_zero(initial), expected);
-}
-
-#[test]
-fn should_annotate_known_zero_nested() {
-    let initial = parse("[[]]").unwrap();
-    let expected = vec![
-        Instruction::Set(0),
-        Instruction::Loop(vec![
-            Instruction::Loop(vec![]),
-            Instruction::Set(0)]),
-        Instruction::Set(0)];
-    assert_eq!(annotate_known_zero(initial), expected);
-}
-
 /// Remove code at the end of the program that has no side
 /// effects. This means we have no write commands afterwards, nor
 /// loops (which may not terminate so we should not remove).
@@ -471,23 +226,4 @@ fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect();
 
     truncated.into_iter().rev().collect()
-}
-
-#[test]
-fn should_remove_pure_code() {
-    // The final increment here is side-effect free and can be
-    // removed.
-    let initial = parse("+.+").unwrap();
-    let expected = vec![
-        Instruction::Set(1),
-        Instruction::Write];
-    assert_eq!(optimize(initial), expected);
-}
-
-#[quickcheck]
-fn should_remove_dead_pure_code(instrs: Vec<Instruction>) -> TestResult {
-    if !is_pure(&instrs) {
-        return TestResult::discard();
-    }
-    return TestResult::from_bool(optimize(instrs) == vec![]);
 }

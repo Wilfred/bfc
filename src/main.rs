@@ -17,6 +17,9 @@ mod llvm;
 mod optimize;
 mod bounds;
 
+#[cfg(test)]
+mod optimize_tests;
+
 /// Read the contents of the file at path, and return a string of its
 /// contents.
 fn slurp(path: &str) -> Result<String, std::io::Error> {
