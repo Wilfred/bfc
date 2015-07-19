@@ -6,12 +6,13 @@ use bfir::parse;
 
 const MAX_CELLS: u64 = 30000;
 
-pub fn highest_cell_index(instrs: Vec<Instruction>) -> u64 {
+// TODO: static analysis of cell bounds.
+pub fn highest_cell_index(_: &Vec<Instruction>) -> u64 {
     MAX_CELLS
 }
 
 #[test]
 fn unbounded_should_return_max() {
     let instrs = parse("[>]").unwrap();
-    assert_eq!(highest_cell_index(instrs), MAX_CELLS);
+    assert_eq!(highest_cell_index(&instrs), MAX_CELLS);
 }

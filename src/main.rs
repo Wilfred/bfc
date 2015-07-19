@@ -74,9 +74,11 @@ fn main() {
                     return
                 }
 
+                let num_cells = bounds::highest_cell_index(&instrs);
+
                 let llvm_ir_raw;
                 unsafe {
-                    llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs);
+                    llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs, num_cells);
                 }
 
                 if dump_llvm {

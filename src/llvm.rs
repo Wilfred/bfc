@@ -69,13 +69,13 @@ unsafe fn add_function_call(module: &mut ModuleWithContext, bb: &mut LLVMBasicBl
     result
 }
 
-const NUM_CELLS: u64 = 30000;
 const CELL_SIZE_IN_BYTES: u64 = 1;
 
-unsafe fn add_cells_init(module: &mut ModuleWithContext, bb: &mut LLVMBasicBlock) -> LLVMValueRef {
+unsafe fn add_cells_init(num_cells: u64, module: &mut ModuleWithContext,
+                         bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     // calloc(30000, 1);
     let mut calloc_args = vec![
-        LLVMConstInt(LLVMInt32Type(), NUM_CELLS, LLVM_FALSE),
+        LLVMConstInt(LLVMInt32Type(), num_cells, LLVM_FALSE),
         LLVMConstInt(LLVMInt32Type(), CELL_SIZE_IN_BYTES, LLVM_FALSE),
         ];
     add_function_call(module, bb, "calloc", &mut calloc_args, "cells")
@@ -94,7 +94,7 @@ unsafe fn create_module(module_name: &str) -> ModuleWithContext {
 
 /// Define up the main function and add preamble. Return the main
 /// function and a reference to the cells and their current index.
-unsafe fn add_main_init(module: &mut ModuleWithContext)
+unsafe fn add_main_init(num_cells: u64, module: &mut ModuleWithContext)
                         -> (LLVMValueRef, LLVMValueRef, LLVMValueRef) {
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
@@ -103,7 +103,7 @@ unsafe fn add_main_init(module: &mut ModuleWithContext)
                                   main_type);
     
     let bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
-    let cells = add_cells_init(module, &mut *bb);
+    let cells = add_cells_init(num_cells, module, &mut *bb);
 
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
@@ -313,10 +313,11 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
     }
 }
 
-pub unsafe fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>) -> CString {
+pub unsafe fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
+                            num_cells: u64) -> CString {
     let mut module = create_module(module_name);
 
-    let (main_fn, cells, cell_index_ptr) = add_main_init(&mut module);
+    let (main_fn, cells, cell_index_ptr) = add_main_init(num_cells, &mut module);
     let mut bb = LLVMGetLastBasicBlock(main_fn);
 
     // TODO: don't bother with init/cleanup if we have an empty
