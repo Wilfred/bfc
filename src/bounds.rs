@@ -7,24 +7,27 @@ use bfir::parse;
 const MAX_CELLS: i64 = 30000;
 
 pub fn highest_cell_index(instrs: &Vec<Instruction>) -> u64 {
-    let mut max_seen: i64 = 1;
+    let mut max_overall: i64 = 1;
+    let mut max_at_point = 1;
 
-    // TODO: smarter handling of loops, smarter handling of pointer
-    // decrement.
+    // TODO: smarter handling of loops
     for instr in instrs {
         match instr {
             &Instruction::Loop(_) => {
-                max_seen = MAX_CELLS;
-                break;
+                // TODO: use saturating arithmetic
+                max_at_point = MAX_CELLS;
             },
             &Instruction::PointerIncrement(amount) => {
-                max_seen += amount as i64;
+                max_at_point += amount as i64;
             },
             _ => {}
         }
+        if max_at_point > max_overall {
+            max_overall = max_at_point;
+        }
     }
 
-    max_seen as u64
+    max_overall as u64
 }
 
 #[test]
@@ -37,6 +40,12 @@ fn one_cell_bounds() {
 fn ptr_increment_bounds() {
     let instrs = parse(">").unwrap();
     assert_eq!(highest_cell_index(&instrs), 2);
+}
+
+#[test]
+fn ptr_increment_sequence_bounds() {
+    let instrs = parse(">>.<").unwrap();
+    assert_eq!(highest_cell_index(&instrs), 3);
 }
 
 #[test]
