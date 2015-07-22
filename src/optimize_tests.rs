@@ -17,6 +17,7 @@ impl Arbitrary for Instruction {
                 Arbitrary::arbitrary(g)),
             3 => Instruction::Read,
             4 => Instruction::Write,
+            // TODO: we should be able to generate nested instructions here!
             5 => Instruction::Loop(vec![]),
             _ => unreachable!()
         }
@@ -263,4 +264,43 @@ fn should_remove_dead_pure_code(instrs: Vec<Instruction>) -> TestResult {
         return TestResult::discard();
     }
     return TestResult::from_bool(optimize(instrs) == vec![]);
+}
+
+#[quickcheck]
+fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
+    // Once we've optimized once, running again shouldn't reduce the
+    // instructions further. If it does, we're probably running our
+    // optimisations in the wrong order.
+    let minimal = optimize(instrs.clone());
+    let prop = optimize(minimal.clone()) == minimal;
+
+    if !prop {
+        println!("Original: {:?}", instrs);
+        println!("Minimal: {:?}", minimal);
+    }
+
+    return prop;
+}
+
+fn count_instrs(instrs: &Vec<Instruction>) -> u64 {
+    let mut count = 0;
+    for instr in instrs {
+        match instr {
+            &Instruction::Loop(ref body) => {
+                count += count_instrs(body);
+            }
+            _ => {
+                count += 1;
+            }
+        }
+    }
+    count
+}
+
+#[quickcheck]
+fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
+    // The result of optimize() should never increase the number of
+    // instructions.
+    let result = optimize(instrs.clone());
+    return count_instrs(&result) <= count_instrs(&instrs);
 }
