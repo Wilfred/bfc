@@ -21,10 +21,8 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
     }).filter(|instr| {
         // Remove any increments of 0.
-        if let &Instruction::Increment(amount) = instr {
-            if amount == 0 {
-                return false;
-            }
+        if let &Instruction::Increment(0) = instr {
+            return false;
         }
         true
     }).map(|instr| {
@@ -48,10 +46,8 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
     }).filter(|instr| {
         // Remove any increments of 0.
-        if let &Instruction::PointerIncrement(amount) = instr {
-            if amount == 0 {
-                return false;
-            }
+        if let &Instruction::PointerIncrement(0) = instr {
+            return false;
         }
         true
     }).map(|instr| {
@@ -111,12 +107,9 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Remove any loops where we know the current cell is zero.
 pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    // TODO: nested dead loops.
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (Instruction::Set(amount), Instruction::Loop(_)) = (prev_instr.clone(), instr.clone()) {
-            if amount == 0 {
-                return Ok(Instruction::Set(amount));
-            }
+        if let (Instruction::Set(0), Instruction::Loop(_)) = (prev_instr.clone(), instr.clone()) {
+            return Ok(Instruction::Set(0));
         }
         Err((prev_instr, instr))
     }).map(|instr| {
@@ -159,10 +152,8 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (Instruction::Loop(body), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
-            if amount == 0 {
-                return Ok(Instruction::Loop(body));
-            }
+        if let (Instruction::Loop(body), Instruction::Set(0)) = (prev_instr.clone(), instr.clone()) {
+            return Ok(Instruction::Loop(body));
         }
         Err((prev_instr, instr))
     }).map(|instr| {
