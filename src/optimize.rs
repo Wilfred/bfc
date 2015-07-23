@@ -5,8 +5,8 @@ use bfir::Instruction;
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
-    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(annotated)));
-    remove_pure_code(remove_redundant_sets(combine_before_read(simplified)))
+    let simplified = combine_set_and_increments(remove_dead_loops(simplify_loops(annotated)));
+    remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
 }
 
 /// Combine consecutive increments into a single increment
@@ -126,7 +126,7 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// increments.
 pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (Instruction::Set(_), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
+        if let (Instruction::Increment(_), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
             return Ok(Instruction::Set(amount));
         }
         Err((prev_instr, instr))
@@ -136,7 +136,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (Instruction::Increment(_), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
+        if let (Instruction::Set(_), Instruction::Set(amount)) = (prev_instr.clone(), instr.clone()) {
             return Ok(Instruction::Set(amount));
         }
         Err((prev_instr, instr))

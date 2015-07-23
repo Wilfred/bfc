@@ -272,14 +272,7 @@ fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
     // instructions further. If it does, we're probably running our
     // optimisations in the wrong order.
     let minimal = optimize(instrs.clone());
-    let prop = optimize(minimal.clone()) == minimal;
-
-    if !prop {
-        println!("Original: {:?}", instrs);
-        println!("Minimal: {:?}", minimal);
-    }
-
-    return prop;
+    return optimize(minimal.clone()) == minimal;
 }
 
 fn count_instrs(instrs: &Vec<Instruction>) -> u64 {
