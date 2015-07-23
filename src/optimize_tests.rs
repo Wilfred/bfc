@@ -278,14 +278,10 @@ fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
 fn count_instrs(instrs: &Vec<Instruction>) -> u64 {
     let mut count = 0;
     for instr in instrs {
-        match instr {
-            &Instruction::Loop(ref body) => {
-                count += count_instrs(body);
-            }
-            _ => {
-                count += 1;
-            }
+        if let &Instruction::Loop(ref body) = instr {
+            count += count_instrs(body);
         }
+        count += 1;
     }
     count
 }
