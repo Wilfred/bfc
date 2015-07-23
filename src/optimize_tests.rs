@@ -8,7 +8,7 @@ use quickcheck::{Arbitrary,Gen,TestResult};
 impl Arbitrary for Instruction {
     fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
         let i = g.next_u32();
-        match i % 6 {
+        match i % 11 {
             0 => Instruction::Increment(
                 Arbitrary::arbitrary(g)),
             1 => Instruction::PointerIncrement(
@@ -17,8 +17,18 @@ impl Arbitrary for Instruction {
                 Arbitrary::arbitrary(g)),
             3 => Instruction::Read,
             4 => Instruction::Write,
-            // TODO: we should be able to generate nested instructions here!
+            // TODO: we should be able to generate arbitrary nested
+            // instructions, instead of limited range. Currently we're
+            // getting a stack overflow.
             5 => Instruction::Loop(vec![]),
+            6 => Instruction::Loop(vec![Instruction::Increment(
+                Arbitrary::arbitrary(g))]),
+            7 => Instruction::Loop(vec![Instruction::PointerIncrement(
+                Arbitrary::arbitrary(g))]),
+            8 => Instruction::Loop(vec![Instruction::Set(
+                Arbitrary::arbitrary(g))]),
+            9 => Instruction::Loop(vec![Instruction::Read]),
+            10 => Instruction::Loop(vec![Instruction::Read]),
             _ => unreachable!()
         }
     }
