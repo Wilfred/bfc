@@ -157,7 +157,17 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
 }
 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let mut reduced: Vec<_> = instrs.into_iter().coalesce(|prev_instr, instr| {
+    let mut reduced = remove_redundant_sets_inner(instrs);
+
+    if let Some(&Instruction::Set(0)) = reduced.first() {
+        reduced.remove(0);
+    }
+
+    reduced
+}
+
+fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    instrs.into_iter().coalesce(|prev_instr, instr| {
         if let (Instruction::Loop(body), Instruction::Set(0)) = (prev_instr.clone(), instr.clone()) {
             return Ok(Instruction::Loop(body));
         }
@@ -165,17 +175,11 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).map(|instr| {
         match instr {
             Instruction::Loop(body) => {
-                Instruction::Loop(remove_redundant_sets(body))
+                Instruction::Loop(remove_redundant_sets_inner(body))
             },
             i => i
         }
-    }).collect();
-
-    if let Some(&Instruction::Set(0)) = reduced.first() {
-        reduced.remove(0);
-    }
-
-    reduced
+    }).collect()
 }
 
 pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {

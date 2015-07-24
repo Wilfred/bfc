@@ -267,6 +267,15 @@ fn should_annotate_known_zero_cleaned_up() {
 }
 
 #[test]
+fn should_preserve_set_0_in_loop() {
+    // Regression test.
+    let initial = vec![Instruction::Read,
+                       Instruction::Loop(
+                           vec![Instruction::Set(0)])];
+    assert_eq!(optimize(initial.clone()), initial);
+}
+
+#[test]
 fn should_remove_pure_code() {
     // The final increment here is side-effect free and can be
     // removed.
