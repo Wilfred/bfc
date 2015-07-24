@@ -257,6 +257,15 @@ fn should_annotate_known_zero_nested() {
     assert_eq!(annotate_known_zero(initial), expected);
 }
 
+/// When we annotate known zeroes, we have new opportunities for
+/// combining instructions and loop removal. However, we should later
+/// remove the Set 0 if we haven't combined it.
+#[test]
+fn should_annotate_known_zero_cleaned_up() {
+    let initial = vec![Instruction::Write];
+    assert_eq!(optimize(initial.clone()), initial);
+}
+
 #[test]
 fn should_remove_pure_code() {
     // The final increment here is side-effect free and can be

@@ -5,7 +5,13 @@ use bfir::Instruction;
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
-    let simplified = combine_set_and_increments(remove_dead_loops(simplify_loops(annotated)));
+    // Removing dead loops can require us to collapse increments first:
+    // Set 1, Increment -1, Loop => Set 0
+    // however, it can also create opportunities to collapse increments:
+    // Set 0, Loop, Increment 1 => Set 1
+    // so we need to run it twice.
+    let simplified = combine_set_and_increments(
+        remove_dead_loops(combine_set_and_increments(simplify_loops(annotated))));
     remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
 }
 
@@ -151,7 +157,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
 }
 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter().coalesce(|prev_instr, instr| {
+    let mut reduced: Vec<_> = instrs.into_iter().coalesce(|prev_instr, instr| {
         if let (Instruction::Loop(body), Instruction::Set(0)) = (prev_instr.clone(), instr.clone()) {
             return Ok(Instruction::Loop(body));
         }
@@ -163,7 +169,13 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
             },
             i => i
         }
-    }).collect()
+    }).collect();
+
+    if let Some(&Instruction::Set(0)) = reduced.first() {
+        reduced.remove(0);
+    }
+
+    reduced
 }
 
 pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
