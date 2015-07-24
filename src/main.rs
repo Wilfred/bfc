@@ -74,7 +74,7 @@ fn main() {
                     return
                 }
 
-                let num_cells = bounds::highest_cell_index(&instrs);
+                let num_cells = bounds::highest_cell_index(&instrs) + 1;
 
                 let llvm_ir_raw;
                 unsafe {
