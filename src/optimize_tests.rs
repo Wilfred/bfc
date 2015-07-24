@@ -18,8 +18,8 @@ impl Arbitrary for Instruction {
             3 => Instruction::Read,
             4 => Instruction::Write,
             // TODO: we should be able to generate arbitrary nested
-            // instructions, instead of limited range. Currently we're
-            // getting a stack overflow.
+            // instructions, instead of limited range. See
+            // https://github.com/BurntSushi/quickcheck/issues/23
             5 => Instruction::Loop(vec![]),
             6 => Instruction::Loop(vec![Instruction::Increment(
                 Arbitrary::arbitrary(g))]),
