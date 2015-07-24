@@ -52,8 +52,10 @@ $ cargo test
 ## Test programs
 
 There are a few test programs in this repo, but
-http://www.hevanet.com/cristofd/brainfuck/tests.b is also an excellent
-collection of test BF programs.
+http://www.hevanet.com/cristofd/brainfuck/tests.b is an excellent
+collection of test BF programs and
+http://esoteric.sange.fi/brainfuck/bf-source/prog/ includes some more
+elaborate programs.
 
 ## Peephole optimisations
 
