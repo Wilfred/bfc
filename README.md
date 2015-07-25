@@ -60,10 +60,12 @@ elaborate programs.
 
 ## Peephole optimisations
 
-bfc can use LLVM's optimisations, but it also offers some BF-specific
-optimisations. There's a roadmap in
-[optimisations.md](optimisations.md) of optimisations we will
-implement at the BF IR level.
+bfc provides a range of peephole optimisations. We use quickcheck to
+ensure our optimisations are in the optimal order (by verifying that
+our optimiser is idempotent).
+
+There's also a roadmap in [optimisations.md](optimisations.md) of
+optimisations we haven't yet implemented.
 
 ### Combining Instructions
 
