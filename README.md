@@ -25,6 +25,7 @@ GPLv2 or later license.
         - [Combining Instructions](#combining-instructions)
         - [Loop Simplification](#loop-simplification)
         - [Dead Code Elimination](#dead-code-elimination)
+    - [Cell Bounds Analysis](#cell-bounds-analysis)
     - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
