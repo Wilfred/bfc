@@ -41,22 +41,6 @@ Rather than a naive IR equivalent, IR should look like this:
 
 (IR transformation, speed improvement.)
 
-## Cell counting
-
-Most BF programs don't use an unbounded number of cells, and some
-interpreters only provide 30,000 cells. If we consider every possible
-path through the conditionals, and the net number of cell moves, we do
-not need to allocate 30,000 cells to our compiled program.
-
-Examples:
-
-1: Unbounded cell usage, no optimisation possible: `[>]`
-
-2: `[><]` visits cell #1, but this conditional produces a net movement
-of 0.
-
-(IR transsformation, memory improvement.)
-
 ## Constant cell detection
 
 If, after constant propagation, we can demonstrate that a cell is
