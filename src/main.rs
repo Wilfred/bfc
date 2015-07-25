@@ -19,6 +19,7 @@ mod bounds;
 
 #[cfg(test)]
 mod optimize_tests;
+mod llvm_tests;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents.
