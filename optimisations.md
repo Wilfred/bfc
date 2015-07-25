@@ -40,22 +40,3 @@ Rather than a naive IR equivalent, IR should look like this:
     cells[index] = 0
 
 (IR transformation, speed improvement.)
-
-## Constant cell detection
-
-If, after constant propagation, we can demonstrate that a cell is
-never modified, we can replace accesses to it with its constant value.
-
-So if cell #5 never changes from the value 21, we can replace all IR
-of the form:
-
-    cell[index] = cell[5]
-
-with:
-
-    cell[index] = 21
-
-Depending on how sophisticated our cell counting can be, we may also be
-able to remove cell #5 entirely, so cell #6 is stored in its place.
-    
-(IR transformation, speed and potentially memory improvement.)
