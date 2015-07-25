@@ -189,6 +189,31 @@ Write         =>           Write
 Increment 1
 ```
 
+## Cell Bounds Analysis
+
+BF programs can use up to 30,000 cells, all of which must be
+zero-initialised. However, most programs don't use the whole range.
+
+bfc uses static analysis to work out how many cells a BF program may
+use, so it doesn't need to allocate or zero-initialise more memory
+than necessary.
+
+```
+>><< only uses three cells
+```
+
+```
+[>><<] uses three cells at most
+```
+
+```
+[>><<]>>> uses four cells at most
+```
+
+```
+[>] may use any number of cells, so we must assume 30,000
+```
+
 ## Other projects optimising BF
 
 There are also some interesting other projects for optimising BF
