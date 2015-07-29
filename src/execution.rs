@@ -15,6 +15,13 @@ struct ExecutionState {
     outputs: Vec<i8>
 }
 
+#[derive(Debug,PartialEq,Eq)]
+enum ExecutionResult {
+    Done(ExecutionState),
+    ReachedRuntimeValue(ExecutionState),
+    OutOfSteps(ExecutionState),
+}
+
 // TODO: this is probably not enough.
 const MAX_STEPS: u64 = 1000;
 
@@ -23,7 +30,7 @@ const MAX_STEPS: u64 = 1000;
 /// the code we reached.
 ///
 /// If we reach an apparently infinite loop, return None.
-fn execute(instrs: &Vec<Instruction>, steps: u64) -> Option<ExecutionState> {
+fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionResult {
     let mut steps = steps;
     
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
@@ -56,7 +63,7 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> Option<ExecutionState> {
         }
     }
 
-    Some(state)
+    ExecutionResult::Done(state)
 }
 
 /// We can't evaluate outputs of runtime values at compile time.
@@ -67,7 +74,9 @@ fn cant_evaluate_inputs() {
 
     assert_eq!(
         result,
-        Some(ExecutionState { next: 0, known_cells: vec![0], cell_ptr: 0, outputs: vec![] }))
+        ExecutionResult::Done(ExecutionState {
+            next: 0, known_cells: vec![0], cell_ptr: 0, outputs: vec![]
+        }))
 }
 
 #[test]
@@ -77,7 +86,9 @@ fn increment_executed() {
 
     assert_eq!(
         result,
-        Some(ExecutionState { next: 1, known_cells: vec![1], cell_ptr: 0, outputs: vec![] }))
+        ExecutionResult::Done(ExecutionState {
+            next: 1, known_cells: vec![1], cell_ptr: 0, outputs: vec![]
+        }))
 }
 
 #[test]
@@ -87,7 +98,9 @@ fn decrement_executed() {
 
     assert_eq!(
         result,
-        Some(ExecutionState { next: 2, known_cells: vec![0], cell_ptr: 0, outputs: vec![] }))
+        ExecutionResult::Done(ExecutionState {
+            next: 2, known_cells: vec![0], cell_ptr: 0, outputs: vec![]
+        }))
 }
 
 #[test]
@@ -97,7 +110,9 @@ fn ptr_increment_executed() {
 
     assert_eq!(
         result,
-        Some(ExecutionState { next: 1, known_cells: vec![0, 0], cell_ptr: 1, outputs: vec![] }))
+        ExecutionResult::Done(ExecutionState {
+            next: 1, known_cells: vec![0, 0], cell_ptr: 1, outputs: vec![]
+        }))
 }
 
 #[test]
@@ -107,7 +122,9 @@ fn limit_to_steps_specified() {
     
     assert_eq!(
         result,
-        Some(ExecutionState { next: 2, known_cells: vec![2], cell_ptr: 0, outputs: vec![] }))
+        ExecutionResult::Done(ExecutionState {
+            next: 2, known_cells: vec![2], cell_ptr: 0, outputs: vec![]
+        }))
 }
 
 #[test]
@@ -117,5 +134,7 @@ fn write_executed() {
 
     assert_eq!(
         result,
-        Some(ExecutionState { next: 2, known_cells: vec![1], cell_ptr: 0, outputs: vec![1] }))
+        ExecutionResult::Done(ExecutionState {
+            next: 2, known_cells: vec![1], cell_ptr: 0, outputs: vec![1]
+        }))
 }
