@@ -10,7 +10,7 @@ struct ExecutionState {
     // Not all 30,000 cells, just those whose value we know.  Arguably
     // this should be a u8, but it's more convenient to work with (in
     // BF values can wrap around anyway).
-    known_cells: Vec<i8>,
+    cells: Vec<i8>,
     cell_ptr: usize,
     outputs: Vec<i8>
 }
@@ -33,13 +33,13 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> (ExecutionState, Outcome) {
     
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
     let mut state = ExecutionState {
-        next: 0, known_cells: cells, cell_ptr: 0, outputs: vec![] };
+        next: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
 
     for instr in instrs {
         match instr {
             &Increment(amount) => {
                 // TODO: Increment should use an i8.
-                state.known_cells[state.cell_ptr] += amount as i8;
+                state.cells[state.cell_ptr] += amount as i8;
             }
             &PointerIncrement(amount) => {
                 // TODO: PointerIncrement should use a usize.
@@ -47,7 +47,7 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> (ExecutionState, Outcome) {
                 // TODO: append more cells as necessary.
             }
             &Write => {
-                let cell_value = state.known_cells[state.cell_ptr];
+                let cell_value = state.cells[state.cell_ptr];
                 state.outputs.push(cell_value);
             }
             &Read => {
@@ -75,7 +75,7 @@ fn cant_evaluate_inputs() {
     assert_eq!(outcome, Outcome::ReachedRuntimeValue);
     assert_eq!(
         final_state, ExecutionState {
-            next: 0, known_cells: vec![0], cell_ptr: 0, outputs: vec![]
+            next: 0, cells: vec![0], cell_ptr: 0, outputs: vec![]
         });
 }
 
@@ -87,7 +87,7 @@ fn increment_executed() {
     assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
-            next: 1, known_cells: vec![1], cell_ptr: 0, outputs: vec![]
+            next: 1, cells: vec![1], cell_ptr: 0, outputs: vec![]
         });
 }
 
@@ -99,7 +99,7 @@ fn decrement_executed() {
     assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
-            next: 2, known_cells: vec![0], cell_ptr: 0, outputs: vec![]
+            next: 2, cells: vec![0], cell_ptr: 0, outputs: vec![]
         });
 }
 
@@ -111,7 +111,7 @@ fn ptr_increment_executed() {
     assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
-            next: 1, known_cells: vec![0, 0], cell_ptr: 1, outputs: vec![]
+            next: 1, cells: vec![0, 0], cell_ptr: 1, outputs: vec![]
         });
 }
 
@@ -123,7 +123,7 @@ fn limit_to_steps_specified() {
     assert_eq!(outcome, Outcome::OutOfSteps);
     assert_eq!(
         final_state, ExecutionState {
-            next: 2, known_cells: vec![2], cell_ptr: 0, outputs: vec![]
+            next: 2, cells: vec![2], cell_ptr: 0, outputs: vec![]
         });
 }
 
@@ -135,6 +135,6 @@ fn write_executed() {
     assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
-            next: 2, known_cells: vec![1], cell_ptr: 0, outputs: vec![1]
+            next: 2, cells: vec![1], cell_ptr: 0, outputs: vec![1]
         });
 }
