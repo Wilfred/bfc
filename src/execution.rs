@@ -25,16 +25,23 @@ enum Outcome {
 // TODO: this is probably not enough.
 const MAX_STEPS: u64 = 1000;
 
+
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
-fn execute(instrs: &Vec<Instruction>, steps: u64) -> (ExecutionState, Outcome) {
-    let mut steps = steps;
-    
+fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionState {
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
     let mut state = ExecutionState {
         next: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
+    let (final_state, _) = execute_inner(instrs, state, steps);
+    final_state
+}
 
+fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
+                 -> (ExecutionState, Outcome) {
+    let mut steps = steps;
+    let mut state = state;
+    
     for instr in instrs {
         match instr {
             &Increment(amount) => {
@@ -53,7 +60,9 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> (ExecutionState, Outcome) {
             &Read => {
                 return (state, Outcome::ReachedRuntimeValue);
             }
-            _ => {}
+            // TODO: when we're done, we shouldn't need a placeholder
+            // at the end.
+            _ => unreachable!()
         }
         state.next += 1;
         steps -= 1;
@@ -70,9 +79,8 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> (ExecutionState, Outcome) {
 #[test]
 fn cant_evaluate_inputs() {
     let instrs = parse(",.").unwrap();
-    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
+    let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(outcome, Outcome::ReachedRuntimeValue);
     assert_eq!(
         final_state, ExecutionState {
             next: 0, cells: vec![0], cell_ptr: 0, outputs: vec![]
@@ -82,9 +90,8 @@ fn cant_evaluate_inputs() {
 #[test]
 fn increment_executed() {
     let instrs = parse("+").unwrap();
-    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
+    let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
             next: 1, cells: vec![1], cell_ptr: 0, outputs: vec![]
@@ -94,9 +101,8 @@ fn increment_executed() {
 #[test]
 fn decrement_executed() {
     let instrs = parse("+-").unwrap();
-    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
+    let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
             next: 2, cells: vec![0], cell_ptr: 0, outputs: vec![]
@@ -106,9 +112,8 @@ fn decrement_executed() {
 #[test]
 fn ptr_increment_executed() {
     let instrs = parse(">").unwrap();
-    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
+    let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
             next: 1, cells: vec![0, 0], cell_ptr: 1, outputs: vec![]
@@ -118,9 +123,8 @@ fn ptr_increment_executed() {
 #[test]
 fn limit_to_steps_specified() {
     let instrs = parse("++++").unwrap();
-    let (final_state, outcome) = execute(&instrs, 2);
+    let final_state = execute(&instrs, 2);
 
-    assert_eq!(outcome, Outcome::OutOfSteps);
     assert_eq!(
         final_state, ExecutionState {
             next: 2, cells: vec![2], cell_ptr: 0, outputs: vec![]
@@ -130,9 +134,8 @@ fn limit_to_steps_specified() {
 #[test]
 fn write_executed() {
     let instrs = parse("+.").unwrap();
-    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
+    let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
         final_state, ExecutionState {
             next: 2, cells: vec![1], cell_ptr: 0, outputs: vec![1]
