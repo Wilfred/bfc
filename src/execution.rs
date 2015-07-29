@@ -1,5 +1,6 @@
 use bfir::parse;
 use bfir::Instruction;
+use bfir::Instruction::*;
 
 use bounds::highest_cell_index;
 
@@ -27,17 +28,17 @@ fn execute(instrs: &Vec<Instruction>, _: u64) -> ExecutionState {
 
     for instr in instrs {
         match instr {
-            &Instruction::Increment(amount) => {
-                // TODO: Instruction::Increment should use an i8.
+            &Increment(amount) => {
+                // TODO: Increment should use an i8.
                 state.known_cells[state.cell_ptr] += amount as i8;
             }
-            &Instruction::PointerIncrement(amount) => {
-                // TODO: Instruction::PointerIncrement should use a usize.
+            &PointerIncrement(amount) => {
+                // TODO: PointerIncrement should use a usize.
                 state.cell_ptr += amount as usize;
                 // TODO: append more cells as necessary.
             }
-            &Instruction::Read => { break; }
-            &Instruction::Write => { break; }
+            &Read => { break; }
+            &Write => { break; }
             _ => {}
         }
         state.next += 1;

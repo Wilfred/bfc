@@ -5,6 +5,7 @@ use llvm_sys::prelude::*;
 use std::ffi::{CString,CStr};
 
 use bfir::Instruction;
+use bfir::Instruction::*;
 
 const LLVM_FALSE: LLVMBool = 0;
 
@@ -297,17 +298,17 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
                             cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                             -> &'a mut LLVMBasicBlock {
     match instr {
-        &Instruction::Increment(amount) =>
+        &Increment(amount) =>
             compile_increment(amount, module, bb, cells, cell_index_ptr),
-        &Instruction::Set(amount) =>
+        &Set(amount) =>
             compile_set(amount, module, bb, cells, cell_index_ptr),
-        &Instruction::PointerIncrement(amount) =>
+        &PointerIncrement(amount) =>
             compile_ptr_increment(amount, module, bb, cell_index_ptr),
-        &Instruction::Read =>
+        &Read =>
             compile_read(module, bb, cells, cell_index_ptr),
-        &Instruction::Write =>
+        &Write =>
             compile_write(module, bb, cells, cell_index_ptr),
-        &Instruction::Loop(ref body) => {
+        &Loop(ref body) => {
             compile_loop(module, bb, body, main_fn, cells, cell_index_ptr)
         }
     }
