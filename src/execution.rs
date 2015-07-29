@@ -51,7 +51,6 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
             &PointerIncrement(amount) => {
                 // TODO: PointerIncrement should use a usize.
                 state.cell_ptr += amount as usize;
-                // TODO: append more cells as necessary.
             }
             &Write => {
                 let cell_value = state.cells[state.cell_ptr];
