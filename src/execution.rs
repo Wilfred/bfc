@@ -23,7 +23,9 @@ const MAX_STEPS: u64 = 1000;
 /// the code we reached.
 ///
 /// If we reach an apparently infinite loop, return None.
-fn execute(instrs: &Vec<Instruction>, _: u64) -> Option<ExecutionState> {
+fn execute(instrs: &Vec<Instruction>, steps: u64) -> Option<ExecutionState> {
+    let mut steps = steps;
+    
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
     let mut state = ExecutionState {
         next: 0, known_cells: cells, cell_ptr: 0, outputs: vec![] };
@@ -44,6 +46,11 @@ fn execute(instrs: &Vec<Instruction>, _: u64) -> Option<ExecutionState> {
             _ => {}
         }
         state.next += 1;
+        steps -= 1;
+
+        if steps == 0 {
+            break;
+        }
     }
 
     Some(state)
@@ -88,4 +95,14 @@ fn ptr_increment_executed() {
     assert_eq!(
         result,
         Some(ExecutionState { next: 1, known_cells: vec![0, 0], cell_ptr: 1, outputs: vec![] }))
+}
+
+#[test]
+fn limit_to_steps_specified() {
+    let instrs = parse("++++").unwrap();
+    let result = execute(&instrs, 2);
+    
+    assert_eq!(
+        result,
+        Some(ExecutionState { next: 2, known_cells: vec![2], cell_ptr: 0, outputs: vec![] }))
 }
