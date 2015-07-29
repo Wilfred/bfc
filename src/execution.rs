@@ -21,7 +21,9 @@ const MAX_STEPS: u64 = 1000;
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
-fn execute(instrs: &Vec<Instruction>, _: u64) -> ExecutionState {
+///
+/// If we reach an apparently infinite loop, return None.
+fn execute(instrs: &Vec<Instruction>, _: u64) -> Option<ExecutionState> {
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
     let mut state = ExecutionState {
         next: 0, known_cells: cells, cell_ptr: 0, outputs: vec![] };
@@ -44,7 +46,7 @@ fn execute(instrs: &Vec<Instruction>, _: u64) -> ExecutionState {
         state.next += 1;
     }
 
-    state
+    Some(state)
 }
 
 /// We can't evaluate outputs of runtime values at compile time.
@@ -55,7 +57,7 @@ fn cant_evaluate_inputs() {
 
     assert_eq!(
         result,
-        ExecutionState { next: 0, known_cells: vec![0], cell_ptr: 0, outputs: vec![] })
+        Some(ExecutionState { next: 0, known_cells: vec![0], cell_ptr: 0, outputs: vec![] }))
 }
 
 #[test]
@@ -65,7 +67,7 @@ fn increment_executed() {
 
     assert_eq!(
         result,
-        ExecutionState { next: 1, known_cells: vec![1], cell_ptr: 0, outputs: vec![] })
+        Some(ExecutionState { next: 1, known_cells: vec![1], cell_ptr: 0, outputs: vec![] }))
 }
 
 #[test]
@@ -75,7 +77,7 @@ fn decrement_executed() {
 
     assert_eq!(
         result,
-        ExecutionState { next: 2, known_cells: vec![0], cell_ptr: 0, outputs: vec![] })
+        Some(ExecutionState { next: 2, known_cells: vec![0], cell_ptr: 0, outputs: vec![] }))
 }
 
 #[test]
@@ -85,5 +87,5 @@ fn ptr_increment_executed() {
 
     assert_eq!(
         result,
-        ExecutionState { next: 1, known_cells: vec![0, 0], cell_ptr: 1, outputs: vec![] })
+        Some(ExecutionState { next: 1, known_cells: vec![0, 0], cell_ptr: 1, outputs: vec![] }))
 }
