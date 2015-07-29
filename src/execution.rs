@@ -52,7 +52,9 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionResult {
                 let cell_value = state.known_cells[state.cell_ptr];
                 state.outputs.push(cell_value);
             }
-            &Read => { break; }
+            &Read => {
+                return ExecutionResult::ReachedRuntimeValue(state);
+            }
             _ => {}
         }
         state.next += 1;
@@ -74,7 +76,7 @@ fn cant_evaluate_inputs() {
 
     assert_eq!(
         result,
-        ExecutionResult::Done(ExecutionState {
+        ExecutionResult::ReachedRuntimeValue(ExecutionState {
             next: 0, known_cells: vec![0], cell_ptr: 0, outputs: vec![]
         }))
 }
