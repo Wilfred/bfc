@@ -6,7 +6,7 @@ use bounds::highest_cell_index;
 
 #[derive(Debug,PartialEq,Eq)]
 struct ExecutionState {
-    next: u64,
+    next: usize,
     // Not all 30,000 cells, just those whose value we know.  Arguably
     // this should be a u8, but it's more convenient to work with (in
     // BF values can wrap around anyway).
@@ -31,7 +31,7 @@ const MAX_STEPS: u64 = 1000;
 /// the code we reached.
 fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionState {
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
-    let mut state = ExecutionState {
+    let state = ExecutionState {
         next: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
     let (final_state, _) = execute_inner(instrs, state, steps);
     final_state
@@ -41,9 +41,9 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
                  -> (ExecutionState, Outcome) {
     let mut steps = steps;
     let mut state = state;
-    
-    for instr in instrs {
-        match instr {
+
+    loop {
+        match &instrs[state.next] {
             &Increment(amount) => {
                 // TODO: Increment should use an i8.
                 state.cells[state.cell_ptr] += amount as i8;
@@ -70,9 +70,10 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
         if steps == 0 {
             return (state, Outcome::OutOfSteps);
         }
+        if state.next == instrs.len() {
+            return (state, Outcome::Completed);
+        }
     }
-
-    (state, Outcome::Completed)
 }
 
 /// We can't evaluate outputs of runtime values at compile time.
