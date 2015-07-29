@@ -4,7 +4,7 @@ use bfir::Instruction::*;
 
 use bounds::highest_cell_index;
 
-#[derive(Debug,Clone,PartialEq,Eq)]
+#[derive(Debug,PartialEq,Eq)]
 struct ExecutionState {
     instr_ptr: usize,
     // Not all 30,000 cells, just those whose value we know.  Arguably
@@ -62,8 +62,7 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
             }
             &Loop(ref body) => {
                 if state.cells[state.cell_ptr] != 0 {
-                    let mut loop_body_state = state.clone();
-                    loop_body_state.instr_ptr = 0;
+                    let loop_body_state = ExecutionState { instr_ptr: 0, .. state };
                     let (state_after, loop_outcome) = execute_inner(body, loop_body_state, steps);
                     if let &Outcome::Completed = &loop_outcome {
                         // We finished executing the loop, so carry on.
