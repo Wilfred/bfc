@@ -4,7 +4,7 @@ use bfir::Instruction::*;
 
 use bounds::highest_cell_index;
 
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug,Clone,PartialEq,Eq)]
 struct ExecutionState {
     instr_ptr: usize,
     // Not all 30,000 cells, just those whose value we know.  Arguably
@@ -12,7 +12,8 @@ struct ExecutionState {
     // BF values can wrap around anyway).
     cells: Vec<i8>,
     cell_ptr: usize,
-    outputs: Vec<i8>
+    outputs: Vec<i8>,
+    steps: u64,
 }
 
 #[derive(Debug,PartialEq,Eq)]
@@ -32,17 +33,16 @@ const MAX_STEPS: u64 = 1000;
 fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionState {
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
     let state = ExecutionState {
-        instr_ptr: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
-    let (final_state, _) = execute_inner(instrs, state, steps);
+        instr_ptr: 0, cells: cells, cell_ptr: 0, outputs: vec![], steps: steps };
+    let (final_state, _) = execute_inner(instrs, state);
     final_state
 }
 
-fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
+fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState)
                  -> (ExecutionState, Outcome) {
-    let mut steps = steps;
     let mut state = state;
 
-    loop {
+    while state.instr_ptr < instrs.len() && state.steps > 0 {
         match &instrs[state.instr_ptr] {
             &Increment(amount) => {
                 // TODO: Increment should use an i8.
@@ -61,14 +61,20 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
             }
             &Loop(ref body) => {
                 if state.cells[state.cell_ptr] != 0 {
-                    let loop_body_state = ExecutionState { instr_ptr: 0, .. state };
-                    let (state_after, loop_outcome) = execute_inner(body, loop_body_state, steps);
+                    let loop_body_state = ExecutionState { instr_ptr: 0, .. state.clone() };
+                    let (state_after, loop_outcome) = execute_inner(body, loop_body_state);
                     if let &Outcome::Completed = &loop_outcome {
-                        // We finished executing the loop, so carry on.
-                        state = state_after;
+                        // We finished executing a loop iteration, so store its side effects.
+                        state.cells = state_after.cells;
+                        state.outputs = state_after.outputs;
+                        state.cell_ptr = state_after.cell_ptr;
+                        // We've run several steps during the loop body, so update for that too.
+                        state.steps = state_after.steps;
+                        // Go back to the start of the loop.
+                        state.instr_ptr -= 1;
                     }
                     else {
-                        return (state_after, loop_outcome);
+                        return (state, loop_outcome);
                     }
                 }
             }
@@ -76,15 +82,17 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
             // at the end.
             _ => unreachable!()
         }
-        state.instr_ptr += 1;
-        steps -= 1;
 
-        if steps == 0 {
-            return (state, Outcome::OutOfSteps);
-        }
-        if state.instr_ptr == instrs.len() {
-            return (state, Outcome::Completed);
-        }
+        state.instr_ptr += 1;
+        state.steps -= 1;
+    }
+
+    if state.steps == 0 {
+        // TODO: since state includes the steps, this enum value is
+        // arguably redundant.
+        (state, Outcome::OutOfSteps)
+    } else {
+        (state, Outcome::Completed)
     }
 }
 
@@ -96,7 +104,8 @@ fn cant_evaluate_inputs() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 0, cells: vec![0], cell_ptr: 0, outputs: vec![]
+            instr_ptr: 0, cells: vec![0], cell_ptr: 0, outputs: vec![],
+            steps: MAX_STEPS
         });
 }
 
@@ -107,7 +116,8 @@ fn increment_executed() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![1], cell_ptr: 0, outputs: vec![]
+            instr_ptr: 1, cells: vec![1], cell_ptr: 0, outputs: vec![],
+            steps: MAX_STEPS - 1
         });
 }
 
@@ -118,7 +128,8 @@ fn decrement_executed() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![0], cell_ptr: 0, outputs: vec![]
+            instr_ptr: 2, cells: vec![0], cell_ptr: 0, outputs: vec![],
+            steps: MAX_STEPS - 2
         });
 }
 
@@ -129,7 +140,8 @@ fn ptr_increment_executed() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![0, 0], cell_ptr: 1, outputs: vec![]
+            instr_ptr: 1, cells: vec![0, 0], cell_ptr: 1, outputs: vec![],
+            steps: MAX_STEPS - 1
         });
 }
 
@@ -140,7 +152,8 @@ fn limit_to_steps_specified() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![2], cell_ptr: 0, outputs: vec![]
+            instr_ptr: 2, cells: vec![2], cell_ptr: 0, outputs: vec![],
+            steps: 0
         });
 }
 
@@ -151,7 +164,8 @@ fn write_executed() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![1], cell_ptr: 0, outputs: vec![1]
+            instr_ptr: 2, cells: vec![1], cell_ptr: 0, outputs: vec![1],
+            steps: MAX_STEPS - 2
         });
 }
 
@@ -162,6 +176,47 @@ fn loop_executed() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 3, cells: vec![0], cell_ptr: 0, outputs: vec![]
+            instr_ptr: 3, cells: vec![0], cell_ptr: 0, outputs: vec![],
+            steps: MAX_STEPS - 7
+        });
+}
+
+#[test]
+fn loop_up_to_step_limit() {
+    let instrs = parse("++[-]").unwrap();
+    // Assuming we take one step to enter the loop, we will execute
+    // the loop body once.
+    let final_state = execute(&instrs, 4);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 2, cells: vec![1], cell_ptr: 0, outputs: vec![],
+            steps: 0
+        });
+}
+
+#[test]
+fn loop_with_read_body() {
+    // We should return the state before the loop is executed, since
+    // we can't execute the whole loop.
+    let instrs = parse("+[+,]").unwrap();
+    let final_state = execute(&instrs, 4);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 1, cells: vec![1], cell_ptr: 0, outputs: vec![],
+            steps: 3
+        });
+}
+
+#[test]
+fn up_to_infinite_loop_executed() {
+    let instrs = parse("++[]").unwrap();
+    let final_state = execute(&instrs, 20);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 2, cells: vec![2], cell_ptr: 0, outputs: vec![],
+            steps: 0
         });
 }
