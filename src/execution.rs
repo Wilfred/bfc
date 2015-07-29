@@ -16,10 +16,10 @@ struct ExecutionState {
 }
 
 #[derive(Debug,PartialEq,Eq)]
-enum ExecutionResult {
-    Done(ExecutionState),
-    ReachedRuntimeValue(ExecutionState),
-    OutOfSteps(ExecutionState),
+enum Outcome {
+    Completed,
+    ReachedRuntimeValue,
+    OutOfSteps,
 }
 
 // TODO: this is probably not enough.
@@ -28,9 +28,7 @@ const MAX_STEPS: u64 = 1000;
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
-///
-/// If we reach an apparently infinite loop, return None.
-fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionResult {
+fn execute(instrs: &Vec<Instruction>, steps: u64) -> (ExecutionState, Outcome) {
     let mut steps = steps;
     
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
@@ -53,7 +51,7 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionResult {
                 state.outputs.push(cell_value);
             }
             &Read => {
-                return ExecutionResult::ReachedRuntimeValue(state);
+                return (state, Outcome::ReachedRuntimeValue);
             }
             _ => {}
         }
@@ -61,82 +59,82 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionResult {
         steps -= 1;
 
         if steps == 0 {
-            return ExecutionResult::OutOfSteps(state);
+            return (state, Outcome::OutOfSteps);
         }
     }
 
-    ExecutionResult::Done(state)
+    (state, Outcome::Completed)
 }
 
 /// We can't evaluate outputs of runtime values at compile time.
 #[test]
 fn cant_evaluate_inputs() {
     let instrs = parse(",.").unwrap();
-    let result = execute(&instrs, MAX_STEPS);
+    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
 
+    assert_eq!(outcome, Outcome::ReachedRuntimeValue);
     assert_eq!(
-        result,
-        ExecutionResult::ReachedRuntimeValue(ExecutionState {
+        final_state, ExecutionState {
             next: 0, known_cells: vec![0], cell_ptr: 0, outputs: vec![]
-        }))
+        });
 }
 
 #[test]
 fn increment_executed() {
     let instrs = parse("+").unwrap();
-    let result = execute(&instrs, MAX_STEPS);
+    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
 
+    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
-        result,
-        ExecutionResult::Done(ExecutionState {
+        final_state, ExecutionState {
             next: 1, known_cells: vec![1], cell_ptr: 0, outputs: vec![]
-        }))
+        });
 }
 
 #[test]
 fn decrement_executed() {
     let instrs = parse("+-").unwrap();
-    let result = execute(&instrs, MAX_STEPS);
+    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
 
+    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
-        result,
-        ExecutionResult::Done(ExecutionState {
+        final_state, ExecutionState {
             next: 2, known_cells: vec![0], cell_ptr: 0, outputs: vec![]
-        }))
+        });
 }
 
 #[test]
 fn ptr_increment_executed() {
     let instrs = parse(">").unwrap();
-    let result = execute(&instrs, MAX_STEPS);
+    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
 
+    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
-        result,
-        ExecutionResult::Done(ExecutionState {
+        final_state, ExecutionState {
             next: 1, known_cells: vec![0, 0], cell_ptr: 1, outputs: vec![]
-        }))
+        });
 }
 
 #[test]
 fn limit_to_steps_specified() {
     let instrs = parse("++++").unwrap();
-    let result = execute(&instrs, 2);
-    
+    let (final_state, outcome) = execute(&instrs, 2);
+
+    assert_eq!(outcome, Outcome::OutOfSteps);
     assert_eq!(
-        result,
-        ExecutionResult::OutOfSteps(ExecutionState {
+        final_state, ExecutionState {
             next: 2, known_cells: vec![2], cell_ptr: 0, outputs: vec![]
-        }))
+        });
 }
 
 #[test]
 fn write_executed() {
     let instrs = parse("+.").unwrap();
-    let result = execute(&instrs, MAX_STEPS);
+    let (final_state, outcome) = execute(&instrs, MAX_STEPS);
 
+    assert_eq!(outcome, Outcome::Completed);
     assert_eq!(
-        result,
-        ExecutionResult::Done(ExecutionState {
+        final_state, ExecutionState {
             next: 2, known_cells: vec![1], cell_ptr: 0, outputs: vec![1]
-        }))
+        });
 }
