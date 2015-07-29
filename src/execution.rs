@@ -4,7 +4,7 @@ use bfir::Instruction::*;
 
 use bounds::highest_cell_index;
 
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug,Clone,PartialEq,Eq)]
 struct ExecutionState {
     instr_ptr: usize,
     // Not all 30,000 cells, just those whose value we know.  Arguably
@@ -59,6 +59,20 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
             }
             &Read => {
                 return (state, Outcome::ReachedRuntimeValue);
+            }
+            &Loop(ref body) => {
+                if state.cells[state.cell_ptr] != 0 {
+                    let mut loop_body_state = state.clone();
+                    loop_body_state.instr_ptr = 0;
+                    let (state_after, loop_outcome) = execute_inner(body, loop_body_state, steps);
+                    if let &Outcome::Completed = &loop_outcome {
+                        // We finished executing the loop, so carry on.
+                        state = state_after;
+                    }
+                    else {
+                        return (state_after, loop_outcome);
+                    }
+                }
             }
             // TODO: when we're done, we shouldn't need a placeholder
             // at the end.
@@ -140,5 +154,16 @@ fn write_executed() {
     assert_eq!(
         final_state, ExecutionState {
             instr_ptr: 2, cells: vec![1], cell_ptr: 0, outputs: vec![1]
+        });
+}
+
+#[test]
+fn loop_executed() {
+    let instrs = parse("++[-]").unwrap();
+    let final_state = execute(&instrs, MAX_STEPS);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 3, cells: vec![0], cell_ptr: 0, outputs: vec![]
         });
 }
