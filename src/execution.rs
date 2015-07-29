@@ -12,7 +12,7 @@ struct ExecutionState {
     // BF values can wrap around anyway).
     known_cells: Vec<i8>,
     cell_ptr: usize,
-    outputs: Vec<u8>
+    outputs: Vec<i8>
 }
 
 // TODO: this is probably not enough.
@@ -41,8 +41,11 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> Option<ExecutionState> {
                 state.cell_ptr += amount as usize;
                 // TODO: append more cells as necessary.
             }
+            &Write => {
+                let cell_value = state.known_cells[state.cell_ptr];
+                state.outputs.push(cell_value);
+            }
             &Read => { break; }
-            &Write => { break; }
             _ => {}
         }
         state.next += 1;
@@ -105,4 +108,14 @@ fn limit_to_steps_specified() {
     assert_eq!(
         result,
         Some(ExecutionState { next: 2, known_cells: vec![2], cell_ptr: 0, outputs: vec![] }))
+}
+
+#[test]
+fn write_executed() {
+    let instrs = parse("+.").unwrap();
+    let result = execute(&instrs, MAX_STEPS);
+
+    assert_eq!(
+        result,
+        Some(ExecutionState { next: 2, known_cells: vec![1], cell_ptr: 0, outputs: vec![1] }))
 }
