@@ -59,7 +59,7 @@ fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionResult {
         steps -= 1;
 
         if steps == 0 {
-            break;
+            return ExecutionResult::OutOfSteps(state);
         }
     }
 
@@ -122,7 +122,7 @@ fn limit_to_steps_specified() {
     
     assert_eq!(
         result,
-        ExecutionResult::Done(ExecutionState {
+        ExecutionResult::OutOfSteps(ExecutionState {
             next: 2, known_cells: vec![2], cell_ptr: 0, outputs: vec![]
         }))
 }
