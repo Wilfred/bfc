@@ -265,3 +265,10 @@ fn up_to_infinite_loop_executed() {
             instr_ptr: 2, cells: vec![2], cell_ptr: 0, outputs: vec![],
         });
 }
+
+/// Ensure that we can execute arbitrary instruction sequences.
+#[quickcheck]
+fn smoke_test(instrs: Vec<Instruction>) -> bool {
+    execute(&instrs, MAX_STEPS);
+    true
+}
