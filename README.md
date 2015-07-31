@@ -20,6 +20,7 @@ GPLv2 or later license.
     - [Compiling](#compiling)
     - [Usage](#usage)
     - [Running tests](#running-tests)
+    - [Portability](#portability)
     - [Test programs](#test-programs)
     - [Peephole optimisations](#peephole-optimisations)
         - [Combining Instructions](#combining-instructions)
@@ -49,6 +50,16 @@ Hello World!
 ```
 $ cargo test
 ```
+
+## Portability
+
+bfc considers cells to be single bytes, and arithmetic wraps
+around. As a result, `-` sets cell #0 to 255.
+
+bfc provides 30,000 cells. Accessing cells outside of this range is
+explicitly undefined, and will probably segfault your program.
+
+bfc requires brackets to be balanced, so `+[]]` is rejected.
 
 ## Test programs
 
