@@ -7,12 +7,9 @@ use bounds::highest_cell_index;
 #[derive(Debug,Clone,PartialEq,Eq)]
 struct ExecutionState {
     instr_ptr: usize,
-    // Not all 30,000 cells, just those whose value we know.  Arguably
-    // this should be a u8, but it's more convenient to work with (in
-    // BF values can wrap around anyway).
-    cells: Vec<i8>,
+    cells: Vec<u8>,
     cell_ptr: usize,
-    outputs: Vec<i8>,
+    outputs: Vec<u8>,
 }
 
 #[derive(Debug,PartialEq,Eq)]
@@ -47,11 +44,11 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
         match &instrs[state.instr_ptr] {
             &Increment(amount) => {
                 // TODO: Increment should use an i8.
-                state.cells[state.cell_ptr] += amount as i8;
+                state.cells[state.cell_ptr] = state.cells[state.cell_ptr].wrapping_add(amount as u8);
             }
             &Set(amount) => {
                 // TODO: Set should use an i8.
-                state.cells[state.cell_ptr] = amount as i8;
+                state.cells[state.cell_ptr] = amount as u8;
             }
             &PointerIncrement(amount) => {
                 // TODO: PointerIncrement should use a usize.
@@ -133,8 +130,33 @@ fn set_executed() {
 }
 
 #[test]
+fn set_wraps() {
+    // TODO: this won't be an accurate test when we move to u8.
+    let instrs = vec![Set(-1)];
+    let final_state = execute(&instrs, MAX_STEPS);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 1, cells: vec![255], cell_ptr: 0, outputs: vec![],
+        });
+}
+
+#[test]
 fn decrement_executed() {
-    let instrs = parse("+-").unwrap();
+    let instrs = parse("-").unwrap();
+    let final_state = execute(&instrs, MAX_STEPS);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 1, cells: vec![255], cell_ptr: 0, outputs: vec![],
+        });
+}
+
+// TODO: find out what the most common BF implementation choice is here.
+#[test]
+fn increment_wraps() {
+    // TODO: this won't be an accurate test when we move to u8.
+    let instrs = vec![Increment(255), Increment(1)];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(
