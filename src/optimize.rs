@@ -138,8 +138,8 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
+        // TODO: use references rather than cloning here.
         if let (Set(set_amount), Increment(inc_amount)) = (prev_instr.clone(), instr.clone()) {
-            return Ok(Set(set_amount + inc_amount));
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
