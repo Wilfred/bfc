@@ -19,8 +19,10 @@ mod bounds;
 
 #[cfg(test)]
 mod optimize_tests;
+#[cfg(test)]
 mod llvm_tests;
-mod execution; // just tests until we update llvm.rs
+#[cfg(test)] // TODO: functions only used in tests until we update llvm.rs
+mod execution;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents.
