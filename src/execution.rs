@@ -48,6 +48,10 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState)
                 // TODO: Increment should use an i8.
                 state.cells[state.cell_ptr] += amount as i8;
             }
+            &Set(amount) => {
+                // TODO: Set should use an i8.
+                state.cells[state.cell_ptr] = amount as i8;
+            }
             &PointerIncrement(amount) => {
                 // TODO: PointerIncrement should use a usize.
                 state.cell_ptr += amount as usize;
@@ -78,9 +82,6 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState)
                     }
                 }
             }
-            // TODO: when we're done, we shouldn't need a placeholder
-            // at the end.
-            _ => unreachable!()
         }
 
         state.instr_ptr += 1;
@@ -117,6 +118,18 @@ fn increment_executed() {
     assert_eq!(
         final_state, ExecutionState {
             instr_ptr: 1, cells: vec![1], cell_ptr: 0, outputs: vec![],
+            steps: MAX_STEPS - 1
+        });
+}
+
+#[test]
+fn set_executed() {
+    let instrs = vec![Set(2)];
+    let final_state = execute(&instrs, MAX_STEPS);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 1, cells: vec![2], cell_ptr: 0, outputs: vec![],
             steps: MAX_STEPS - 1
         });
 }
