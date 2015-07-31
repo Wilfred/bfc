@@ -1,16 +1,22 @@
 #![feature(plugin)]
 #![plugin(quickcheck_macros)]
 
+// TODO: find a way to avoid this.
+#![feature(convert)]
+
 extern crate llvm_sys;
 extern crate itertools;
 extern crate quickcheck;
 extern crate rand;
+extern crate tempfile;
 
 use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::io::prelude::Read;
 use std::path::Path;
+use std::process::Command;
+use tempfile::NamedTempFile;
 
 mod bfir;
 mod llvm;
@@ -33,14 +39,14 @@ fn slurp(path: &str) -> Result<String, std::io::Error> {
     Ok(contents)
 }
 
-/// Convert "foo.bf" to "foo.ll".
-fn ll_file_name(bf_file_name: &str) -> String {
+/// Convert "foo.bf" to "foo.o".
+fn obj_file_name(bf_file_name: &str) -> String {
     let mut name_parts: Vec<_> = bf_file_name.split('.').collect();
     let parts_len = name_parts.len();
     if parts_len > 1 {
-        name_parts[parts_len - 1] = "ll";
+        name_parts[parts_len - 1] = "o";
     } else {
-        name_parts.push("ll");
+        name_parts.push("o");
     }
 
     name_parts.connect(".")
@@ -88,22 +94,49 @@ fn main() {
                 if dump_llvm {
                     let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
                     println!("{}", llvm_ir);
-                } else {
-                    // TODO: write to a temp file then call llc.
-                    let bf_name = Path::new(file_path).file_name().unwrap();
-                    let ll_name = ll_file_name(bf_name.to_str().unwrap());
-                    match File::create(&ll_name) {
-                        Ok(mut f) => {
-                            let _ = f.write(llvm_ir_raw.as_bytes());
-                            println!("Wrote {}", ll_name);
-                        }
-                        Err(e) => {
-                            println!("Could not create file: {}", e);
-                            std::process::exit(1);
+                    return
+                }                        
+
+                // TODO: write to a temp file then call llc.
+                let bf_name = Path::new(file_path).file_name().unwrap();
+                let obj_name = obj_file_name(bf_name.to_str().unwrap());
+
+                match NamedTempFile::new() {
+                    Ok(mut f) => {
+                        let _ = f.write(llvm_ir_raw.as_bytes());
+
+                        // TODO: use llc optimisations
+                        // TODO: link as well.
+                        let llc_result = Command::new("llc")
+                            .arg("-filetype=obj").arg(f.path())
+                            .arg("-o").arg(obj_name.to_owned())
+                            .output();
+
+                        match llc_result {
+                            Ok(res) => {
+                                if res.stderr.len() > 0 {
+                                    // TODO: this should go to our stderr.
+                                    println!("{}", String::from_utf8_lossy(res.stderr.as_slice()));
+                                }
+                                if res.status.success() {
+                                    println!("Wrote {}", obj_name);
+                                } else {
+                                    println!("llc failed");
+                                    std::process::exit(1);
+                                }
+                            }
+                            Err(e) => {
+                                println!("LLVM IR compilation failed: {}", e);
+                                std::process::exit(1);
+                            }
                         }
                     }
+                    Err(e) => {
+                        println!("Could not create temporary file: {}", e);
+                        std::process::exit(1);
+                    }
                 }
-
+                
             }
             Err(e) => {
                 println!("Could not open file: {}", e);

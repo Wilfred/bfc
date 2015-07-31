@@ -41,7 +41,8 @@ You will need LLVM and Rust beta installed to compile bfc.
 
 ```
 $ cargo run -- sample_programs/hello_world.bf
-$ lli hello_world.ll
+$ gcc hello_world.o
+$ ./a.out
 Hello World!
 ```
 
