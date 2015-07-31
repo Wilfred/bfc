@@ -45,12 +45,10 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
         let cell_ptr = state.cell_ptr as usize;
         match &instrs[state.instr_ptr] {
             &Increment(amount) => {
-                // TODO: Increment should use an i8.
-                state.cells[cell_ptr] = state.cells[cell_ptr].wrapping_add(amount as u8);
+                state.cells[cell_ptr] = state.cells[cell_ptr].wrapping_add(amount);
             }
             &Set(amount) => {
-                // TODO: Set should use a u8.
-                state.cells[cell_ptr] = amount as u8;
+                state.cells[cell_ptr] = amount;
             }
             &PointerIncrement(amount) => {
                 // TODO: PointerIncrement should use an isize.
@@ -138,8 +136,7 @@ fn set_executed() {
 
 #[test]
 fn set_wraps() {
-    // TODO: this won't be an accurate test when we move to u8.
-    let instrs = vec![Set(-1)];
+    let instrs = vec![Set(255)];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(
@@ -162,7 +159,6 @@ fn decrement_executed() {
 // TODO: find out what the most common BF implementation choice is here.
 #[test]
 fn increment_wraps() {
-    // TODO: this won't be an accurate test when we move to u8.
     let instrs = vec![Increment(255), Increment(1)];
     let final_state = execute(&instrs, MAX_STEPS);
 

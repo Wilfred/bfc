@@ -2,8 +2,8 @@ use std::fmt;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
-    Increment(i32),
-    Set(i32),
+    Increment(u8),
+    Set(u8),
     PointerIncrement(i32),
     Read,
     Write,
@@ -58,7 +58,7 @@ fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instructi
             '+' => 
                 instructions.push(Instruction::Increment(1)),
             '-' => 
-                instructions.push(Instruction::Increment(-1)),
+                instructions.push(Instruction::Increment(255)),
             '>' => 
                 instructions.push(Instruction::PointerIncrement(1)),
             '<' => 
@@ -119,7 +119,7 @@ fn parse_increment() {
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("-").unwrap(), [Instruction::Increment(-1)]);
+    assert_eq!(parse("-").unwrap(), [Instruction::Increment(255)]);
 }
 
 #[test]
@@ -160,7 +160,7 @@ fn parse_complex_loop() {
     let loop_body = vec![Instruction::Read, Instruction::Increment(1)];
     let expected = [Instruction::Write,
                     Instruction::Loop(loop_body),
-                    Instruction::Increment(-1)];
+                    Instruction::Increment(255)];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 

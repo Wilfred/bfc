@@ -57,6 +57,18 @@ fn combine_increments_remove_redundant() {
 }
 
 #[test]
+fn combine_increment_sum_to_zero() {
+    let initial = vec![Increment(255), Increment(1)];
+    assert_eq!(combine_increments(initial), vec![]);
+}
+
+#[test]
+fn combine_set_sum_to_zero() {
+    let initial = vec![Set(255), Increment(1)];
+    assert_eq!(combine_set_and_increments(initial), vec![Set(0)]);
+}
+
+#[test]
 fn combine_ptr_increments_flat() {
     let initial = parse(">>").unwrap();
     let expected = vec![PointerIncrement(2)];
@@ -140,7 +152,7 @@ fn should_remove_dead_loops_nested() {
 }
 
 #[quickcheck]
-fn should_combine_set_and_increment(set_amount: i32, increment_amount: i32)
+fn should_combine_set_and_increment(set_amount: u8, increment_amount: u8)
                                     -> bool {
     let initial = vec![
         Set(set_amount),
@@ -150,7 +162,7 @@ fn should_combine_set_and_increment(set_amount: i32, increment_amount: i32)
 }
 
 #[quickcheck]
-fn should_combine_set_and_set(set_amount_before: i32, set_amount_after: i32)
+fn should_combine_set_and_set(set_amount_before: u8, set_amount_after: u8)
                               -> bool {
     let initial = vec![
         Set(set_amount_before),

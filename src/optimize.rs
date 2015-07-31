@@ -22,7 +22,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
         if let (Increment(prev_amount), Increment(amount)) = (prev_instr.clone(), instr.clone()) {
-            Ok(Increment(amount + prev_amount))
+            Ok(Increment(amount.wrapping_add(prev_amount)))
         } else {
             Err((prev_instr, instr))
         }
@@ -96,7 +96,8 @@ fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
         if let Loop(body) = instr.clone() {
-            if body == vec![Increment(-1)] {
+            // If the loop is [-] (255 is -1 mod 256)
+            if body == vec![Increment(255)] {
                 return Set(0)
             }
         }
@@ -140,6 +141,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
     }).coalesce(|prev_instr, instr| {
         // TODO: use references rather than cloning here.
         if let (Set(set_amount), Increment(inc_amount)) = (prev_instr.clone(), instr.clone()) {
+            return Ok(Set(set_amount.wrapping_add(inc_amount)));
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {

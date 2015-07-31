@@ -136,7 +136,7 @@ unsafe fn add_main_cleanup(module: &mut ModuleWithContext, bb: &mut LLVMBasicBlo
     LLVMDisposeBuilder(builder);
 }
 
-unsafe fn compile_increment<'a>(amount: i32, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_increment<'a>(amount: u8, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
                                 cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                                 -> &'a mut LLVMBasicBlock {
     let builder = LLVMCreateBuilder();
@@ -159,7 +159,7 @@ unsafe fn compile_increment<'a>(amount: i32, module: &mut ModuleWithContext, bb:
     bb
 }
 
-unsafe fn compile_set<'a>(amount: i32, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_set<'a>(amount: u8, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
                           cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                           -> &'a mut LLVMBasicBlock {
     let builder = LLVMCreateBuilder();
