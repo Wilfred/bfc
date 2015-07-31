@@ -8,7 +8,7 @@ use bounds::highest_cell_index;
 struct ExecutionState {
     instr_ptr: usize,
     cells: Vec<u8>,
-    cell_ptr: usize,
+    cell_ptr: isize,
     outputs: Vec<u8>,
 }
 
@@ -17,6 +17,7 @@ enum Outcome {
     // Return the number of steps remaining at completion.
     Completed(u64),
     ReachedRuntimeValue,
+    RuntimeError,
     OutOfSteps,
 }
 
@@ -41,28 +42,34 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
     let mut state = state;
 
     while state.instr_ptr < instrs.len() && steps_left > 0 {
+        let cell_ptr = state.cell_ptr as usize;
         match &instrs[state.instr_ptr] {
             &Increment(amount) => {
                 // TODO: Increment should use an i8.
-                state.cells[state.cell_ptr] = state.cells[state.cell_ptr].wrapping_add(amount as u8);
+                state.cells[cell_ptr] = state.cells[cell_ptr].wrapping_add(amount as u8);
             }
             &Set(amount) => {
-                // TODO: Set should use an i8.
-                state.cells[state.cell_ptr] = amount as u8;
+                // TODO: Set should use a u8.
+                state.cells[cell_ptr] = amount as u8;
             }
             &PointerIncrement(amount) => {
-                // TODO: PointerIncrement should use a usize.
-                state.cell_ptr += amount as usize;
+                // TODO: PointerIncrement should use an isize.
+                let new_cell_ptr = state.cell_ptr + amount as isize;
+                if new_cell_ptr < 0 || new_cell_ptr >= state.cells.len() as isize {
+                    return (state, Outcome::RuntimeError);
+                } else {
+                    state.cell_ptr = new_cell_ptr;
+                }
             }
             &Write => {
-                let cell_value = state.cells[state.cell_ptr];
+                let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value);
             }
             &Read => {
                 return (state, Outcome::ReachedRuntimeValue);
             }
             &Loop(ref body) => {
-                if state.cells[state.cell_ptr] != 0 {
+                if state.cells[state.cell_ptr as usize] != 0 {
                     let loop_body_state = ExecutionState { instr_ptr: 0, .. state.clone() };
                     let (state_after, loop_outcome) = execute_inner(body, loop_body_state, steps_left);
                     if let &Outcome::Completed(remaining_steps) = &loop_outcome {
@@ -173,6 +180,19 @@ fn ptr_increment_executed() {
     assert_eq!(
         final_state, ExecutionState {
             instr_ptr: 1, cells: vec![0, 0], cell_ptr: 1, outputs: vec![],
+        });
+}
+
+// TODO: it would be nice to emit a warning in this case, as it's
+// clearly a user error.
+#[test]
+fn ptr_out_of_range() {
+    let instrs = parse("<").unwrap();
+    let final_state = execute(&instrs, MAX_STEPS);
+
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 0, cells: vec![0], cell_ptr: 0, outputs: vec![],
         });
 }
 
