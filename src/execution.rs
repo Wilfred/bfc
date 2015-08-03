@@ -262,9 +262,15 @@ fn up_to_infinite_loop_executed() {
         });
 }
 
-/// Ensure that we can execute arbitrary instruction sequences.
 #[quickcheck]
-fn smoke_test(instrs: Vec<Instruction>) -> bool {
-    execute(&instrs, MAX_STEPS);
-    true
+fn instr_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
+    let state = execute(&instrs, 100);
+    state.instr_ptr <= instrs.len()
+}
+
+#[quickcheck]
+fn cell_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
+    let state = execute(&instrs, 100);
+    (state.cell_ptr >= 0) &&
+        (state.cell_ptr <= state.cells.len() as isize)
 }
