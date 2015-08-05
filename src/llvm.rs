@@ -314,33 +314,36 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
     }
 }
 
-pub unsafe fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
-                            num_cells: u64) -> CString {
-    let mut module = create_module(module_name);
+pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
+                     num_cells: u64) -> CString {
+    let llvm_ir_owned;
+    unsafe {
+        let mut module = create_module(module_name);
 
-    let (main_fn, cells, cell_index_ptr) = add_main_init(num_cells, &mut module);
-    let mut bb = LLVMGetLastBasicBlock(main_fn);
+        let (main_fn, cells, cell_index_ptr) = add_main_init(num_cells, &mut module);
+        let mut bb = LLVMGetLastBasicBlock(main_fn);
 
-    // TODO: don't bother with init/cleanup if we have an empty
-    // program.
-    for instr in instrs {
-        bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
-                           cells, cell_index_ptr);
+        // TODO: don't bother with init/cleanup if we have an empty
+        // program.
+        for instr in instrs {
+            bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
+                               cells, cell_index_ptr);
+        }
+        
+        add_main_cleanup(&mut module, &mut *bb, cells);
+
+        // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
+        // as borrowed.
+        let llvm_ir_ptr = LLVMPrintModuleToString(module.module);
+        let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
+
+        // Make an owned copy of the string in our memory space.
+        llvm_ir_owned = CString::new(llvm_ir.to_bytes().clone()).unwrap();
+
+        // Cleanup module and borrowed string.
+        LLVMDisposeModule(module.module);
+        LLVMDisposeMessage(llvm_ir_ptr);
     }
-    
-    add_main_cleanup(&mut module, &mut *bb, cells);
-
-    // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
-    // as borrowed.
-    let llvm_ir_ptr = LLVMPrintModuleToString(module.module);
-    let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
-
-    // Make an owned copy of the string in our memory space.
-    let llvm_ir_owned = CString::new(llvm_ir.to_bytes().clone()).unwrap();
-
-    // Cleanup module and borrowed string.
-    LLVMDisposeModule(module.module);
-    LLVMDisposeMessage(llvm_ir_ptr);
 
     llvm_ir_owned
 }
