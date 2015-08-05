@@ -2,6 +2,7 @@ use llvm_sys::core::*;
 use llvm_sys::{LLVMModule,LLVMBasicBlock,LLVMIntPredicate};
 use llvm_sys::prelude::*;
 
+use libc::types::os::arch::c99::c_ulonglong;
 use std::ffi::{CString,CStr};
 
 use bfir::Instruction;
@@ -95,7 +96,7 @@ unsafe fn create_module(module_name: &str) -> ModuleWithContext {
 
 /// Define up the main function and add preamble. Return the main
 /// function and a reference to the cells and their current index.
-unsafe fn add_main_init(num_cells: u64, module: &mut ModuleWithContext)
+unsafe fn add_main_init(num_cells: u64, cell_ptr: i32, module: &mut ModuleWithContext)
                         -> (LLVMValueRef, LLVMValueRef, LLVMValueRef) {
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
@@ -112,8 +113,8 @@ unsafe fn add_main_init(num_cells: u64, module: &mut ModuleWithContext)
     // int cell_index = 0;
     let cell_index_ptr = LLVMBuildAlloca(
         builder, LLVMInt32Type(), module.new_string_ptr("cell_index_ptr"));
-    let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
-    LLVMBuildStore(builder, zero, cell_index_ptr);
+    let cell_ptr_init = LLVMConstInt(LLVMInt32Type(), cell_ptr as c_ulonglong, LLVM_FALSE);
+    LLVMBuildStore(builder, cell_ptr_init, cell_index_ptr);
 
     LLVMDisposeBuilder(builder);
 
@@ -315,12 +316,12 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
 }
 
 pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
-                     num_cells: u64) -> CString {
+                     num_cells: u64, cell_ptr: i32) -> CString {
     let llvm_ir_owned;
     unsafe {
         let mut module = create_module(module_name);
 
-        let (main_fn, cells, cell_index_ptr) = add_main_init(num_cells, &mut module);
+        let (main_fn, cells, cell_index_ptr) = add_main_init(num_cells, cell_ptr, &mut module);
         let mut bb = LLVMGetLastBasicBlock(main_fn);
 
         // TODO: don't bother with init/cleanup if we have an empty

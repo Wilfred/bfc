@@ -4,6 +4,7 @@
 // TODO: find a way to avoid this.
 #![feature(convert)]
 
+extern crate libc;
 extern crate llvm_sys;
 extern crate itertools;
 extern crate quickcheck;
@@ -86,7 +87,8 @@ fn main() {
 
                 let num_cells = bounds::highest_cell_index(&instrs) + 1;
 
-                let llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs, num_cells);
+                let llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs,
+                                                      num_cells, 0);
 
                 if dump_llvm {
                     let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
