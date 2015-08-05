@@ -38,15 +38,23 @@ unsafe fn add_function(module: &mut ModuleWithContext, fn_name: &str,
 
 unsafe fn add_c_declarations(module: &mut ModuleWithContext) {
     let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
+    let void = LLVMVoidType();
 
     add_function(
-        module, "calloc",
-        &mut vec![LLVMInt32Type(), LLVMInt32Type()], byte_pointer);
-    
+        module, "malloc",
+        &mut vec![LLVMInt32Type()], byte_pointer);
+
+    // TODO: we should use memset for Set() commands.
+    add_function(
+        module, "llvm.memset.p0i8.i32",
+        &mut vec![byte_pointer, LLVMInt8Type(), LLVMInt32Type(),
+                  LLVMInt32Type(), LLVMInt1Type()],
+        void);
+
     add_function(
         module, "free",
-        &mut vec![byte_pointer], LLVMVoidType());
-    
+        &mut vec![byte_pointer], void);
+
     add_function(
         module, "putchar",
         &mut vec![LLVMInt32Type()], LLVMInt32Type());
@@ -71,16 +79,23 @@ unsafe fn add_function_call(module: &mut ModuleWithContext, bb: &mut LLVMBasicBl
     result
 }
 
-const CELL_SIZE_IN_BYTES: u64 = 1;
-
 unsafe fn add_cells_init(num_cells: u64, module: &mut ModuleWithContext,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
-    // calloc(30000, 1);
-    let mut calloc_args = vec![
-        LLVMConstInt(LLVMInt32Type(), num_cells, LLVM_FALSE),
-        LLVMConstInt(LLVMInt32Type(), CELL_SIZE_IN_BYTES, LLVM_FALSE),
-        ];
-    add_function_call(module, bb, "calloc", &mut calloc_args, "cells")
+    // malloc(30000);
+    let llvm_num_cells = LLVMConstInt(LLVMInt32Type(), num_cells, LLVM_FALSE);
+    let mut malloc_args = vec![llvm_num_cells];
+    let cells = add_function_call(module, bb, "malloc", &mut malloc_args, "cells");
+
+    let zero = LLVMConstInt(LLVMInt8Type(), 0, LLVM_FALSE);
+    let one = LLVMConstInt(LLVMInt32Type(), 1, LLVM_FALSE);
+    let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
+    let mut memset_args = vec![
+        // TODO: is one the correct alignment here? I've just blindly
+        // copied from clang output.
+        cells, zero, llvm_num_cells, one, false_];
+    add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
+
+    cells
 }
 
 unsafe fn create_module(module_name: &str) -> ModuleWithContext {
