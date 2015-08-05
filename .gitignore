@@ -6,3 +6,5 @@ target
 # Generated files by our compiler.
 *.ll
 *.o
+
+a.out
