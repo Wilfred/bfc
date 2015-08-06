@@ -96,7 +96,6 @@ fn main() {
                     return
                 }                        
 
-                // TODO: write to a temp file then call llc.
                 let bf_name = Path::new(file_path).file_name().unwrap();
                 let obj_name = obj_file_name(bf_name.to_str().unwrap());
 
