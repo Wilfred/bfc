@@ -63,6 +63,7 @@ fn main() {
         let dump_llvm = args.len() > 2 && args[2] == "--dump-llvm";
         
         let ref file_path = args[1];
+        // TODO: this would be cleaner to use try!.
         match slurp(&file_path) {
             Ok(src) => {
                 let mut instrs;
