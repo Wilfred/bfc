@@ -79,11 +79,11 @@ unsafe fn add_function_call(module: &mut ModuleWithContext, bb: &mut LLVMBasicBl
     result
 }
 
-unsafe fn add_cells_init(num_cells: u64, module: &mut ModuleWithContext,
+unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     // malloc(30000);
-    let llvm_num_cells = LLVMConstInt(LLVMInt32Type(), num_cells, LLVM_FALSE);
-    let mut malloc_args = vec![llvm_num_cells];
+    let num_cells = LLVMConstInt(LLVMInt32Type(), cells.len() as c_ulonglong, LLVM_FALSE);
+    let mut malloc_args = vec![num_cells];
     let cells = add_function_call(module, bb, "malloc", &mut malloc_args, "cells");
 
     let zero = LLVMConstInt(LLVMInt8Type(), 0, LLVM_FALSE);
@@ -92,7 +92,7 @@ unsafe fn add_cells_init(num_cells: u64, module: &mut ModuleWithContext,
     let mut memset_args = vec![
         // TODO: is one the correct alignment here? I've just blindly
         // copied from clang output.
-        cells, zero, llvm_num_cells, one, false_];
+        cells, zero, num_cells, one, false_];
     add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
 
     cells
@@ -111,7 +111,7 @@ unsafe fn create_module(module_name: &str) -> ModuleWithContext {
 
 /// Define up the main function and add preamble. Return the main
 /// function and a reference to the cells and their current index.
-unsafe fn add_main_init(num_cells: u64, cell_ptr: i32, module: &mut ModuleWithContext)
+unsafe fn add_main_init(cells: &Vec<u8>, cell_ptr: i32, module: &mut ModuleWithContext)
                         -> (LLVMValueRef, LLVMValueRef, LLVMValueRef) {
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
@@ -120,7 +120,7 @@ unsafe fn add_main_init(num_cells: u64, cell_ptr: i32, module: &mut ModuleWithCo
                                   main_type);
     
     let bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
-    let cells = add_cells_init(num_cells, module, &mut *bb);
+    let cells = add_cells_init(cells, module, &mut *bb);
 
     let builder = LLVMCreateBuilder();
     LLVMPositionBuilderAtEnd(builder, bb);
@@ -331,12 +331,12 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
 }
 
 pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
-                     num_cells: u64, cell_ptr: i32) -> CString {
+                     cells: &Vec<u8>, cell_ptr: i32) -> CString {
     let llvm_ir_owned;
     unsafe {
         let mut module = create_module(module_name);
 
-        let (main_fn, cells, cell_index_ptr) = add_main_init(num_cells, cell_ptr, &mut module);
+        let (main_fn, cells, cell_index_ptr) = add_main_init(cells, cell_ptr, &mut module);
         let mut bb = LLVMGetLastBasicBlock(main_fn);
 
         // TODO: don't bother with init/cleanup if we have an empty

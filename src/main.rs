@@ -86,10 +86,12 @@ fn main() {
                     return
                 }
 
+                // TODO: highest_cell_index should return a usize.
                 let num_cells = bounds::highest_cell_index(&instrs) + 1;
+                let cells = vec![0; num_cells as usize];
 
                 let llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs,
-                                                      num_cells, 0);
+                                                      &cells, 0);
 
                 if dump_llvm {
                     let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());

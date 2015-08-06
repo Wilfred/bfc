@@ -3,7 +3,7 @@ use std::ffi::CString;
 
 #[test]
 fn compile_empty_program() {
-    let result = compile_to_ir("foo", &vec![], 10, 0);
+    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 0);
     let expected = "; ModuleID = \'foo\'
 
 declare i8* @malloc(i32)
@@ -36,7 +36,7 @@ attributes #0 = { nounwind }
 fn respect_initial_cell_ptr() {
     // TODO: this is a bad test, we would never access cell 42 with 10
     // cells.
-    let result = compile_to_ir("foo", &vec![], 10, 42);
+    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 42);
     let expected = "; ModuleID = \'foo\'
 
 declare i8* @malloc(i32)
