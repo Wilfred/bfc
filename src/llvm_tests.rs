@@ -3,7 +3,7 @@ use std::ffi::CString;
 
 #[test]
 fn compile_empty_program() {
-    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 0);
+    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 declare i8* @malloc(i32)
@@ -36,7 +36,7 @@ attributes #0 = { nounwind }
 fn respect_initial_cell_ptr() {
     // TODO: this is a bad test, we would never access cell 42 with 10
     // cells.
-    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 42);
+    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 42, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 declare i8* @malloc(i32)
@@ -67,7 +67,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn set_initial_cell_values() {
-    let result = compile_to_ir("foo", &vec![], &vec![1, 1, 2, 0, 0, 0], 0);
+    let result = compile_to_ir("foo", &vec![], &vec![1, 1, 2, 0, 0, 0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 declare i8* @malloc(i32)
@@ -98,3 +98,38 @@ attributes #0 = { nounwind }
 
     assert_eq!(result, CString::new(expected).unwrap());
 }
+
+#[test]
+fn compile_static_outputs() {
+    let result = compile_to_ir("foo", &vec![], &vec![0; 3], 0, &vec![5, 10]);
+    let expected = "; ModuleID = \'foo\'
+
+declare i8* @malloc(i32)
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare void @free(i8*)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+entry:
+  %cells = call i8* @malloc(i32 3)
+  call void @llvm.memset.p0i8.i32(i8* %cells, i8 0, i32 3, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  %0 = call i32 @putchar(i32 5)
+  %1 = call i32 @putchar(i32 10)
+  call void @free(i8* %cells)
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+
+    assert_eq!(result, CString::new(expected).unwrap());
+}
+

@@ -349,14 +349,35 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
     }
 }
 
+unsafe fn compile_static_outputs(module: &mut ModuleWithContext,
+                          bb: &mut LLVMBasicBlock, outputs: &Vec<u8>) {
+    // TODO: it would be nicer to create our own Builder struct
+    // that cleaned up on Drop.
+    let builder = LLVMCreateBuilder();
+    LLVMPositionBuilderAtEnd(builder, bb);
+
+    // TODO: we should do a single call to puts instead of many calls to putchar.
+    for value in outputs {
+        let llvm_value = LLVMConstInt(LLVMInt32Type(), *value as c_ulonglong, LLVM_FALSE);
+        let mut putchar_args = vec![llvm_value];
+        add_function_call(module, bb, "putchar", &mut putchar_args, "");
+    }
+
+    LLVMDisposeBuilder(builder);
+}
+
+// TODO: take a compile state rather than passing tons of variables.
 pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
-                     cells: &Vec<u8>, cell_ptr: i32) -> CString {
+                     cells: &Vec<u8>, cell_ptr: i32, static_outputs: &Vec<u8>)
+                     -> CString {
     let llvm_ir_owned;
     unsafe {
         let mut module = create_module(module_name);
 
         let (main_fn, cells, cell_index_ptr) = add_main_init(cells, cell_ptr, &mut module);
         let mut bb = LLVMGetLastBasicBlock(main_fn);
+
+        compile_static_outputs(&mut module, &mut *bb, static_outputs);
 
         // TODO: don't bother with init/cleanup if we have an empty
         // program.
