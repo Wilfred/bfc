@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use llvm_sys::core::*;
 use llvm_sys::{LLVMModule,LLVMBasicBlock,LLVMIntPredicate};
 use llvm_sys::prelude::*;
@@ -79,23 +80,41 @@ unsafe fn add_function_call(module: &mut ModuleWithContext, bb: &mut LLVMBasicBl
     result
 }
 
+/// Given a vector of cells [1, 1, 0, 0, 0, ...] return a vector
+/// [(1, 2), (0, 3), ...].
+fn run_length_encode(cells: &Vec<u8>) -> Vec<(u8, usize)> {
+    cells.into_iter().map(|val| {
+        (*val, 1)
+    }).coalesce(|(prev_val, prev_count), (val, count)| {
+        if prev_val == val {
+            Ok((val, prev_count + count))
+        } else {
+            Err(((prev_val, prev_count), (val, count)))
+        }
+    }).collect()
+}
+
 unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     // malloc(30000);
     let num_cells = LLVMConstInt(LLVMInt32Type(), cells.len() as c_ulonglong, LLVM_FALSE);
     let mut malloc_args = vec![num_cells];
-    let cells = add_function_call(module, bb, "malloc", &mut malloc_args, "cells");
+    let cells_ptr = add_function_call(module, bb, "malloc", &mut malloc_args, "cells");
 
-    let zero = LLVMConstInt(LLVMInt8Type(), 0, LLVM_FALSE);
     let one = LLVMConstInt(LLVMInt32Type(), 1, LLVM_FALSE);
     let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
-    let mut memset_args = vec![
-        // TODO: is one the correct alignment here? I've just blindly
-        // copied from clang output.
-        cells, zero, num_cells, one, false_];
-    add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
 
-    cells
+    for (cell_val, cell_count) in run_length_encode(cells) {
+        let llvm_cell_val = LLVMConstInt(LLVMInt8Type(), cell_val as c_ulonglong, LLVM_FALSE);
+        let llvm_cell_count = LLVMConstInt(LLVMInt32Type(), cell_count as c_ulonglong, LLVM_FALSE);
+        let mut memset_args = vec![
+            // TODO: is one the correct alignment here? I've just blindly
+            // copied from clang output.
+            cells_ptr, llvm_cell_val, llvm_cell_count, one, false_];
+        add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
+    }
+
+    cells_ptr
 }
 
 unsafe fn create_module(module_name: &str) -> ModuleWithContext {
