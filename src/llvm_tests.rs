@@ -1,5 +1,55 @@
 use llvm::compile_to_ir;
+use bfir::Instruction::*;
 use std::ffi::CString;
+
+#[test]
+fn compile_loop() {
+    let result = compile_to_ir("foo", &vec![Loop(vec![Increment(1)])], &vec![0], 0, &vec![]);
+    let expected = "; ModuleID = \'foo\'
+
+declare i8* @malloc(i32)
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare void @free(i8*)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+entry:
+  %cells = call i8* @malloc(i32 1)
+  call void @llvm.memset.p0i8.i32(i8* %cells, i8 0, i32 1, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  br label %loop_header
+
+loop_header:                                      ; preds = %loop_body, %entry
+  %cell_index = load i32* %cell_index_ptr
+  %current_cell_ptr = getelementptr i8* %cells, i32 %cell_index
+  %cell_value = load i8* %current_cell_ptr
+  %cell_value_is_zero = icmp eq i8 0, %cell_value
+  br i1 %cell_value_is_zero, label %loop_after, label %loop_body
+
+loop_body:                                        ; preds = %loop_header
+  %cell_index1 = load i32* %cell_index_ptr
+  %current_cell_ptr2 = getelementptr i8* %cells, i32 %cell_index1
+  %cell_value3 = load i8* %current_cell_ptr2
+  %new_cell_value = add i8 %cell_value3, 1
+  store i8 %new_cell_value, i8* %current_cell_ptr2
+  br label %loop_header
+
+loop_after:                                       ; preds = %loop_header
+  call void @free(i8* %cells)
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+    assert_eq!(result, CString::new(expected).unwrap());
+}
 
 #[test]
 fn compile_empty_program() {
