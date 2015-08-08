@@ -66,9 +66,10 @@ bfc requires brackets to be balanced, so `+[]]` is rejected.
 
 There are a few test programs in this repo, but
 http://www.hevanet.com/cristofd/brainfuck/tests.b is an excellent
-collection of test BF programs and
-http://esoteric.sange.fi/brainfuck/bf-source/prog/ includes some more
-elaborate programs.
+collection of test BF programs and includes some more elaborate
+programs can be found at
+[1](http://esoteric.sange.fi/brainfuck/bf-source/prog/) and
+[2](http://www.hevanet.com/cristofd/brainfuck/).
 
 ## Peephole optimisations
 
