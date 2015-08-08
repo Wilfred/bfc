@@ -97,6 +97,7 @@ fn run_length_encode(cells: &Vec<u8>) -> Vec<(u8, usize)> {
 unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     // malloc(30000);
+    // TODO: since it's only 30KiB, benchmark using stack storage instead.
     let num_cells = LLVMConstInt(LLVMInt32Type(), cells.len() as c_ulonglong, LLVM_FALSE);
     let mut malloc_args = vec![num_cells];
     let cells_ptr = add_function_call(module, bb, "malloc", &mut malloc_args, "cells");
