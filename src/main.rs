@@ -110,7 +110,7 @@ fn main() {
                         // TODO: use llc optimisations
                         // TODO: link as well.
                         let llc_result = Command::new("llc")
-                            .arg("-filetype=obj").arg(f.path())
+                            .arg("-O3").arg("-filetype=obj").arg(f.path())
                             .arg("-o").arg(obj_name.to_owned())
                             .output();
 
