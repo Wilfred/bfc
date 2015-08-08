@@ -13,6 +13,7 @@ const LLVM_FALSE: LLVMBool = 0;
 
 /// A struct that keeps ownership of all the strings we've passed to
 /// the LLVM API until we destroy the LLVMModule.
+// TODO: there isn't actually a context here any more.
 struct ModuleWithContext {
     module: *mut LLVMModule,
     strings: Vec<CString>
