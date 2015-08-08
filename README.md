@@ -44,7 +44,7 @@ in speculative execution if bfc is compiled without optimisations.
 ## Usage
 
 ```
-$ cargo run -- sample_programs/hello_world.bf
+$ target/release/bfc sample_programs/hello_world.bf
 $ gcc hello_world.o
 $ ./a.out
 Hello World!
