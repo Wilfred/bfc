@@ -109,13 +109,13 @@ fn run_length_encode(cells: &Vec<u8>) -> Vec<(u8, usize)> {
     }).collect()
 }
 
-unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
+unsafe fn add_cells_init(init_values: &Vec<u8>, module: &mut ModuleWithContext,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
     
     // Allocate stack memory for our cells.
-    let num_cells = LLVMConstInt(LLVMInt32Type(), cells.len() as c_ulonglong, LLVM_FALSE);
+    let num_cells = LLVMConstInt(LLVMInt32Type(), init_values.len() as c_ulonglong, LLVM_FALSE);
     let cells_ptr = LLVMBuildArrayAlloca(builder.builder, LLVMInt8Type(), num_cells,
                                          module.new_string_ptr("cells"));
 
@@ -123,7 +123,7 @@ unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
     let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
 
     let mut offset = 0;
-    for (cell_val, cell_count) in run_length_encode(cells) {
+    for (cell_val, cell_count) in run_length_encode(init_values) {
         let llvm_cell_val = LLVMConstInt(LLVMInt8Type(), cell_val as c_ulonglong, LLVM_FALSE);
         let llvm_cell_count = LLVMConstInt(LLVMInt32Type(), cell_count as c_ulonglong, LLVM_FALSE);
 
@@ -155,29 +155,30 @@ unsafe fn create_module(module_name: &str) -> ModuleWithContext {
     module
 }
 
-/// Define up the main function and add preamble. Return the main
-/// function and a reference to the cells and their current index.
-unsafe fn add_main_init(cells: &Vec<u8>, cell_ptr: i32, module: &mut ModuleWithContext)
-                        -> (LLVMValueRef, LLVMValueRef, LLVMValueRef) {
+unsafe fn add_main_fn(module: &mut ModuleWithContext) -> LLVMValueRef {
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
         LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
     let main_fn = LLVMAddFunction(module.module, module.new_string_ptr("main"),
                                   main_type);
     
-    let bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
-    let cells = add_cells_init(cells, module, &mut *bb);
+    LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
+    main_fn
+}
 
+/// Initialise the value that contains the current cell index.
+unsafe fn add_cell_index_init(init_value: i32, bb: *mut LLVMBasicBlock,
+                              module: &mut ModuleWithContext) -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
     
     // int cell_index = 0;
     let cell_index_ptr = LLVMBuildAlloca(
         builder.builder, LLVMInt32Type(), module.new_string_ptr("cell_index_ptr"));
-    let cell_ptr_init = LLVMConstInt(LLVMInt32Type(), cell_ptr as c_ulonglong, LLVM_FALSE);
+    let cell_ptr_init = LLVMConstInt(LLVMInt32Type(), init_value as c_ulonglong, LLVM_FALSE);
     LLVMBuildStore(builder.builder, cell_ptr_init, cell_index_ptr);
 
-    (main_fn, cells, cell_index_ptr)
+    cell_index_ptr
 }
 
 /// Add prologue to main function.
@@ -367,6 +368,7 @@ unsafe fn compile_static_outputs(module: &mut ModuleWithContext,
 }
 
 // TODO: take a compile state rather than passing tons of variables.
+// TODO: use init_values terminology consistently for names here.
 pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
                      cells: &Vec<u8>, cell_ptr: i32, static_outputs: &Vec<u8>)
                      -> CString {
@@ -374,8 +376,13 @@ pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
     unsafe {
         let mut module = create_module(module_name);
 
-        let (main_fn, cells, cell_index_ptr) = add_main_init(cells, cell_ptr, &mut module);
+        let main_fn = add_main_fn(&mut module);
         let mut bb = LLVMGetLastBasicBlock(main_fn);
+
+        // TODO: decide on a consistent order between module and bb as
+        // parameters.
+        let llvm_cells = add_cells_init(cells, &mut module, &mut *bb);
+        let llvm_cell_index = add_cell_index_init(cell_ptr, bb, &mut module);
 
         compile_static_outputs(&mut module, &mut *bb, static_outputs);
 
@@ -383,7 +390,7 @@ pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
         // program.
         for instr in instrs {
             bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
-                               cells, cell_index_ptr);
+                               llvm_cells, llvm_cell_index);
         }
         
         add_main_cleanup(bb);
