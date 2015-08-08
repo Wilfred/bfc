@@ -48,9 +48,11 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
         match &instrs[state.instr_ptr] {
             &Increment(amount) => {
                 state.cells[cell_ptr] = state.cells[cell_ptr].wrapping_add(amount);
+                state.instr_ptr += 1;
             }
             &Set(amount) => {
                 state.cells[cell_ptr] = amount;
+                state.instr_ptr += 1;
             }
             &PointerIncrement(amount) => {
                 // TODO: PointerIncrement should use an isize.
@@ -59,17 +61,24 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
                     return (state, Outcome::RuntimeError);
                 } else {
                     state.cell_ptr = new_cell_ptr;
+                    state.instr_ptr += 1;
                 }
             }
             &Write => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value);
+                state.instr_ptr += 1;
             }
             &Read => {
                 return (state, Outcome::ReachedRuntimeValue);
             }
             &Loop(ref body) => {
-                if state.cells[state.cell_ptr as usize] != 0 {
+                if state.cells[state.cell_ptr as usize] == 0 {
+                    // Step over the loop because the current cell is
+                    // zero.
+                    state.instr_ptr += 1;
+                } else {
+                    // Execute the loop body.
                     let loop_body_state = ExecutionState { instr_ptr: 0, .. state.clone() };
                     let (state_after, loop_outcome) = execute_inner(body, loop_body_state, steps_left);
                     if let &Outcome::Completed(remaining_steps) = &loop_outcome {
@@ -79,19 +88,15 @@ fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
                         state.cell_ptr = state_after.cell_ptr;
                         // We've run several steps during the loop body, so update for that too.
                         steps_left = remaining_steps;
-                        // Go back to the start of the loop.
-                        state.instr_ptr -= 1;
                     }
                     else {
+                        // We couldn't evaluate the loop body.
                         return (state, loop_outcome);
                     }
                 }
-                // Otherwise, we step over the loop because the
-                // current cell is zero.
             }
         }
 
-        state.instr_ptr += 1;
         steps_left -= 1;
     }
 
@@ -275,4 +280,13 @@ fn cell_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
     let state = execute(&instrs, 100);
     (state.cell_ptr >= 0) &&
         (state.cell_ptr <= state.cells.len() as isize)
+}
+
+#[test]
+fn arithmetic_error_nested_loops() {
+    // Regression test, based on a snippet from
+    // mandlebrot.bf. Previously, if the first element in a loop was
+    // another loop, we had arithmetic overflow.
+    let instrs = parse("+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
+    execute(&instrs, MAX_STEPS);
 }
