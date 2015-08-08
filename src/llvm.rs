@@ -360,7 +360,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
 
 unsafe fn compile_static_outputs(module: &mut ModuleWithContext,
                           bb: &mut LLVMBasicBlock, outputs: &Vec<u8>) {
-    // TODO: we should do a single call to puts instead of many calls to putchar.
+    // TODO: we should do a single call to fwrite instead of many calls to putchar.
     for value in outputs {
         let llvm_value = LLVMConstInt(LLVMInt32Type(), *value as c_ulonglong, LLVM_FALSE);
         let mut putchar_args = vec![llvm_value];
