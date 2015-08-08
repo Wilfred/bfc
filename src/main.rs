@@ -23,13 +23,12 @@ mod bfir;
 mod llvm;
 mod optimize;
 mod bounds;
+mod execution;
 
 #[cfg(test)]
 mod optimize_tests;
 #[cfg(test)]
 mod llvm_tests;
-#[cfg(test)] // TODO: functions only used in tests until we update llvm.rs
-mod execution;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents.
@@ -87,11 +86,13 @@ fn main() {
                 }
 
                 // TODO: highest_cell_index should return a usize.
-                let num_cells = bounds::highest_cell_index(&instrs) + 1;
-                let cells = vec![0; num_cells as usize];
+                let state = execution::execute(&instrs, execution::MAX_STEPS);
 
-                let llvm_ir_raw = llvm::compile_to_ir(&file_path, &instrs,
-                                                      &cells, 0, &vec![]);
+                // TODO: we should pass slice references around, not Vec references.
+                let remaining_instrs = &instrs[state.instr_ptr..];
+                let llvm_ir_raw = llvm::compile_to_ir(
+                    &file_path, &remaining_instrs.to_vec(), &state.cells, state.cell_ptr as i32,
+                    &state.outputs);
 
                 if dump_llvm {
                     let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());

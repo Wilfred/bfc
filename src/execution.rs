@@ -1,15 +1,17 @@
+#[cfg(test)]
 use bfir::parse;
+
 use bfir::Instruction;
 use bfir::Instruction::*;
 
 use bounds::highest_cell_index;
 
 #[derive(Debug,Clone,PartialEq,Eq)]
-struct ExecutionState {
-    instr_ptr: usize,
-    cells: Vec<u8>,
-    cell_ptr: isize,
-    outputs: Vec<u8>,
+pub struct ExecutionState {
+    pub instr_ptr: usize,
+    pub cells: Vec<u8>,
+    pub cell_ptr: isize,
+    pub outputs: Vec<u8>,
 }
 
 #[derive(Debug,PartialEq,Eq)]
@@ -22,13 +24,13 @@ enum Outcome {
 }
 
 // TODO: this is probably not enough.
-const MAX_STEPS: u64 = 1000;
+pub const MAX_STEPS: u64 = 1000;
 
 
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
-fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionState {
+pub fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionState {
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
     let state = ExecutionState {
         instr_ptr: 0, cells: cells, cell_ptr: 0, outputs: vec![] };

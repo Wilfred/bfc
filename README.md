@@ -27,6 +27,7 @@ GPLv2 or later license.
         - [Loop Simplification](#loop-simplification)
         - [Dead Code Elimination](#dead-code-elimination)
     - [Cell Bounds Analysis](#cell-bounds-analysis)
+    - [Speculative Execution](#speculative-execution)
     - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
@@ -229,6 +230,29 @@ than necessary.
 ```
 [>] may use any number of cells, so we must assume 30,000
 ```
+
+## Speculative Execution
+
+bfc executes as much as it can at compile time. For some programs
+(such as hello_world.bf) this optimises away the entire program to
+just writing to stdout.
+
+For example, `+.` is compiled to simply `putchar(1);` without needing
+any cell storage at all.
+
+bfc sets a maximum number of execution steps, avoiding infinite loops
+hanging the compiler. As a result `+[]` will have `+` executed (so our
+initial cell value is `1` and `[]` will be in the compiled output.
+
+If a program reads from stdin, speculation execution stops. As a
+result, `>,` will have `>` executed (setting the initial cell pointer
+to 1) and `,` will be in the compiled output.
+
+bfc will either execute loops entirely, or place them in the compiled
+output. For example, consider `+[-]+[+,]`. We can execute `[-]`
+entirely, but we cannot execute all of `[+,]` at compile time. The
+compiled output does not jump into a loop halfway, instead we execute
+`+[-]+` at compile time and all of `[+,]` is in the compiled output.
 
 ## Other projects optimising BF
 
