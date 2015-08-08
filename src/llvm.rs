@@ -119,6 +119,9 @@ fn run_length_encode(cells: &Vec<u8>) -> Vec<(u8, usize)> {
 
 unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    
     // malloc(30000);
     // TODO: since it's only 30KiB, benchmark using stack storage instead.
     let num_cells = LLVMConstInt(LLVMInt32Type(), cells.len() as c_ulonglong, LLVM_FALSE);
@@ -128,14 +131,23 @@ unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
     let one = LLVMConstInt(LLVMInt32Type(), 1, LLVM_FALSE);
     let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
 
+    let mut offset = 0;
     for (cell_val, cell_count) in run_length_encode(cells) {
         let llvm_cell_val = LLVMConstInt(LLVMInt8Type(), cell_val as c_ulonglong, LLVM_FALSE);
         let llvm_cell_count = LLVMConstInt(LLVMInt32Type(), cell_count as c_ulonglong, LLVM_FALSE);
+
+        // TODO: factor out a build_gep function.
+        let mut offset_vec = vec![LLVMConstInt(LLVMInt32Type(), offset as c_ulonglong, LLVM_FALSE)];
+        let offset_cell_ptr = LLVMBuildGEP(builder.builder, cells_ptr, offset_vec.as_mut_ptr(),
+                                           offset_vec.len() as u32, module.new_string_ptr("offset_cell_ptr"));
+        
         let mut memset_args = vec![
             // TODO: is one the correct alignment here? I've just blindly
             // copied from clang output.
-            cells_ptr, llvm_cell_val, llvm_cell_count, one, false_];
+            offset_cell_ptr, llvm_cell_val, llvm_cell_count, one, false_];
         add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
+
+        offset += cell_count;
     }
 
     cells_ptr
