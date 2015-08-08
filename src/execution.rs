@@ -23,9 +23,10 @@ enum Outcome {
     OutOfSteps,
 }
 
-// TODO: this is probably not enough.
-pub const MAX_STEPS: u64 = 1000;
-
+// It takes around 9 million steps to finish executing bottles.bf at
+// compile time. This is intolerably slow for debug builds of bfc, but
+// instant on a release build.
+pub const MAX_STEPS: u64 = 10000000;
 
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in

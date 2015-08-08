@@ -36,7 +36,10 @@ GPLv2 or later license.
 
 You will need LLVM and Rust beta installed to compile bfc.
 
-    $ cargo build
+    $ cargo build --release
+
+Debug builds work, but large programs will take a large amount of time
+in speculative execution if bfc is compiled without optimisations.
 
 ## Usage
 
