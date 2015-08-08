@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use llvm_sys::core::*;
-use llvm_sys::{LLVMModule,LLVMBasicBlock,LLVMIntPredicate};
+use llvm_sys::{LLVMModule,LLVMBasicBlock,LLVMIntPredicate,LLVMBuilder};
 use llvm_sys::prelude::*;
 
 use libc::types::os::arch::c99::c_ulonglong;
@@ -27,6 +27,32 @@ impl ModuleWithContext {
         let ptr = cstring.as_ptr() as *const _;
         self.strings.push(cstring);
         ptr
+    }
+}
+
+/// Wraps LLVM's builder class to provide a nicer API and ensure we
+/// always dispose correctly.
+struct Builder {
+    builder: *mut LLVMBuilder
+}
+
+impl Builder {
+    /// Create a new Builder in LLVM's global context.
+    unsafe fn new() -> Self {
+        Builder { builder: LLVMCreateBuilder() }
+    }
+
+    unsafe fn position_at_end(&self, bb: *mut LLVMBasicBlock) {
+        LLVMPositionBuilderAtEnd(self.builder, bb);
+    }
+}
+
+impl Drop for Builder {
+    fn drop(&mut self) {
+        // Rust requires that drop() is a safe function.
+        unsafe {
+            LLVMDisposeBuilder(self.builder);
+        }
     }
 }
 
@@ -68,16 +94,13 @@ unsafe fn add_c_declarations(module: &mut ModuleWithContext) {
 unsafe fn add_function_call(module: &mut ModuleWithContext, bb: &mut LLVMBasicBlock,
                             fn_name: &str, args: &mut Vec<LLVMValueRef>,
                             name: &str) -> LLVMValueRef {
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
+    let builder = Builder::new();
+    builder.position_at_end(bb);
 
     let function = LLVMGetNamedFunction(module.module, module.new_string_ptr(fn_name));
 
-    let result = LLVMBuildCall(builder, function, args.as_mut_ptr(),
-                               args.len() as u32, module.new_string_ptr(name));
-
-    LLVMDisposeBuilder(builder);
-    result
+    LLVMBuildCall(builder.builder, function, args.as_mut_ptr(),
+                  args.len() as u32, module.new_string_ptr(name))
 }
 
 /// Given a vector of cells [1, 1, 0, 0, 0, ...] return a vector
@@ -142,16 +165,14 @@ unsafe fn add_main_init(cells: &Vec<u8>, cell_ptr: i32, module: &mut ModuleWithC
     let bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
     let cells = add_cells_init(cells, module, &mut *bb);
 
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
+    let builder = Builder::new();
+    builder.position_at_end(bb);
     
     // int cell_index = 0;
     let cell_index_ptr = LLVMBuildAlloca(
-        builder, LLVMInt32Type(), module.new_string_ptr("cell_index_ptr"));
+        builder.builder, LLVMInt32Type(), module.new_string_ptr("cell_index_ptr"));
     let cell_ptr_init = LLVMConstInt(LLVMInt32Type(), cell_ptr as c_ulonglong, LLVM_FALSE);
-    LLVMBuildStore(builder, cell_ptr_init, cell_index_ptr);
-
-    LLVMDisposeBuilder(builder);
+    LLVMBuildStore(builder.builder, cell_ptr_init, cell_index_ptr);
 
     (main_fn, cells, cell_index_ptr)
 }
@@ -163,120 +184,107 @@ unsafe fn add_main_cleanup(module: &mut ModuleWithContext, bb: &mut LLVMBasicBlo
     let mut free_args = vec![cells];
     add_function_call(module, &mut *bb, "free", &mut free_args, "");
 
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
-
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    
     let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
-    LLVMBuildRet(builder, zero);
-
-    LLVMDisposeBuilder(builder);
+    LLVMBuildRet(builder.builder, zero);
 }
 
 unsafe fn compile_increment<'a>(amount: u8, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
                                 cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                                 -> &'a mut LLVMBasicBlock {
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
-
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, module.new_string_ptr("cell_index"));
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    
+    let cell_index = LLVMBuildLoad(builder.builder, cell_index_ptr, module.new_string_ptr("cell_index"));
 
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+    let current_cell_ptr = LLVMBuildGEP(builder.builder, cells, indices.as_mut_ptr(),
                                         indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
-    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, module.new_string_ptr("cell_value"));
+    let cell_val = LLVMBuildLoad(builder.builder, current_cell_ptr, module.new_string_ptr("cell_value"));
 
     let increment_amount = LLVMConstInt(LLVMInt8Type(), amount as u64, LLVM_FALSE);
-    let new_cell_val = LLVMBuildAdd(builder, cell_val, increment_amount,
+    let new_cell_val = LLVMBuildAdd(builder.builder, cell_val, increment_amount,
                                     module.new_string_ptr("new_cell_value"));
 
-    LLVMBuildStore(builder, new_cell_val, current_cell_ptr);
-
-    LLVMDisposeBuilder(builder);
+    LLVMBuildStore(builder.builder, new_cell_val, current_cell_ptr);
     bb
 }
 
 unsafe fn compile_set<'a>(amount: u8, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
                           cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                           -> &'a mut LLVMBasicBlock {
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
-
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, module.new_string_ptr("cell_index"));
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    
+    let cell_index = LLVMBuildLoad(builder.builder, cell_index_ptr, module.new_string_ptr("cell_index"));
 
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+    let current_cell_ptr = LLVMBuildGEP(builder.builder, cells, indices.as_mut_ptr(),
                                         indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
 
     let new_cell_val = LLVMConstInt(LLVMInt8Type(), amount as u64, LLVM_FALSE);
-    LLVMBuildStore(builder, new_cell_val, current_cell_ptr);
-
-    LLVMDisposeBuilder(builder);
+    LLVMBuildStore(builder.builder, new_cell_val, current_cell_ptr);
     bb
 }
 
 unsafe fn compile_ptr_increment<'a>(amount: i32, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
                                     cell_index_ptr: LLVMValueRef)
                                     -> &'a mut LLVMBasicBlock {
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
-
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, module.new_string_ptr("cell_index"));
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    
+    let cell_index = LLVMBuildLoad(builder.builder, cell_index_ptr, module.new_string_ptr("cell_index"));
 
     let increment_amount = LLVMConstInt(LLVMInt32Type(), amount as u64, LLVM_FALSE);
-    let new_cell_index = LLVMBuildAdd(builder, cell_index, increment_amount,
+    let new_cell_index = LLVMBuildAdd(builder.builder, cell_index, increment_amount,
                                       module.new_string_ptr("new_cell_index"));
 
-    LLVMBuildStore(builder, new_cell_index, cell_index_ptr);
-
-    LLVMDisposeBuilder(builder);
-
+    LLVMBuildStore(builder.builder, new_cell_index, cell_index_ptr);
     bb
 }
 
 unsafe fn compile_read<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                            -> &'a mut LLVMBasicBlock {
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
-
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, module.new_string_ptr("cell_index"));
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    
+    let cell_index = LLVMBuildLoad(builder.builder, cell_index_ptr, module.new_string_ptr("cell_index"));
 
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+    let current_cell_ptr = LLVMBuildGEP(builder.builder, cells, indices.as_mut_ptr(),
                                         indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
 
     let mut getchar_args = vec![];
     let input_char = add_function_call(module, bb, "getchar", &mut getchar_args, "input_char");
-    let input_byte = LLVMBuildTrunc(builder, input_char, LLVMInt8Type(),
+    let input_byte = LLVMBuildTrunc(builder.builder, input_char, LLVMInt8Type(),
                                     module.new_string_ptr("input_byte"));
 
-    LLVMBuildStore(builder, input_byte, current_cell_ptr);
-
-    LLVMDisposeBuilder(builder);
+    LLVMBuildStore(builder.builder, input_byte, current_cell_ptr);
     bb
 }
 
 unsafe fn compile_write<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
                             cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                             -> &'a mut LLVMBasicBlock {
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
-
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, module.new_string_ptr("cell_index"));
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    
+    let cell_index = LLVMBuildLoad(builder.builder, cell_index_ptr, module.new_string_ptr("cell_index"));
 
     let mut indices = vec![cell_index];
     let current_cell_ptr = LLVMBuildGEP(
-        builder, cells, indices.as_mut_ptr(), indices.len() as u32,
+        builder.builder, cells, indices.as_mut_ptr(), indices.len() as u32,
         module.new_string_ptr("current_cell_ptr"));
-    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, module.new_string_ptr("cell_value"));
+    let cell_val = LLVMBuildLoad(builder.builder, current_cell_ptr, module.new_string_ptr("cell_value"));
 
-    let cell_val_as_char = LLVMBuildSExt(builder, cell_val, LLVMInt32Type(),
+    let cell_val_as_char = LLVMBuildSExt(builder.builder, cell_val, LLVMInt32Type(),
                                          module.new_string_ptr("cell_val_as_char"));
     
     let mut putchar_args = vec![cell_val_as_char];
     add_function_call(module, bb, "putchar", &mut putchar_args, "");
-
-    LLVMDisposeBuilder(builder);
     bb
 }
 
@@ -285,13 +293,13 @@ unsafe fn compile_loop<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasic
                            main_fn: LLVMValueRef,
                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                            -> &'a mut LLVMBasicBlock {
-    let builder = LLVMCreateBuilder();
-
+    let builder = Builder::new();
+    
     // First, we branch into the loop header from the previous basic
     // block.
     let loop_header = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("loop_header"));
-    LLVMPositionBuilderAtEnd(builder, bb);
-    LLVMBuildBr(builder, loop_header);
+    builder.position_at_end(bb);
+    LLVMBuildBr(builder.builder, loop_header);
 
     let mut loop_body_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("loop_body"));
     let loop_after = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("loop_after"));
@@ -300,19 +308,19 @@ unsafe fn compile_loop<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasic
     //   %cell_value = ...
     //   %cell_value_is_zero = icmp ...
     //   br %cell_value_is_zero, %loop_after, %loop_body
-    LLVMPositionBuilderAtEnd(builder, loop_header);
+    builder.position_at_end(loop_header);
     // TODO: we do this several times, factor out duplication.
-    let cell_index = LLVMBuildLoad(builder, cell_index_ptr, module.new_string_ptr("cell_index"));
+    let cell_index = LLVMBuildLoad(builder.builder, cell_index_ptr, module.new_string_ptr("cell_index"));
     let mut indices = vec![cell_index];
-    let current_cell_ptr = LLVMBuildGEP(builder, cells, indices.as_mut_ptr(),
+    let current_cell_ptr = LLVMBuildGEP(builder.builder, cells, indices.as_mut_ptr(),
                                         indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
-    let cell_val = LLVMBuildLoad(builder, current_cell_ptr, module.new_string_ptr("cell_value"));
+    let cell_val = LLVMBuildLoad(builder.builder, current_cell_ptr, module.new_string_ptr("cell_value"));
 
     // TODO: factor out a function for this.
     let zero = LLVMConstInt(LLVMInt8Type(), 0, LLVM_FALSE);
-    let cell_val_is_zero = LLVMBuildICmp(builder, LLVMIntPredicate::LLVMIntEQ,
+    let cell_val_is_zero = LLVMBuildICmp(builder.builder, LLVMIntPredicate::LLVMIntEQ,
                                          zero, cell_val, module.new_string_ptr("cell_value_is_zero"));
-    LLVMBuildCondBr(builder, cell_val_is_zero, loop_after, loop_body_bb);
+    LLVMBuildCondBr(builder.builder, cell_val_is_zero, loop_after, loop_body_bb);
 
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
@@ -322,10 +330,9 @@ unsafe fn compile_loop<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasic
 
     // When the loop is finished, jump back to the beginning of the
     // loop.
-    LLVMPositionBuilderAtEnd(builder, loop_body_bb);
-    LLVMBuildBr(builder, loop_header);
+    builder.position_at_end(loop_body_bb);
+    LLVMBuildBr(builder.builder, loop_header);
 
-    LLVMDisposeBuilder(builder);
     &mut *loop_after
 }
 
@@ -352,19 +359,12 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
 
 unsafe fn compile_static_outputs(module: &mut ModuleWithContext,
                           bb: &mut LLVMBasicBlock, outputs: &Vec<u8>) {
-    // TODO: it would be nicer to create our own Builder struct
-    // that cleaned up on Drop.
-    let builder = LLVMCreateBuilder();
-    LLVMPositionBuilderAtEnd(builder, bb);
-
     // TODO: we should do a single call to puts instead of many calls to putchar.
     for value in outputs {
         let llvm_value = LLVMConstInt(LLVMInt32Type(), *value as c_ulonglong, LLVM_FALSE);
         let mut putchar_args = vec![llvm_value];
         add_function_call(module, bb, "putchar", &mut putchar_args, "");
     }
-
-    LLVMDisposeBuilder(builder);
 }
 
 // TODO: take a compile state rather than passing tons of variables.
