@@ -13,13 +13,12 @@ const LLVM_FALSE: LLVMBool = 0;
 
 /// A struct that keeps ownership of all the strings we've passed to
 /// the LLVM API until we destroy the LLVMModule.
-// TODO: there isn't actually a context here any more.
-struct ModuleWithContext {
+struct Module {
     module: *mut LLVMModule,
     strings: Vec<CString>
 }
 
-impl ModuleWithContext {
+impl Module {
     /// Create a new CString associated with this LLVMModule,
     /// and return a pointer that can be passed to LLVM APIs.
     /// Assumes s is pure-ASCII.
@@ -57,14 +56,14 @@ impl Drop for Builder {
     }
 }
 
-unsafe fn add_function(module: &mut ModuleWithContext, fn_name: &str,
+unsafe fn add_function(module: &mut Module, fn_name: &str,
                        args: &mut Vec<LLVMTypeRef>, ret_type: LLVMTypeRef) {
     let fn_type = 
         LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, LLVM_FALSE);
     LLVMAddFunction(module.module, module.new_string_ptr(fn_name), fn_type);
 }
 
-unsafe fn add_c_declarations(module: &mut ModuleWithContext) {
+unsafe fn add_c_declarations(module: &mut Module) {
     let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
     let void = LLVMVoidType();
 
@@ -84,7 +83,7 @@ unsafe fn add_c_declarations(module: &mut ModuleWithContext) {
         &mut vec![], LLVMInt32Type());
 }
 
-unsafe fn add_function_call(module: &mut ModuleWithContext, bb: &mut LLVMBasicBlock,
+unsafe fn add_function_call(module: &mut Module, bb: &mut LLVMBasicBlock,
                             fn_name: &str, args: &mut Vec<LLVMValueRef>,
                             name: &str) -> LLVMValueRef {
     let builder = Builder::new();
@@ -110,7 +109,7 @@ fn run_length_encode(cells: &Vec<u8>) -> Vec<(u8, usize)> {
     }).collect()
 }
 
-unsafe fn add_cells_init(init_values: &Vec<u8>, module: &mut ModuleWithContext,
+unsafe fn add_cells_init(init_values: &Vec<u8>, module: &mut Module,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
@@ -145,18 +144,18 @@ unsafe fn add_cells_init(init_values: &Vec<u8>, module: &mut ModuleWithContext,
     cells_ptr
 }
 
-unsafe fn create_module(module_name: &str) -> ModuleWithContext {
+unsafe fn create_module(module_name: &str) -> Module {
     let c_module_name = CString::new(module_name).unwrap();
     
     let llvm_module = LLVMModuleCreateWithName(
         c_module_name.to_bytes_with_nul().as_ptr() as *const _);
-    let mut module = ModuleWithContext { module: llvm_module, strings: vec![c_module_name] };
+    let mut module = Module { module: llvm_module, strings: vec![c_module_name] };
     add_c_declarations(&mut module);
 
     module
 }
 
-unsafe fn add_main_fn(module: &mut ModuleWithContext) -> LLVMValueRef {
+unsafe fn add_main_fn(module: &mut Module) -> LLVMValueRef {
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(
         LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
@@ -169,7 +168,7 @@ unsafe fn add_main_fn(module: &mut ModuleWithContext) -> LLVMValueRef {
 
 /// Initialise the value that contains the current cell index.
 unsafe fn add_cell_index_init(init_value: i32, bb: *mut LLVMBasicBlock,
-                              module: &mut ModuleWithContext) -> LLVMValueRef {
+                              module: &mut Module) -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
     
@@ -191,7 +190,7 @@ unsafe fn add_main_cleanup(bb: *mut LLVMBasicBlock) {
     LLVMBuildRet(builder.builder, zero);
 }
 
-unsafe fn compile_increment<'a>(amount: u8, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_increment<'a>(amount: u8, module: &mut Module, bb: &'a mut LLVMBasicBlock,
                                 cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                                 -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -212,7 +211,7 @@ unsafe fn compile_increment<'a>(amount: u8, module: &mut ModuleWithContext, bb: 
     bb
 }
 
-unsafe fn compile_set<'a>(amount: u8, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_set<'a>(amount: u8, module: &mut Module, bb: &'a mut LLVMBasicBlock,
                           cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                           -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -229,7 +228,7 @@ unsafe fn compile_set<'a>(amount: u8, module: &mut ModuleWithContext, bb: &'a mu
     bb
 }
 
-unsafe fn compile_ptr_increment<'a>(amount: i32, module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_ptr_increment<'a>(amount: i32, module: &mut Module, bb: &'a mut LLVMBasicBlock,
                                     cell_index_ptr: LLVMValueRef)
                                     -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -245,7 +244,7 @@ unsafe fn compile_ptr_increment<'a>(amount: i32, module: &mut ModuleWithContext,
     bb
 }
 
-unsafe fn compile_read<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_read<'a>(module: &mut Module, bb: &'a mut LLVMBasicBlock,
                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                            -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -266,7 +265,7 @@ unsafe fn compile_read<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasic
     bb
 }
 
-unsafe fn compile_write<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_write<'a>(module: &mut Module, bb: &'a mut LLVMBasicBlock,
                             cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                             -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -288,7 +287,7 @@ unsafe fn compile_write<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasi
     bb
 }
 
-unsafe fn compile_loop<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_loop<'a>(module: &mut Module, bb: &'a mut LLVMBasicBlock,
                            loop_body: &Vec<Instruction>,
                            main_fn: LLVMValueRef,
                            cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
@@ -337,7 +336,7 @@ unsafe fn compile_loop<'a>(module: &mut ModuleWithContext, bb: &'a mut LLVMBasic
 }
 
 // TODO: just take * instead of & to save all the casting.
-unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
+unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut Module,
                             bb: &'a mut LLVMBasicBlock, main_fn: LLVMValueRef,
                             cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                             -> &'a mut LLVMBasicBlock {
@@ -358,8 +357,8 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut ModuleWithContext,
     }
 }
 
-unsafe fn compile_static_outputs(module: &mut ModuleWithContext,
-                          bb: &mut LLVMBasicBlock, outputs: &Vec<u8>) {
+unsafe fn compile_static_outputs(module: &mut Module,
+                                 bb: &mut LLVMBasicBlock, outputs: &Vec<u8>) {
     // TODO: we should do a single call to fwrite instead of many calls to putchar.
     for value in outputs {
         let llvm_value = LLVMConstInt(LLVMInt32Type(), *value as c_ulonglong, LLVM_FALSE);
