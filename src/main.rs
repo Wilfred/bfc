@@ -88,7 +88,6 @@ fn main() {
                 // TODO: highest_cell_index should return a usize.
                 let state = execution::execute(&instrs, execution::MAX_STEPS);
 
-                // TODO: we should pass slice references around, not Vec references.
                 let remaining_instrs = &instrs[state.instr_ptr..];
                 let llvm_ir_raw = llvm::compile_to_ir(
                     &file_path, &remaining_instrs.to_vec(), &state.cells, state.cell_ptr as i32,

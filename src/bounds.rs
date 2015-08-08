@@ -12,7 +12,7 @@ const MAX_CELL_INDEX: u64 = 29999;
 
 /// Return the highest cell index that can be reached during program
 /// execution. Zero-indexed.
-pub fn highest_cell_index(instrs: &Vec<Instruction>) -> u64 {
+pub fn highest_cell_index(instrs: &[Instruction]) -> u64 {
     let (highest_index, _) = overall_movement(instrs);
 
     match highest_index {
@@ -63,7 +63,7 @@ impl PartialOrd for SaturatingInt {
 
 /// Return a tuple (highest cell index reached, cell index at end).
 /// If movement is unbounded, return Max.
-fn overall_movement(instrs: &Vec<Instruction>) -> (SaturatingInt, SaturatingInt) {
+fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
     let mut net_movement = SaturatingInt::Number(0);
     let mut max_index = SaturatingInt::Number(0);
 

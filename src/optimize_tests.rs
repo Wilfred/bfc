@@ -192,7 +192,7 @@ fn should_remove_redundant_set() {
     assert_eq!(remove_redundant_sets(initial), expected);
 }
 
-fn is_pure(instrs: &Vec<Instruction>) -> bool {
+fn is_pure(instrs: &[Instruction]) -> bool {
     for instr in instrs {
         match instr {
             &Loop(_) => {
@@ -287,7 +287,7 @@ fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
     return optimize(minimal.clone()) == minimal;
 }
 
-fn count_instrs(instrs: &Vec<Instruction>) -> u64 {
+fn count_instrs(instrs: &[Instruction]) -> u64 {
     let mut count = 0;
     for instr in instrs {
         if let &Loop(ref body) = instr {

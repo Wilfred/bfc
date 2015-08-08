@@ -31,7 +31,7 @@ pub const MAX_STEPS: u64 = 10000000;
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
-pub fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionState {
+pub fn execute(instrs: &[Instruction], steps: u64) -> ExecutionState {
     let cells = vec![0; (highest_cell_index(instrs) + 1) as usize];
     let state = ExecutionState {
         instr_ptr: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
@@ -39,7 +39,7 @@ pub fn execute(instrs: &Vec<Instruction>, steps: u64) -> ExecutionState {
     final_state
 }
 
-fn execute_inner(instrs: &Vec<Instruction>, state: ExecutionState, steps: u64)
+fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                  -> (ExecutionState, Outcome) {
     let mut steps_left = steps;
     let mut state = state;
