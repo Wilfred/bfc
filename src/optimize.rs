@@ -21,7 +21,7 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
-        if let (Increment(prev_amount), Increment(amount)) = (prev_instr.clone(), instr.clone()) {
+        if let (&Increment(prev_amount), &Increment(amount)) = (&prev_instr, &instr) {
             Ok(Increment(amount.wrapping_add(prev_amount)))
         } else {
             Err((prev_instr, instr))
@@ -46,7 +46,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
-        if let (PointerIncrement(prev_amount), PointerIncrement(amount)) = (prev_instr.clone(), instr.clone()) {
+        if let (&PointerIncrement(prev_amount), &PointerIncrement(amount)) = (&prev_instr, &instr) {
             Ok(PointerIncrement(amount + prev_amount))
         } else {
             Err((prev_instr, instr))
@@ -95,9 +95,9 @@ fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
-        if let Loop(body) = instr.clone() {
+        if let &Loop(ref body) = &instr {
             // If the loop is [-] (255 is -1 mod 256)
-            if body == vec![Increment(255)] {
+            if *body == vec![Increment(255)] {
                 return Set(0)
             }
         }
@@ -116,7 +116,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Remove any loops where we know the current cell is zero.
 pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (Set(0), Loop(_)) = (prev_instr.clone(), instr.clone()) {
+        if let (&Set(0), &Loop(_)) = (&prev_instr, &instr) {
             return Ok(Set(0));
         }
         Err((prev_instr, instr))
@@ -134,18 +134,17 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// increments.
 pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (Increment(_), Set(amount)) = (prev_instr.clone(), instr.clone()) {
+        if let (&Increment(_), &Set(amount)) = (&prev_instr, &instr) {
             return Ok(Set(amount));
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        // TODO: use references rather than cloning here.
-        if let (Set(set_amount), Increment(inc_amount)) = (prev_instr.clone(), instr.clone()) {
+        if let (&Set(set_amount), &Increment(inc_amount)) = (&prev_instr, &instr) {
             return Ok(Set(set_amount.wrapping_add(inc_amount)));
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (Set(_), Set(amount)) = (prev_instr.clone(), instr.clone()) {
+        if let (&Set(_), &Set(amount)) = (&prev_instr, &instr) {
             return Ok(Set(amount));
         }
         Err((prev_instr, instr))
@@ -171,8 +170,8 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (Loop(body), Set(0)) = (prev_instr.clone(), instr.clone()) {
-            return Ok(Loop(body));
+        if let (loop_instr @ Loop(_), &Set(0)) = (prev_instr.clone(), &instr) {
+            return Ok(loop_instr);
         }
         Err((prev_instr, instr))
     }).map(|instr| {
