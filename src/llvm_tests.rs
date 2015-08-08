@@ -61,11 +61,6 @@ declare i32 @getchar()
 
 define i32 @main() {
 entry:
-  %cells = alloca i8, i32 10
-  %offset_cell_ptr = getelementptr i8* %cells, i32 0
-  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 10, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
   ret i32 0
 }
 
@@ -141,7 +136,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_static_outputs() {
-    let result = compile_to_ir("foo", &vec![], &vec![0; 3], 0, &vec![5, 10]);
+    let result = compile_to_ir("foo", &vec![], &vec![], 0, &vec![5, 10]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -153,11 +148,6 @@ declare i32 @getchar()
 
 define i32 @main() {
 entry:
-  %cells = alloca i8, i32 3
-  %offset_cell_ptr = getelementptr i8* %cells, i32 0
-  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 3, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
   %0 = call i32 @putchar(i32 5)
   %1 = call i32 @putchar(i32 10)
   ret i32 0

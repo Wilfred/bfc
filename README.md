@@ -257,6 +257,9 @@ entirely, but we cannot execute all of `[+,]` at compile time. The
 compiled output does not jump into a loop halfway, instead we execute
 `+[-]+` at compile time and all of `[+,]` is in the compiled output.
 
+If bfc manages to execute the entire program, it won't bother
+allocating memory for cells.
+
 ## Other projects optimising BF
 
 There are also some interesting other projects for optimising BF

@@ -379,18 +379,18 @@ pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
         let main_fn = add_main_fn(&mut module);
         let mut bb = LLVMGetLastBasicBlock(main_fn);
 
-        // TODO: decide on a consistent order between module and bb as
-        // parameters.
-        let llvm_cells = add_cells_init(cells, &mut module, &mut *bb);
-        let llvm_cell_index = add_cell_index_init(cell_ptr, bb, &mut module);
-
         compile_static_outputs(&mut module, &mut *bb, static_outputs);
 
-        // TODO: don't bother with init/cleanup if we have an empty
-        // program.
-        for instr in instrs {
-            bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
-                               llvm_cells, llvm_cell_index);
+        if instrs.len() > 0 {
+            // TODO: decide on a consistent order between module and bb as
+            // parameters.
+            let llvm_cells = add_cells_init(cells, &mut module, &mut *bb);
+            let llvm_cell_index = add_cell_index_init(cell_ptr, bb, &mut module);
+
+            for instr in instrs {
+                bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
+                                   llvm_cells, llvm_cell_index);
+            }
         }
         
         add_main_cleanup(bb);
