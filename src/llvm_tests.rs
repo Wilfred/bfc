@@ -165,3 +165,34 @@ attributes #0 = { nounwind }
     assert_eq!(result, CString::new(expected).unwrap());
 }
 
+#[test]
+fn compile_ptr_increment() {
+    let result = compile_to_ir("foo", &vec![PointerIncrement(1)], &vec![0, 0], 0, &vec![]);
+    let expected = "; ModuleID = \'foo\'
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+entry:
+  %cells = alloca i8, i32 2
+  %offset_cell_ptr = getelementptr i8* %cells, i32 0
+  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 2, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  %cell_index = load i32* %cell_index_ptr
+  %new_cell_index = add i32 %cell_index, 1
+  store i32 %new_cell_index, i32* %cell_index_ptr
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+
+    assert_eq!(result, CString::new(expected).unwrap());
+}
+
