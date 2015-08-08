@@ -76,9 +76,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn respect_initial_cell_ptr() {
-    // TODO: this is a bad test, we would never access cell 42 with 10
-    // cells.
-    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 42, &vec![]);
+    let result = compile_to_ir("foo", &vec![PointerIncrement(1)], &vec![0; 10], 8, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -94,7 +92,10 @@ entry:
   %offset_cell_ptr = getelementptr i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 10, i32 1, i1 true)
   %cell_index_ptr = alloca i32
-  store i32 42, i32* %cell_index_ptr
+  store i32 8, i32* %cell_index_ptr
+  %cell_index = load i32* %cell_index_ptr
+  %new_cell_index = add i32 %cell_index, 1
+  store i32 %new_cell_index, i32* %cell_index_ptr
   ret i32 0
 }
 
