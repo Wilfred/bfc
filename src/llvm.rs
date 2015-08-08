@@ -67,20 +67,12 @@ unsafe fn add_c_declarations(module: &mut ModuleWithContext) {
     let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
     let void = LLVMVoidType();
 
-    add_function(
-        module, "malloc",
-        &mut vec![LLVMInt32Type()], byte_pointer);
-
     // TODO: we should use memset for Set() commands.
     add_function(
         module, "llvm.memset.p0i8.i32",
         &mut vec![byte_pointer, LLVMInt8Type(), LLVMInt32Type(),
                   LLVMInt32Type(), LLVMInt1Type()],
         void);
-
-    add_function(
-        module, "free",
-        &mut vec![byte_pointer], void);
 
     add_function(
         module, "putchar",
@@ -122,11 +114,10 @@ unsafe fn add_cells_init(cells: &Vec<u8>, module: &mut ModuleWithContext,
     let builder = Builder::new();
     builder.position_at_end(bb);
     
-    // malloc(30000);
-    // TODO: since it's only 30KiB, benchmark using stack storage instead.
+    // Allocate stack memory for our cells.
     let num_cells = LLVMConstInt(LLVMInt32Type(), cells.len() as c_ulonglong, LLVM_FALSE);
-    let mut malloc_args = vec![num_cells];
-    let cells_ptr = add_function_call(module, bb, "malloc", &mut malloc_args, "cells");
+    let cells_ptr = LLVMBuildArrayAlloca(builder.builder, LLVMInt8Type(), num_cells,
+                                         module.new_string_ptr("cells"));
 
     let one = LLVMConstInt(LLVMInt32Type(), 1, LLVM_FALSE);
     let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
@@ -190,12 +181,7 @@ unsafe fn add_main_init(cells: &Vec<u8>, cell_ptr: i32, module: &mut ModuleWithC
 }
 
 /// Add prologue to main function.
-unsafe fn add_main_cleanup(module: &mut ModuleWithContext, bb: &mut LLVMBasicBlock,
-                           cells: LLVMValueRef) {
-    // free(cells);
-    let mut free_args = vec![cells];
-    add_function_call(module, &mut *bb, "free", &mut free_args, "");
-
+unsafe fn add_main_cleanup(bb: *mut LLVMBasicBlock) {
     let builder = Builder::new();
     builder.position_at_end(bb);
     
@@ -400,7 +386,7 @@ pub fn compile_to_ir(module_name: &str, instrs: &Vec<Instruction>,
                                cells, cell_index_ptr);
         }
         
-        add_main_cleanup(&mut module, &mut *bb, cells);
+        add_main_cleanup(bb);
 
         // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
         // as borrowed.
