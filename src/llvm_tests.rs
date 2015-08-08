@@ -106,7 +106,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn set_initial_cell_values() {
-    let result = compile_to_ir("foo", &vec![], &vec![1, 1, 2, 0, 0, 0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![PointerIncrement(1)], &vec![1, 1, 2, 0, 0, 0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -127,6 +127,9 @@ entry:
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr2, i8 0, i32 3, i32 1, i1 true)
   %cell_index_ptr = alloca i32
   store i32 0, i32* %cell_index_ptr
+  %cell_index = load i32* %cell_index_ptr
+  %new_cell_index = add i32 %cell_index, 1
+  store i32 %new_cell_index, i32* %cell_index_ptr
   ret i32 0
 }
 
