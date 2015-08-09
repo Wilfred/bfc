@@ -6,10 +6,8 @@ authors = ["Wilfred Hughes <me@wilfred.me.uk>"]
 [dependencies]
 llvm_sys = "0.1.3"
 itertools = "*"
-tempfile = "*"
-libc = "0.1"
-
-[dev-dependencies]
+rand = "*"
 quickcheck = "*"
 quickcheck_macros = "*"
-rand = "*"
+tempfile = "*"
+libc = "0.1"
