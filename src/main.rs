@@ -40,6 +40,7 @@ fn slurp(path: &str) -> Result<String, std::io::Error> {
 }
 
 /// Convert "foo.bf" to "foo.o".
+#[allow(deprecated)] // .connect is in stable 1.2, but beta has deprecated it.
 fn obj_file_name(bf_file_name: &str) -> String {
     let mut name_parts: Vec<_> = bf_file_name.split('.').collect();
     let parts_len = name_parts.len();
