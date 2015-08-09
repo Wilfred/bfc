@@ -12,6 +12,7 @@ extern crate rand;
 extern crate tempfile;
 
 use std::env;
+use std::fmt::{Display,Formatter};
 use std::fs::File;
 use std::io::Write;
 use std::io::prelude::Read;
@@ -61,6 +62,96 @@ fn print_usage(bin_name: &str) {
     println!("  {} foo.bf --dump-llvm", bin_name);
 }
 
+#[derive(Debug)]
+struct StringError { message: String }
+
+impl StringError {
+    fn new(message: &str) -> StringError {
+        StringError { message: message.to_owned() }
+    }
+}
+
+impl std::error::Error for StringError {
+    fn description(&self) -> &str {
+        &self.message
+    }
+}
+
+impl Display for StringError {
+    fn fmt(&self, formatter: &mut Formatter) -> Result<(), std::fmt::Error> {
+        self.message.fmt(formatter)
+    }
+}
+
+fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
+                -> Result<(),std::io::Error> {
+    let src = try!(slurp(&path));
+
+    // TODO: wrapping everything in io::Error is ugly.
+    let instrs;
+    match bfir::parse(&src) {
+        Ok(instrs_) => {
+            instrs = instrs_;
+        }
+        Err(e) => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other, StringError::new(&e)));
+        }
+    }
+    
+    // TODO: allow users to specify optimisation level.
+    let instrs = optimize::optimize(instrs);
+
+    if dump_bf_ir {
+        for instr in &instrs {
+            println!("{}", instr);
+        }
+        return Ok(());
+    }
+
+    // TODO: highest_cell_index should return a usize.
+    let state = execution::execute(&instrs, execution::MAX_STEPS);
+
+    let remaining_instrs = &instrs[state.instr_ptr..];
+    let llvm_ir_raw = llvm::compile_to_ir(
+        &path, &remaining_instrs.to_vec(), &state.cells, state.cell_ptr as i32,
+        &state.outputs);
+
+    if dump_llvm {
+        let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
+        println!("{}", llvm_ir);
+        return Ok(());
+    }                        
+
+    let bf_name = Path::new(path).file_name().unwrap();
+    let obj_name = obj_file_name(bf_name.to_str().unwrap());
+
+    let mut f = try!(NamedTempFile::new());
+
+    let _ = f.write(llvm_ir_raw.as_bytes());
+
+    // TODO: link as well.
+    let llc_result = try!(
+        Command::new("llc")
+            .arg("-O3").arg("-filetype=obj").arg(f.path())
+            .arg("-o").arg(obj_name.to_owned())
+            .output());
+
+    let mut llc_stderr = String::from_utf8_lossy(llc_result.stderr.as_slice());
+
+    // TODO: it would be nice to have a function that wraps
+    // Command::new so we don't have to inspect .status.success() and
+    // wrap in Err as below.
+    if llc_result.status.success() {
+        // TODO: it would be cleaner to return this in Ok().
+        println!("Wrote {}", obj_name);
+        Ok(())
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other, StringError::new(llc_stderr.to_mut())))
+    }
+}
+
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -71,91 +162,18 @@ fn main() {
         let dump_llvm = args.len() > 2 && args[2] == "--dump-llvm";
         
         let ref file_path = args[1];
-        // TODO: this would be cleaner to use try!.
-        match slurp(&file_path) {
-            Ok(src) => {
-                let mut instrs;
-                match bfir::parse(&src) {
-                    Ok(instrs_) => {
-                        instrs = instrs_;
-                    },
-                    Err(message) => {
-                        println!("{}", message);
-                        std::process::exit(1);
-                    }
-                }
-                // TODO: allow users to specify optimisation level.
-                instrs = optimize::optimize(instrs);
 
-                if dump_bf_ir {
-                    for instr in &instrs {
-                        println!("{}", instr);
-                    }
-                    return
-                }
-
-                // TODO: highest_cell_index should return a usize.
-                let state = execution::execute(&instrs, execution::MAX_STEPS);
-
-                let remaining_instrs = &instrs[state.instr_ptr..];
-                let llvm_ir_raw = llvm::compile_to_ir(
-                    &file_path, &remaining_instrs.to_vec(), &state.cells, state.cell_ptr as i32,
-                    &state.outputs);
-
-                if dump_llvm {
-                    let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
-                    println!("{}", llvm_ir);
-                    return
-                }                        
-
-                let bf_name = Path::new(file_path).file_name().unwrap();
-                let obj_name = obj_file_name(bf_name.to_str().unwrap());
-
-                match NamedTempFile::new() {
-                    Ok(mut f) => {
-                        let _ = f.write(llvm_ir_raw.as_bytes());
-
-                        // TODO: use llc optimisations
-                        // TODO: link as well.
-                        let llc_result = Command::new("llc")
-                            .arg("-O3").arg("-filetype=obj").arg(f.path())
-                            .arg("-o").arg(obj_name.to_owned())
-                            .output();
-
-                        match llc_result {
-                            Ok(res) => {
-                                if res.stderr.len() > 0 {
-                                    // TODO: this should go to our stderr.
-                                    println!("{}", String::from_utf8_lossy(res.stderr.as_slice()));
-                                }
-                                if res.status.success() {
-                                    println!("Wrote {}", obj_name);
-                                } else {
-                                    println!("llc failed");
-                                    std::process::exit(1);
-                                }
-                            }
-                            Err(e) => {
-                                println!("LLVM IR compilation failed: {}", e);
-                                std::process::exit(1);
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        println!("Could not create temporary file: {}", e);
-                        std::process::exit(1);
-                    }
-                }
-                
-            }
+        match compile_file(file_path, dump_bf_ir, dump_llvm) {
+            Ok(_) => {}
             Err(e) => {
-                println!("Could not open file: {}", e);
-                std::process::exit(1);
+                // TODO: this should go to stderr.
+                println!("{}", e);
+                std::process::exit(2);
             }
         }
+        
     } else {
-        print_usage(args[0]);
+        print_usage(&args[0]);
         std::process::exit(1);
     }
-    
 }
