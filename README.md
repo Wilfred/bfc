@@ -58,6 +58,9 @@ $ cargo test
 
 ## Portability
 
+bfc assumes a word size of 32 bits, so you may get compilation errors
+on 64-bit environments.
+
 bfc considers cells to be single bytes, and arithmetic wraps
 around. As a result, `-` sets cell #0 to 255.
 
