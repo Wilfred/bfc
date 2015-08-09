@@ -10,6 +10,8 @@ fn compile_loop() {
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
 
+declare i32 @write(i32, i8*, i32)
+
 declare i32 @putchar(i32)
 
 declare i32 @getchar()
@@ -55,6 +57,8 @@ fn compile_empty_program() {
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
 
+declare i32 @write(i32, i8*, i32)
+
 declare i32 @putchar(i32)
 
 declare i32 @getchar()
@@ -77,6 +81,8 @@ fn respect_initial_cell_ptr() {
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
 
+declare i32 @write(i32, i8*, i32)
+
 declare i32 @putchar(i32)
 
 declare i32 @getchar()
@@ -96,6 +102,7 @@ entry:
 
 attributes #0 = { nounwind }
 ";
+
     assert_eq!(result, CString::new(expected).unwrap());
 }
 
@@ -106,6 +113,8 @@ fn set_initial_cell_values() {
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
 
 declare i32 @putchar(i32)
 
@@ -139,8 +148,12 @@ fn compile_static_outputs() {
     let result = compile_to_ir("foo", &vec![], &vec![], 0, &vec![5, 10]);
     let expected = "; ModuleID = \'foo\'
 
+@known_outputs = constant [2 x i8] c\"\\05\\0A\"
+
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
 
 declare i32 @putchar(i32)
 
@@ -148,8 +161,7 @@ declare i32 @getchar()
 
 define i32 @main() {
 entry:
-  %0 = call i32 @putchar(i32 5)
-  %1 = call i32 @putchar(i32 10)
+  %0 = call i32 @write(i32 0, i8* getelementptr inbounds ([2 x i8]* @known_outputs, i32 0, i32 0), i32 2)
   ret i32 0
 }
 
@@ -166,6 +178,8 @@ fn compile_ptr_increment() {
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
 
 declare i32 @putchar(i32)
 

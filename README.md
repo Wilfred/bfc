@@ -261,7 +261,20 @@ compiled output does not jump into a loop halfway, instead we execute
 `+[-]+` at compile time and all of `[+,]` is in the compiled output.
 
 If bfc manages to execute the entire program, it won't bother
-allocating memory for cells.
+allocating memory for cells:
+
+```
+$ cargo run -- sample_programs/hello_world.bf --dump-llvm
+@known_outputs = constant [13 x i8] c"Hello World!\0A"
+
+declare i32 @write(i32, i8*, i32)
+
+define i32 @main() {
+entry:
+  %0 = call i32 @write(i32 0, i8* getelementptr inbounds ([13 x i8]* @known_outputs, i32 0, i32 0), i32 13)
+  ret i32 0
+}
+```
 
 ## Other projects optimising BF
 

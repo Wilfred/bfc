@@ -4,12 +4,14 @@ use llvm_sys::{LLVMModule,LLVMBasicBlock,LLVMIntPredicate,LLVMBuilder};
 use llvm_sys::prelude::*;
 
 use libc::types::os::arch::c99::c_ulonglong;
+use libc::types::os::arch::c95::c_uint;
 use std::ffi::{CString,CStr};
 
 use bfir::Instruction;
 use bfir::Instruction::*;
 
 const LLVM_FALSE: LLVMBool = 0;
+const LLVM_TRUE: LLVMBool = 1;
 
 /// A struct that keeps ownership of all the strings we've passed to
 /// the LLVM API until we destroy the LLVMModule.
@@ -74,6 +76,10 @@ unsafe fn add_c_declarations(module: &mut Module) {
                   LLVMInt32Type(), LLVMInt1Type()],
         void);
 
+    add_function(
+        module, "write",
+        &mut vec![LLVMInt32Type(), byte_pointer, LLVMInt32Type()], LLVMInt32Type());
+    
     add_function(
         module, "putchar",
         &mut vec![LLVMInt32Type()], LLVMInt32Type());
@@ -361,12 +367,32 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut Module,
 
 unsafe fn compile_static_outputs(module: &mut Module,
                                  bb: &mut LLVMBasicBlock, outputs: &[u8]) {
-    // TODO: we should do a single call to fwrite instead of many calls to putchar.
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+
+    let mut llvm_outputs = vec![];
     for value in outputs {
-        let llvm_value = LLVMConstInt(LLVMInt32Type(), *value as c_ulonglong, LLVM_FALSE);
-        let mut putchar_args = vec![llvm_value];
-        add_function_call(module, bb, "putchar", &mut putchar_args, "");
+        llvm_outputs.push(
+            LLVMConstInt(LLVMInt8Type(), *value as c_ulonglong, LLVM_FALSE));
     }
+
+    let output_buf_type = LLVMArrayType(LLVMInt8Type(), llvm_outputs.len() as c_uint);
+    let llvm_outputs_arr = LLVMConstArray(LLVMInt8Type(), llvm_outputs.as_mut_ptr(),
+                                          llvm_outputs.len() as c_uint);
+
+    let known_outputs = LLVMAddGlobal(module.module, output_buf_type, module.new_string_ptr("known_outputs"));
+    // TODO: define a utility function for constant integers.
+    LLVMSetInitializer(known_outputs, llvm_outputs_arr);
+    LLVMSetGlobalConstant(known_outputs, LLVM_TRUE);
+
+    let stdout_fd = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
+    let llvm_num_outputs = LLVMConstInt(LLVMInt32Type(), outputs.len() as c_ulonglong, LLVM_FALSE);
+
+    // TODO: worth factoring out this type too.
+    let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
+    let known_outputs_ptr = LLVMBuildPointerCast(builder.builder, known_outputs, byte_pointer, module.new_string_ptr("known_outputs_ptr"));
+
+    add_function_call(module, bb, "write", &mut vec![stdout_fd, known_outputs_ptr, llvm_num_outputs], "");
 }
 
 // TODO: take a compile state rather than passing tons of variables.
@@ -381,7 +407,9 @@ pub fn compile_to_ir(module_name: &str, instrs: &[Instruction],
         let main_fn = add_main_fn(&mut module);
         let mut bb = LLVMGetLastBasicBlock(main_fn);
 
-        compile_static_outputs(&mut module, &mut *bb, static_outputs);
+        if static_outputs.len() > 0 {
+            compile_static_outputs(&mut module, &mut *bb, static_outputs);
+        }
 
         if instrs.len() > 0 {
             // TODO: decide on a consistent order between module and bb as
