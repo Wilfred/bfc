@@ -58,6 +58,17 @@ impl Drop for Builder {
     }
 }
 
+/// Convert this integer to LLVM's representation of a constant
+/// integer.
+unsafe fn int8(val: c_ulonglong) -> LLVMValueRef {
+    LLVMConstInt(LLVMInt8Type(), val, LLVM_FALSE)
+}
+/// Convert this integer to LLVM's representation of a constant
+/// integer.
+unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
+    LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
+}
+
 unsafe fn add_function(module: &mut Module, fn_name: &str,
                        args: &mut Vec<LLVMTypeRef>, ret_type: LLVMTypeRef) {
     let fn_type = 
@@ -122,20 +133,20 @@ unsafe fn add_cells_init(init_values: &[u8], module: &mut Module,
     builder.position_at_end(bb);
     
     // Allocate stack memory for our cells.
-    let num_cells = LLVMConstInt(LLVMInt32Type(), init_values.len() as c_ulonglong, LLVM_FALSE);
+    let num_cells = int32(init_values.len() as c_ulonglong);
     let cells_ptr = LLVMBuildArrayAlloca(builder.builder, LLVMInt8Type(), num_cells,
                                          module.new_string_ptr("cells"));
 
-    let one = LLVMConstInt(LLVMInt32Type(), 1, LLVM_FALSE);
+    let one = int32(1);
     let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
 
     let mut offset = 0;
     for (cell_val, cell_count) in run_length_encode(init_values) {
-        let llvm_cell_val = LLVMConstInt(LLVMInt8Type(), cell_val as c_ulonglong, LLVM_FALSE);
-        let llvm_cell_count = LLVMConstInt(LLVMInt32Type(), cell_count as c_ulonglong, LLVM_FALSE);
+        let llvm_cell_val = int8(cell_val as c_ulonglong);
+        let llvm_cell_count = int32(cell_count as c_ulonglong);
 
         // TODO: factor out a build_gep function.
-        let mut offset_vec = vec![LLVMConstInt(LLVMInt32Type(), offset as c_ulonglong, LLVM_FALSE)];
+        let mut offset_vec = vec![int32(offset as c_ulonglong)];
         let offset_cell_ptr = LLVMBuildGEP(builder.builder, cells_ptr, offset_vec.as_mut_ptr(),
                                            offset_vec.len() as u32, module.new_string_ptr("offset_cell_ptr"));
         
@@ -182,7 +193,7 @@ unsafe fn add_cell_index_init(init_value: i32, bb: *mut LLVMBasicBlock,
     // int cell_index = 0;
     let cell_index_ptr = LLVMBuildAlloca(
         builder.builder, LLVMInt32Type(), module.new_string_ptr("cell_index_ptr"));
-    let cell_ptr_init = LLVMConstInt(LLVMInt32Type(), init_value as c_ulonglong, LLVM_FALSE);
+    let cell_ptr_init = int32(init_value as c_ulonglong);
     LLVMBuildStore(builder.builder, cell_ptr_init, cell_index_ptr);
 
     cell_index_ptr
@@ -193,7 +204,7 @@ unsafe fn add_main_cleanup(bb: *mut LLVMBasicBlock) {
     let builder = Builder::new();
     builder.position_at_end(bb);
     
-    let zero = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
+    let zero = int32(0);
     LLVMBuildRet(builder.builder, zero);
 }
 
@@ -210,7 +221,7 @@ unsafe fn compile_increment<'a>(amount: u8, module: &mut Module, bb: &'a mut LLV
                                         indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
     let cell_val = LLVMBuildLoad(builder.builder, current_cell_ptr, module.new_string_ptr("cell_value"));
 
-    let increment_amount = LLVMConstInt(LLVMInt8Type(), amount as u64, LLVM_FALSE);
+    let increment_amount = int8(amount as c_ulonglong);
     let new_cell_val = LLVMBuildAdd(builder.builder, cell_val, increment_amount,
                                     module.new_string_ptr("new_cell_value"));
 
@@ -228,10 +239,9 @@ unsafe fn compile_set<'a>(amount: u8, module: &mut Module, bb: &'a mut LLVMBasic
 
     let mut indices = vec![cell_index];
     let current_cell_ptr = LLVMBuildGEP(builder.builder, cells, indices.as_mut_ptr(),
-                                        indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
+                                        indices.len() as c_uint, module.new_string_ptr("current_cell_ptr"));
 
-    let new_cell_val = LLVMConstInt(LLVMInt8Type(), amount as u64, LLVM_FALSE);
-    LLVMBuildStore(builder.builder, new_cell_val, current_cell_ptr);
+    LLVMBuildStore(builder.builder, int8(amount as c_ulonglong), current_cell_ptr);
     bb
 }
 
@@ -243,8 +253,8 @@ unsafe fn compile_ptr_increment<'a>(amount: i32, module: &mut Module, bb: &'a mu
     
     let cell_index = LLVMBuildLoad(builder.builder, cell_index_ptr, module.new_string_ptr("cell_index"));
 
-    let increment_amount = LLVMConstInt(LLVMInt32Type(), amount as u64, LLVM_FALSE);
-    let new_cell_index = LLVMBuildAdd(builder.builder, cell_index, increment_amount,
+    let new_cell_index = LLVMBuildAdd(builder.builder, cell_index,
+                                      int32(amount as c_ulonglong),
                                       module.new_string_ptr("new_cell_index"));
 
     LLVMBuildStore(builder.builder, new_cell_index, cell_index_ptr);
@@ -322,8 +332,7 @@ unsafe fn compile_loop<'a>(module: &mut Module, bb: &'a mut LLVMBasicBlock,
                                         indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
     let cell_val = LLVMBuildLoad(builder.builder, current_cell_ptr, module.new_string_ptr("cell_value"));
 
-    // TODO: factor out a function for this.
-    let zero = LLVMConstInt(LLVMInt8Type(), 0, LLVM_FALSE);
+    let zero = int8(0);
     let cell_val_is_zero = LLVMBuildICmp(builder.builder, LLVMIntPredicate::LLVMIntEQ,
                                          zero, cell_val, module.new_string_ptr("cell_value_is_zero"));
     LLVMBuildCondBr(builder.builder, cell_val_is_zero, loop_after, loop_body_bb);
@@ -371,8 +380,7 @@ unsafe fn compile_static_outputs(module: &mut Module,
 
     let mut llvm_outputs = vec![];
     for value in outputs {
-        llvm_outputs.push(
-            LLVMConstInt(LLVMInt8Type(), *value as c_ulonglong, LLVM_FALSE));
+        llvm_outputs.push(int8(*value as c_ulonglong));
     }
 
     let output_buf_type = LLVMArrayType(LLVMInt8Type(), llvm_outputs.len() as c_uint);
@@ -380,12 +388,11 @@ unsafe fn compile_static_outputs(module: &mut Module,
                                           llvm_outputs.len() as c_uint);
 
     let known_outputs = LLVMAddGlobal(module.module, output_buf_type, module.new_string_ptr("known_outputs"));
-    // TODO: define a utility function for constant integers.
     LLVMSetInitializer(known_outputs, llvm_outputs_arr);
     LLVMSetGlobalConstant(known_outputs, LLVM_TRUE);
 
-    let stdout_fd = LLVMConstInt(LLVMInt32Type(), 0, LLVM_FALSE);
-    let llvm_num_outputs = LLVMConstInt(LLVMInt32Type(), outputs.len() as c_ulonglong, LLVM_FALSE);
+    let stdout_fd = int32(0);
+    let llvm_num_outputs = int32(outputs.len() as c_ulonglong);
 
     // TODO: worth factoring out this type too.
     let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
