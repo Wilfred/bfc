@@ -98,9 +98,8 @@ unsafe fn add_function_call(module: &mut Module, bb: &mut LLVMBasicBlock,
 
     let function = LLVMGetNamedFunction(module.module, module.new_string_ptr(fn_name));
 
-    // TODO: use c_uint here
     LLVMBuildCall(builder.builder, function, args.as_mut_ptr(),
-                  args.len() as u32, module.new_string_ptr(name))
+                  args.len() as c_uint, module.new_string_ptr(name))
 }
 
 /// Given a vector of cells [1, 1, 0, 0, 0, ...] return a vector
