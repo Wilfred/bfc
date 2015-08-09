@@ -3,16 +3,27 @@ use itertools::Itertools;
 use bfir::Instruction;
 use bfir::Instruction::*;
 
+/// Given a sequence of BF instructions, apply peephole optimisations
+/// (repeatedly if necessary).
 pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    // Many of our individual peephole optimisations remove
+    // instructions, creating new opportunities to combine. We run
+    // until we've found a fixed-point where no further optimisations
+    // can be made.
+    let mut prev = instrs.clone();
+    let mut result = optimize_once(instrs);
+    while prev != result {
+        prev = result.clone();
+        result = optimize_once(result);
+    }
+    result
+}
+
+/// Apply all our peephole optimisations once and return the result.
+fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
-    // Removing dead loops can require us to collapse increments first:
-    // Set 1, Increment -1, Loop => Set 0
-    // however, it can also create opportunities to collapse increments:
-    // Set 0, Loop, Increment 1 => Set 1
-    // so we need to run it twice.
-    let simplified = combine_set_and_increments(
-        remove_dead_loops(combine_set_and_increments(simplify_loops(annotated))));
+    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(annotated)));
     remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
 }
 

@@ -287,6 +287,24 @@ fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
     return optimize(minimal.clone()) == minimal;
 }
 
+#[test]
+fn pathological_optimisation_opportunity() {
+    let instrs = vec![Read,
+                      Increment(1),
+                      PointerIncrement(1),
+                      Increment(1),
+                      PointerIncrement(1),
+                      PointerIncrement(-1),
+                      Increment(255),
+                      PointerIncrement(-1),
+                      Increment(255),
+                      Write];
+
+    let expected = vec![Read, Write];
+
+    assert_eq!(optimize(instrs), expected);
+}
+
 fn count_instrs(instrs: &[Instruction]) -> u64 {
     let mut count = 0;
     for instr in instrs {
