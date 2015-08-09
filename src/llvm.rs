@@ -83,6 +83,7 @@ unsafe fn add_c_declarations(module: &mut Module) {
         &mut vec![], LLVMInt32Type());
 }
 
+// TODO: take slice here rather than Vec.
 unsafe fn add_function_call(module: &mut Module, bb: &mut LLVMBasicBlock,
                             fn_name: &str, args: &mut Vec<LLVMValueRef>,
                             name: &str) -> LLVMValueRef {
@@ -91,6 +92,7 @@ unsafe fn add_function_call(module: &mut Module, bb: &mut LLVMBasicBlock,
 
     let function = LLVMGetNamedFunction(module.module, module.new_string_ptr(fn_name));
 
+    // TODO: use c_uint here
     LLVMBuildCall(builder.builder, function, args.as_mut_ptr(),
                   args.len() as u32, module.new_string_ptr(name))
 }
