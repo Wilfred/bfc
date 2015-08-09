@@ -53,6 +53,14 @@ fn obj_file_name(bf_file_name: &str) -> String {
     name_parts.connect(".")
 }
 
+fn print_usage(bin_name: &str) {
+    println!("Usage: {} <BF source file> [options...]", bin_name);
+    println!("Examples:");
+    println!("  {} foo.bf", bin_name);
+    println!("  {} foo.bf --dump-bf-ir", bin_name);
+    println!("  {} foo.bf --dump-llvm", bin_name);
+}
+
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -146,11 +154,7 @@ fn main() {
             }
         }
     } else {
-        println!("Usage: {} <BF source file> [options...]", args[0]);
-        println!("Examples:");
-        println!("  {} foo.bf", args[0]);
-        println!("  {} foo.bf --dump-bf-ir", args[0]);
-        println!("  {} foo.bf --dump-llvm", args[0]);
+        print_usage(args[0]);
         std::process::exit(1);
     }
     
