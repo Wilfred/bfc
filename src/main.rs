@@ -12,7 +12,6 @@ extern crate rand;
 extern crate tempfile;
 
 use std::env;
-use std::fmt::{Display,Formatter};
 use std::fs::File;
 use std::io::Write;
 use std::io::prelude::Read;
@@ -62,42 +61,22 @@ fn print_usage(bin_name: &str) {
     println!("  {} foo.bf --dump-llvm", bin_name);
 }
 
-#[derive(Debug)]
-struct StringError { message: String }
-
-impl StringError {
-    fn new(message: &str) -> StringError {
-        StringError { message: message.to_owned() }
-    }
-}
-
-impl std::error::Error for StringError {
-    fn description(&self) -> &str {
-        &self.message
-    }
-}
-
-impl Display for StringError {
-    fn fmt(&self, formatter: &mut Formatter) -> Result<(), std::fmt::Error> {
-        self.message.fmt(formatter)
+fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
+    match result {
+        Ok(value) => {
+            Ok(value)
+        }
+        Err(e) => {
+            Err(format!("{}", e))
+        }
     }
 }
 
 fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
-                -> Result<(),std::io::Error> {
-    let src = try!(slurp(&path));
+                -> Result<(),String> {
+    let src = try!(convert_io_error(slurp(&path)));
 
-    // TODO: wrapping everything in io::Error is ugly.
-    let instrs;
-    match bfir::parse(&src) {
-        Ok(instrs_) => {
-            instrs = instrs_;
-        }
-        Err(e) => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other, StringError::new(&e)));
-        }
-    }
+    let instrs = try!(bfir::parse(&src));
     
     // TODO: allow users to specify optimisation level.
     let instrs = optimize::optimize(instrs);
@@ -126,18 +105,19 @@ fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
     let bf_name = Path::new(path).file_name().unwrap();
     let obj_name = obj_file_name(bf_name.to_str().unwrap());
 
-    let mut f = try!(NamedTempFile::new());
+    let mut f = try!(convert_io_error(NamedTempFile::new()));
 
     let _ = f.write(llvm_ir_raw.as_bytes());
 
     // TODO: link as well.
     let llc_result = try!(
-        Command::new("llc")
-            .arg("-O3").arg("-filetype=obj").arg(f.path())
-            .arg("-o").arg(obj_name.to_owned())
-            .output());
+        convert_io_error(
+            Command::new("llc")
+                .arg("-O3").arg("-filetype=obj").arg(f.path())
+                .arg("-o").arg(obj_name.to_owned())
+                .output()));
 
-    let mut llc_stderr = String::from_utf8_lossy(llc_result.stderr.as_slice());
+    let llc_stderr = String::from_utf8_lossy(llc_result.stderr.as_slice());
 
     // TODO: it would be nice to have a function that wraps
     // Command::new so we don't have to inspect .status.success() and
@@ -147,8 +127,7 @@ fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
         println!("Wrote {}", obj_name);
         Ok(())
     } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other, StringError::new(llc_stderr.to_mut())))
+        Err(llc_stderr.into_owned())
     }
 }
 
