@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bfir::Instruction;
 use bfir::Instruction::*;
 
@@ -323,3 +325,58 @@ fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
     let result = optimize(instrs.clone());
     return count_instrs(&result) <= count_instrs(&instrs);
 }
+
+#[test]
+fn should_extract_multiply_simple() {
+    let instrs = parse("[->+++<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, 3);
+    let expected = vec![MultiplyMove(dest_cells)];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_negative_number() {
+    let instrs = parse("[->--<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, 254);
+    let expected = vec![MultiplyMove(dest_cells)];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_multiple_cells() {
+    let instrs = parse("[->+++>>>+<<<<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, 3);
+    dest_cells.insert(4, 1);
+    let expected = vec![MultiplyMove(dest_cells)];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_not_extract_multiply_net_movement() {
+    let instrs = parse("[->+++<<]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_nested() {
+    let instrs = parse("[->+++<[]]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+/// We need to decrement the initial cell in order for this to be a
+/// multiply.
+#[test]
+fn should_not_extract_multiply_without_decrement() {
+    let instrs = parse("[+>++<]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+

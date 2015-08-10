@@ -96,6 +96,7 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                     }
                 }
             }
+            &MultiplyMove(_) => unimplemented!()
         }
 
         steps_left -= 1;

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use itertools::Itertools;
 
 use bfir::Instruction;
@@ -246,4 +248,84 @@ fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect();
 
     truncated.into_iter().rev().collect()
+}
+
+/// Does this loop represent a multiplication operation?
+/// E.g. "[->>>++]" sets cell #3 to 2*cell #0.
+fn is_multiply_loop(instr: &Instruction) -> bool {
+    if let &Loop(ref body) = instr {
+        // A multiply loop must be straight line code, it cannot
+        // contain other loops.
+        for body_instr in body {
+            if let &Loop(_) = body_instr {
+                return false;
+            }
+        }
+        
+        // A multiply loop must have a net pointer movement of
+        // zero.
+        let mut net_movement = 0;
+        for body_instr in body {
+            if let &PointerIncrement(amount) = body_instr {
+                net_movement += amount;
+            }
+        }
+        if net_movement != 0 {
+            return false;
+        }
+
+        let changes = cell_changes(body);
+        // A multiply loop must decrement cell #0.
+        if let Some(&255) = changes.get(&0) {
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+    false
+}
+
+/// Return a hashmap of all the cells that are affected by this
+/// sequence of instructions, and how much they change.
+/// E.g. "->>+++>+" -> {0: -1, 2: 3, 3: 1}
+fn cell_changes(instrs: &[Instruction]) -> HashMap<isize,u8> {
+    let mut changes = HashMap::new();
+    let mut cell_index: isize = 0;
+
+    for instr in instrs {
+        match instr {
+            &Increment(amount) => {
+                let current_amount: u8 = *changes.get(&cell_index).unwrap_or(&0);
+                changes.insert(cell_index, current_amount.wrapping_add(amount));
+            }
+            &PointerIncrement(amount) => {
+                cell_index += amount as isize;
+            }
+            // We assume this is only called from is_multiply_loop.
+            _ => unreachable!()
+        }
+    }
+
+    changes
+}
+
+pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    instrs.into_iter().map(|instr| {
+        match instr {
+            Loop(body) => {
+                if is_multiply_loop(&Loop(body.clone())) {
+                    let mut changes = cell_changes(&body);
+                    // MultiplyMove is for where we move to, so ignore
+                    // the cell we're moving from.
+                    changes.remove(&0);
+                        
+                    return MultiplyMove(changes);
+                }
+
+                Loop(body)
+            }
+            i => i
+        }
+    }).collect()
 }

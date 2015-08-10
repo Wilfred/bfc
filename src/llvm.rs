@@ -370,6 +370,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut Module,
         &Loop(ref body) => {
             compile_loop(module, bb, body, main_fn, cells, cell_index_ptr)
         }
+        &MultiplyMove(_) => unimplemented!()
     }
 }
 

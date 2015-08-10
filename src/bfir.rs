@@ -1,13 +1,17 @@
 use std::fmt;
+use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
     Increment(u8),
-    Set(u8),
     PointerIncrement(i32),
     Read,
     Write,
-    Loop(Vec<Instruction>)
+    Loop(Vec<Instruction>),
+    // These instruction have no direct equivalent in BF, but we
+    // generate them during optimisation.
+    Set(u8),
+    MultiplyMove(HashMap<isize,u8>),
 }
 
 fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
