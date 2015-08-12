@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::Add;
 use std::cmp::{Ord,Ordering,max};
 
@@ -84,6 +85,15 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
             } else {
                 (SaturatingInt::Number(amount as i64), SaturatingInt::Number(amount as i64))
             },
+        &Instruction::MultiplyMove(ref changes) => {
+            let mut highest_affected = 0;
+            for cell in changes.keys() {
+                if *cell > highest_affected {
+                    highest_affected = *cell;
+                }
+            }
+            (SaturatingInt::Number(highest_affected as i64), SaturatingInt::Number(0))
+        }
         &Instruction::Loop(ref body) => {
             let (max_in_body, net_in_body) = overall_movement(body);
 
@@ -137,6 +147,32 @@ fn ptr_increment_sequence_bounds() {
 fn multiple_ptr_increment_bounds() {
     let instrs = vec![Instruction::PointerIncrement(2)];
     assert_eq!(highest_cell_index(&instrs), 2);
+}
+
+#[test]
+fn multiply_move_bounds() {
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, 3);
+    dest_cells.insert(4, 1);
+    let instrs = vec![
+        Instruction::MultiplyMove(dest_cells),
+        // Multiply move should have increased the highest cell
+        // reached, but not the current cell. This instruction
+        // should not affect the output:
+        Instruction::PointerIncrement(2)];
+    
+    assert_eq!(highest_cell_index(&instrs), 4);
+}
+
+#[test]
+fn multiply_move_backwards_bounds() {
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(-1, 2);
+    let instrs = vec![
+        Instruction::PointerIncrement(1),
+        Instruction::MultiplyMove(dest_cells)];
+    
+    assert_eq!(highest_cell_index(&instrs), 1);
 }
 
 #[test]
