@@ -18,7 +18,13 @@ pub fn highest_cell_index(instrs: &[Instruction]) -> u64 {
     let (highest_index, _) = overall_movement(instrs);
 
     match highest_index {
-        SaturatingInt::Number(x) => x as u64,
+        SaturatingInt::Number(x) => {
+            if x as u64 > MAX_CELL_INDEX {
+                MAX_CELL_INDEX
+            } else {
+                x as u64
+            }
+        }
         SaturatingInt::Max => MAX_CELL_INDEX
     }
 }
@@ -183,6 +189,13 @@ fn unbounded_movement() {
 
     let instrs = parse(">[<]").unwrap();
     assert_eq!(highest_cell_index(&instrs), 1);
+}
+
+#[test]
+fn excessive_bounds_truncated() {
+    // TODO: we should generate a warning in this situation.
+    let instrs = vec![PointerIncrement(MAX_CELL_INDEX as i32 + 1)];
+    assert_eq!(highest_cell_index(&instrs), MAX_CELL_INDEX);
 }
 
 #[test]
