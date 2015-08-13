@@ -1,10 +1,12 @@
 #[cfg(test)]
+use std::collections::HashMap;
+
 use bfir::parse;
 
 use bfir::Instruction;
 use bfir::Instruction::*;
 
-use bounds::highest_cell_index;
+use bounds::{highest_cell_index,MAX_CELL_INDEX};
 
 #[derive(Debug,Clone,PartialEq,Eq)]
 pub struct ExecutionState {
@@ -66,6 +68,30 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                     state.instr_ptr += 1;
                 }
             }
+            &MultiplyMove(ref changes) => {
+                // We will multiply by the current cell value.
+                let cell_value = state.cells[cell_ptr];
+
+                for (cell_offset, factor) in changes.iter() {
+                    let dest_ptr = cell_ptr as isize + *cell_offset;
+                    if dest_ptr < 0 {
+                        // Tried to access a cell before cell #0.
+                        return (state, Outcome::RuntimeError);
+                    }
+                    if dest_ptr as usize >= state.cells.len() {
+                        return (state, Outcome::RuntimeError);
+                    }
+                    
+                    let current_val = state.cells[dest_ptr as usize];
+                    state.cells[dest_ptr as usize] = current_val.wrapping_add(
+                        cell_value.wrapping_mul(*factor));
+                }
+
+                // Finally, zero the cell we used.
+                state.cells[cell_ptr] = 0;
+                
+                state.instr_ptr += 1;
+            }
             &Write => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value);
@@ -97,7 +123,6 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                     }
                 }
             }
-            &MultiplyMove(_) => unimplemented!()
         }
 
         steps_left -= 1;
@@ -130,6 +155,72 @@ fn increment_executed() {
     assert_eq!(
         final_state, ExecutionState {
             instr_ptr: 1, cells: vec![1], cell_ptr: 0, outputs: vec![],
+        });
+}
+
+#[test]
+fn multiply_move_executed() {
+    let mut changes = HashMap::new();
+    changes.insert(1, 2);
+    changes.insert(3, 3);
+    let instrs = vec![
+        // Initial cells: [2, 1, 0, 0]
+        Increment(2),
+        PointerIncrement(1),
+        Increment(1),
+        PointerIncrement(-1),
+        
+        MultiplyMove(changes)];
+
+    let final_state = execute(&instrs, MAX_STEPS);
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 5, cells: vec![0, 5, 0, 6], cell_ptr: 0, outputs: vec![],
+        });
+}
+
+#[test]
+fn multiply_move_wrapping() {
+    let mut changes = HashMap::new();
+    changes.insert(1, 3);
+    let instrs = vec![
+        Increment(100),
+        MultiplyMove(changes)];
+
+    let final_state = execute(&instrs, MAX_STEPS);
+    assert_eq!(
+        final_state, ExecutionState {
+            // 100 * 3 mod 256 == 44
+            instr_ptr: 2, cells: vec![0, 44], cell_ptr: 0, outputs: vec![],
+        });
+}
+
+#[test]
+fn multiply_move_offset_too_high() {
+    let mut changes: HashMap<isize,u8> = HashMap::new();
+    changes.insert(MAX_CELL_INDEX as isize + 1, 1);
+    let instrs = vec![MultiplyMove(changes)];
+
+    let final_state = execute(&instrs, MAX_STEPS);
+    assert_eq!(
+        final_state, ExecutionState {
+            // TODO: MAX_CELL_INDEX should be a usize.
+            instr_ptr: 0, cells: vec![0; MAX_CELL_INDEX as usize + 1],
+            cell_ptr: 0, outputs: vec![],
+        });
+}
+
+#[test]
+fn multiply_move_offset_too_low() {
+    let mut changes = HashMap::new();
+    changes.insert(-1, 1);
+    let instrs = vec![MultiplyMove(changes)];
+
+    let final_state = execute(&instrs, MAX_STEPS);
+    assert_eq!(
+        final_state, ExecutionState {
+            instr_ptr: 0, cells: vec![0],
+            cell_ptr: 0, outputs: vec![],
         });
 }
 

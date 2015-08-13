@@ -10,7 +10,7 @@ use bfir::Instruction::*;
 use bfir::parse;
 
 // 30,000 cells, zero-indexed.
-const MAX_CELL_INDEX: u64 = 29999;
+pub const MAX_CELL_INDEX: u64 = 29999;
 
 /// Return the highest cell index that can be reached during program
 /// execution. Zero-indexed.
