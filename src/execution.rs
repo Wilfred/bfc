@@ -9,6 +9,7 @@ use bounds::highest_cell_index;
 #[derive(Debug,Clone,PartialEq,Eq)]
 pub struct ExecutionState {
     pub instr_ptr: usize,
+    // TODO: use wrapping type here.
     pub cells: Vec<u8>,
     pub cell_ptr: isize,
     pub outputs: Vec<u8>,
