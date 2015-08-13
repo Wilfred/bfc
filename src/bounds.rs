@@ -1,14 +1,17 @@
 #![warn(trivial_numeric_casts)]
 
+#[cfg(test)]
 use std::collections::HashMap;
+#[cfg(test)]
+use std::num::Wrapping;
+
 use std::ops::Add;
 use std::cmp::{Ord,Ordering,max};
 
 use bfir::Instruction;
 use bfir::Instruction::*;
 
-// TODO: mark this as unused only when we're not running tests.
-#[allow(unused_imports)]
+#[cfg(test)]
 use bfir::parse;
 
 // 30,000 cells, zero-indexed.
@@ -161,8 +164,8 @@ fn multiple_ptr_increment_bounds() {
 #[test]
 fn multiply_move_bounds() {
     let mut dest_cells = HashMap::new();
-    dest_cells.insert(1, 3);
-    dest_cells.insert(4, 1);
+    dest_cells.insert(1, Wrapping(3));
+    dest_cells.insert(4, Wrapping(1));
     let instrs = vec![
         MultiplyMove(dest_cells),
         // Multiply move should have increased the highest cell
@@ -176,7 +179,7 @@ fn multiply_move_bounds() {
 #[test]
 fn multiply_move_backwards_bounds() {
     let mut dest_cells = HashMap::new();
-    dest_cells.insert(-1, 2);
+    dest_cells.insert(-1, Wrapping(2));
     let instrs = vec![
         PointerIncrement(1),
         MultiplyMove(dest_cells)];

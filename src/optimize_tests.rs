@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::num::Wrapping;
 
 use bfir::Instruction;
 use bfir::Instruction::*;
@@ -13,18 +14,18 @@ impl Arbitrary for Instruction {
     fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
         let i = g.next_u32();
         match i % 11 {
-            0 => Increment(Arbitrary::arbitrary(g)),
+            0 => Increment(Wrapping(Arbitrary::arbitrary(g))),
             1 => PointerIncrement(Arbitrary::arbitrary(g)),
-            2 => Set(Arbitrary::arbitrary(g)),
+            2 => Set(Wrapping(Arbitrary::arbitrary(g))),
             3 => Read,
             4 => Write,
             // TODO: we should be able to generate arbitrary nested
             // instructions, instead of limited range. See
             // https://github.com/BurntSushi/quickcheck/issues/23
             5 => Loop(vec![]),
-            6 => Loop(vec![Increment(Arbitrary::arbitrary(g))]),
+            6 => Loop(vec![Increment(Wrapping(Arbitrary::arbitrary(g)))]),
             7 => Loop(vec![PointerIncrement(Arbitrary::arbitrary(g))]),
-            8 => Loop(vec![Set(Arbitrary::arbitrary(g))]),
+            8 => Loop(vec![Set(Wrapping(Arbitrary::arbitrary(g)))]),
             9 => Loop(vec![Read]),
             10 => Loop(vec![Read]),
             _ => unreachable!()
@@ -35,7 +36,7 @@ impl Arbitrary for Instruction {
 #[test]
 fn combine_increments_flat() {
     let initial = parse("++").unwrap();
-    let expected = vec![Increment(2)];
+    let expected = vec![Increment(Wrapping(2))];
     assert_eq!(combine_increments(initial), expected);
 }
 
@@ -49,7 +50,7 @@ fn combine_increments_unrelated() {
 #[test]
 fn combine_increments_nested() {
     let initial = parse("[++]").unwrap();
-    let expected = vec![Loop(vec![Increment(2)])];
+    let expected = vec![Loop(vec![Increment(Wrapping(2))])];
     assert_eq!(combine_increments(initial), expected);
 }
 
@@ -61,14 +62,14 @@ fn combine_increments_remove_redundant() {
 
 #[test]
 fn combine_increment_sum_to_zero() {
-    let initial = vec![Increment(255), Increment(1)];
+    let initial = vec![Increment(Wrapping(255)), Increment(Wrapping(1))];
     assert_eq!(combine_increments(initial), vec![]);
 }
 
 #[test]
 fn combine_set_sum_to_zero() {
-    let initial = vec![Set(255), Increment(1)];
-    assert_eq!(combine_set_and_increments(initial), vec![Set(0)]);
+    let initial = vec![Set(Wrapping(255)), Increment(Wrapping(1))];
+    assert_eq!(combine_set_and_increments(initial), vec![Set(Wrapping(0))]);
 }
 
 #[test]
@@ -110,21 +111,21 @@ fn should_combine_before_read() {
 #[test]
 fn should_combine_before_read_nested() {
     let initial = parse("+[+,]").unwrap();
-    let expected = vec![Set(1), Loop(vec![Read])];
+    let expected = vec![Set(Wrapping(1)), Loop(vec![Read])];
     assert_eq!(optimize(initial), expected);
 }
 
 #[test]
 fn simplify_zeroing_loop() {
     let initial = parse("[-]").unwrap();
-    let expected = vec![Set(0)];
+    let expected = vec![Set(Wrapping(0))];
     assert_eq!(simplify_loops(initial), expected);
 }
 
 #[test]
 fn simplify_nested_zeroing_loop() {
     let initial = parse("[[-]]").unwrap();
-    let expected = vec![Loop(vec![Set(0)])];
+    let expected = vec![Loop(vec![Set(Wrapping(0))])];
     assert_eq!(simplify_loops(initial), expected);
 }
 
@@ -140,23 +141,25 @@ fn dont_simplify_multiple_decrement_loop() {
 #[test]
 fn should_remove_dead_loops() {
     let initial = vec![
-        Set(0),
+        Set(Wrapping(0)),
         Loop(vec![]),
         Loop(vec![])];
-    let expected = vec![Set(0)];
+    let expected = vec![Set(Wrapping(0))];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
 #[test]
 fn should_remove_dead_loops_nested() {
-    let initial = vec![Loop(vec![Set(0),Loop(vec![])])];
-    let expected = vec![Loop(vec![Set(0)])];
+    let initial = vec![Loop(vec![Set(Wrapping(0)),Loop(vec![])])];
+    let expected = vec![Loop(vec![Set(Wrapping(0))])];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
 #[quickcheck]
 fn should_combine_set_and_increment(set_amount: u8, increment_amount: u8)
                                     -> bool {
+    let set_amount = Wrapping(set_amount);
+    let increment_amount = Wrapping(increment_amount);
     let initial = vec![
         Set(set_amount),
         Increment(increment_amount)];
@@ -168,29 +171,29 @@ fn should_combine_set_and_increment(set_amount: u8, increment_amount: u8)
 fn should_combine_set_and_set(set_amount_before: u8, set_amount_after: u8)
                               -> bool {
     let initial = vec![
-        Set(set_amount_before),
-        Set(set_amount_after)];
-    let expected = vec![Set(set_amount_after)];
+        Set(Wrapping(set_amount_before)),
+        Set(Wrapping(set_amount_after))];
+    let expected = vec![Set(Wrapping(set_amount_after))];
     return combine_set_and_increments(initial) == expected;
 }
 
 #[test]
 fn should_combine_set_and_set_nested() {
-    let initial = vec![Loop(vec![Set(0), Set(1)])];
-    let expected = vec![Loop(vec![Set(1)])];
+    let initial = vec![Loop(vec![Set(Wrapping(0)), Set(Wrapping(1))])];
+    let expected = vec![Loop(vec![Set(Wrapping(1))])];
     assert_eq!(combine_set_and_increments(initial), expected);
 }
 
 #[test]
 fn should_combine_increment_and_set() {
-    let initial = vec![Increment(2), Set(3)];
-    let expected = vec![Set(3)];
+    let initial = vec![Increment(Wrapping(2)), Set(Wrapping(3))];
+    let expected = vec![Set(Wrapping(3))];
     assert_eq!(combine_set_and_increments(initial), expected);
 }
 
 #[test]
 fn should_remove_redundant_set() {
-    let initial = vec![Loop(vec![]), Set(0)];
+    let initial = vec![Loop(vec![]), Set(Wrapping(0))];
     let expected = vec![Loop(vec![])];
     assert_eq!(remove_redundant_sets(initial), expected);
 }
@@ -218,7 +221,7 @@ fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
     let annotated = annotate_known_zero(instrs);
 
     match annotated[0] {
-        Set(0) => TestResult::from_bool(true),
+        Set(Wrapping(0)) => TestResult::from_bool(true),
         _ => TestResult::from_bool(false)
     }
 }
@@ -227,10 +230,10 @@ fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
 fn should_annotate_known_zero() {
     let initial = parse("+[]").unwrap();
     let expected = vec![
-        Set(0),
-        Increment(1),
+        Set(Wrapping(0)),
+        Increment(Wrapping(1)),
         Loop(vec![]),
-        Set(0)];
+        Set(Wrapping(0))];
     assert_eq!(annotate_known_zero(initial), expected);
 }
 
@@ -238,11 +241,11 @@ fn should_annotate_known_zero() {
 fn should_annotate_known_zero_nested() {
     let initial = parse("[[]]").unwrap();
     let expected = vec![
-        Set(0),
+        Set(Wrapping(0)),
         Loop(vec![
             Loop(vec![]),
-            Set(0)]),
-        Set(0)];
+            Set(Wrapping(0))]),
+        Set(Wrapping(0))];
     assert_eq!(annotate_known_zero(initial), expected);
 }
 
@@ -258,7 +261,7 @@ fn should_annotate_known_zero_cleaned_up() {
 #[test]
 fn should_preserve_set_0_in_loop() {
     // Regression test.
-    let initial = vec![Read, Loop(vec![Set(0)])];
+    let initial = vec![Read, Loop(vec![Set(Wrapping(0))])];
     assert_eq!(optimize(initial.clone()), initial);
 }
 
@@ -268,7 +271,7 @@ fn should_remove_pure_code() {
     // removed.
     let initial = parse("+.+").unwrap();
     let expected = vec![
-        Set(1),
+        Set(Wrapping(1)),
         Write];
     assert_eq!(optimize(initial), expected);
 }
@@ -293,14 +296,14 @@ fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
 #[test]
 fn pathological_optimisation_opportunity() {
     let instrs = vec![Read,
-                      Increment(1),
+                      Increment(Wrapping(1)),
                       PointerIncrement(1),
-                      Increment(1),
+                      Increment(Wrapping(1)),
                       PointerIncrement(1),
                       PointerIncrement(-1),
-                      Increment(255),
+                      Increment(Wrapping(255)),
                       PointerIncrement(-1),
-                      Increment(255),
+                      Increment(Wrapping(255)),
                       Write];
 
     let expected = vec![Read, Write];
@@ -332,7 +335,7 @@ fn should_extract_multiply_simple() {
     let instrs = parse("[->+++<]").unwrap();
 
     let mut dest_cells = HashMap::new();
-    dest_cells.insert(1, 3);
+    dest_cells.insert(1, Wrapping(3));
     let expected = vec![MultiplyMove(dest_cells)];
 
     assert_eq!(extract_multiply(instrs), expected);
@@ -343,7 +346,7 @@ fn should_extract_multiply_negative_number() {
     let instrs = parse("[->--<]").unwrap();
 
     let mut dest_cells = HashMap::new();
-    dest_cells.insert(1, 254);
+    dest_cells.insert(1, Wrapping(254));
     let expected = vec![MultiplyMove(dest_cells)];
 
     assert_eq!(extract_multiply(instrs), expected);
@@ -354,8 +357,8 @@ fn should_extract_multiply_multiple_cells() {
     let instrs = parse("[->+++>>>+<<<<]").unwrap();
 
     let mut dest_cells = HashMap::new();
-    dest_cells.insert(1, 3);
-    dest_cells.insert(4, 1);
+    dest_cells.insert(1, Wrapping(3));
+    dest_cells.insert(4, Wrapping(1));
     let expected = vec![MultiplyMove(dest_cells)];
 
     assert_eq!(extract_multiply(instrs), expected);

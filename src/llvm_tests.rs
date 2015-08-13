@@ -1,10 +1,13 @@
+use std::ffi::CString;
+use std::num::Wrapping;
+
 use llvm::compile_to_ir;
 use bfir::Instruction::*;
-use std::ffi::CString;
 
 #[test]
 fn compile_loop() {
-    let result = compile_to_ir("foo", &vec![Loop(vec![Increment(1)])], &vec![0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![Loop(vec![Increment(Wrapping(1))])],
+                               &vec![0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind

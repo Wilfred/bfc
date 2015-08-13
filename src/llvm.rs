@@ -7,7 +7,7 @@ use libc::types::os::arch::c99::c_ulonglong;
 use libc::types::os::arch::c95::c_uint;
 use std::ffi::{CString,CStr};
 
-use bfir::Instruction;
+use bfir::{Instruction,Cell};
 use bfir::Instruction::*;
 
 const LLVM_FALSE: LLVMBool = 0;
@@ -208,7 +208,7 @@ unsafe fn add_main_cleanup(bb: *mut LLVMBasicBlock) {
     LLVMBuildRet(builder.builder, zero);
 }
 
-unsafe fn compile_increment<'a>(amount: u8, module: &mut Module, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_increment<'a>(amount: Cell, module: &mut Module, bb: &'a mut LLVMBasicBlock,
                                 cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                                 -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -221,7 +221,7 @@ unsafe fn compile_increment<'a>(amount: u8, module: &mut Module, bb: &'a mut LLV
                                         indices.len() as u32, module.new_string_ptr("current_cell_ptr"));
     let cell_val = LLVMBuildLoad(builder.builder, current_cell_ptr, module.new_string_ptr("cell_value"));
 
-    let increment_amount = int8(amount as c_ulonglong);
+    let increment_amount = int8(amount.0 as c_ulonglong);
     let new_cell_val = LLVMBuildAdd(builder.builder, cell_val, increment_amount,
                                     module.new_string_ptr("new_cell_value"));
 
@@ -229,7 +229,7 @@ unsafe fn compile_increment<'a>(amount: u8, module: &mut Module, bb: &'a mut LLV
     bb
 }
 
-unsafe fn compile_set<'a>(amount: u8, module: &mut Module, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_set<'a>(amount: Cell, module: &mut Module, bb: &'a mut LLVMBasicBlock,
                           cells: LLVMValueRef, cell_index_ptr: LLVMValueRef)
                           -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -241,7 +241,7 @@ unsafe fn compile_set<'a>(amount: u8, module: &mut Module, bb: &'a mut LLVMBasic
     let current_cell_ptr = LLVMBuildGEP(builder.builder, cells, indices.as_mut_ptr(),
                                         indices.len() as c_uint, module.new_string_ptr("current_cell_ptr"));
 
-    LLVMBuildStore(builder.builder, int8(amount as c_ulonglong), current_cell_ptr);
+    LLVMBuildStore(builder.builder, int8(amount.0 as c_ulonglong), current_cell_ptr);
     bb
 }
 

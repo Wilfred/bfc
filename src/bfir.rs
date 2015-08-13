@@ -1,17 +1,20 @@
 use std::fmt;
+use std::num::Wrapping;
 use std::collections::HashMap;
+
+pub type Cell = Wrapping<u8>;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
-    Increment(u8),
+    Increment(Cell),
     PointerIncrement(isize),
     Read,
     Write,
     Loop(Vec<Instruction>),
     // These instruction have no direct equivalent in BF, but we
     // generate them during optimisation.
-    Set(u8),
-    MultiplyMove(HashMap<isize,u8>),
+    Set(Cell),
+    MultiplyMove(HashMap<isize,Cell>),
 }
 
 fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
@@ -60,9 +63,9 @@ fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instructi
     while index < end {
         match chars[index] {
             '+' => 
-                instructions.push(Instruction::Increment(1)),
+                instructions.push(Instruction::Increment(Wrapping(1))),
             '-' => 
-                instructions.push(Instruction::Increment(255)),
+                instructions.push(Instruction::Increment(Wrapping(255))),
             '>' => 
                 instructions.push(Instruction::PointerIncrement(1)),
             '<' => 
@@ -116,14 +119,14 @@ fn find_close(source: &str, open_index: usize) -> Result<usize, String> {
 
 #[test]
 fn parse_increment() {
-    assert_eq!(parse("+").unwrap(), [Instruction::Increment(1)]);
-    assert_eq!(parse("++").unwrap(), [Instruction::Increment(1),
-                            Instruction::Increment(1)]);
+    assert_eq!(parse("+").unwrap(), [Instruction::Increment(Wrapping(1))]);
+    assert_eq!(parse("++").unwrap(), [Instruction::Increment(Wrapping(1)),
+                                      Instruction::Increment(Wrapping(1))]);
 }
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("-").unwrap(), [Instruction::Increment(255)]);
+    assert_eq!(parse("-").unwrap(), [Instruction::Increment(Wrapping(255))]);
 }
 
 #[test]
@@ -154,17 +157,17 @@ fn parse_empty_loop() {
 
 #[test]
 fn parse_simple_loop() {
-    let loop_body = vec![Instruction::Increment(1)];
+    let loop_body = vec![Instruction::Increment(Wrapping(1))];
     let expected = [Instruction::Loop(loop_body)];
     assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
 fn parse_complex_loop() {
-    let loop_body = vec![Instruction::Read, Instruction::Increment(1)];
+    let loop_body = vec![Instruction::Read, Instruction::Increment(Wrapping(1))];
     let expected = [Instruction::Write,
                     Instruction::Loop(loop_body),
-                    Instruction::Increment(255)];
+                    Instruction::Increment(Wrapping(255))];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 

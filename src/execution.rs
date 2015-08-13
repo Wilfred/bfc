@@ -4,17 +4,21 @@
 use std::collections::HashMap;
 use std::num::Wrapping;
 
+#[cfg(test)]
 use bfir::parse;
 
-use bfir::Instruction;
+use bfir::{Instruction,Cell};
 use bfir::Instruction::*;
 
-use bounds::{highest_cell_index,MAX_CELL_INDEX};
+#[cfg(test)]
+use bounds::MAX_CELL_INDEX;
+
+use bounds::highest_cell_index;
 
 #[derive(Debug,Clone,PartialEq,Eq)]
 pub struct ExecutionState {
     pub instr_ptr: usize,
-    pub cells: Vec<Wrapping<u8>>,
+    pub cells: Vec<Cell>,
     pub cell_ptr: isize,
     pub outputs: Vec<u8>,
 }
@@ -53,12 +57,11 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
         let cell_ptr = state.cell_ptr as usize;
         match &instrs[state.instr_ptr] {
             &Increment(amount) => {
-                state.cells[cell_ptr] = state.cells[cell_ptr] + Wrapping(amount);
+                state.cells[cell_ptr] = state.cells[cell_ptr] + amount;
                 state.instr_ptr += 1;
             }
             &Set(amount) => {
-                // TODO: Increment and Set should really use Wrapping types.
-                state.cells[cell_ptr] = Wrapping(amount);
+                state.cells[cell_ptr] = amount;
                 state.instr_ptr += 1;
             }
             &PointerIncrement(amount) => {
@@ -85,7 +88,7 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                     }
                     
                     let current_val = state.cells[dest_ptr as usize];
-                    state.cells[dest_ptr as usize] = current_val + cell_value * Wrapping(*factor);
+                    state.cells[dest_ptr as usize] = current_val + cell_value * (*factor);
                 }
 
                 // Finally, zero the cell we used.
@@ -162,13 +165,13 @@ fn increment_executed() {
 #[test]
 fn multiply_move_executed() {
     let mut changes = HashMap::new();
-    changes.insert(1, 2);
-    changes.insert(3, 3);
+    changes.insert(1, Wrapping(2));
+    changes.insert(3, Wrapping(3));
     let instrs = vec![
         // Initial cells: [2, 1, 0, 0]
-        Increment(2),
+        Increment(Wrapping(2)),
         PointerIncrement(1),
-        Increment(1),
+        Increment(Wrapping(1)),
         PointerIncrement(-1),
         
         MultiplyMove(changes)];
@@ -183,9 +186,9 @@ fn multiply_move_executed() {
 #[test]
 fn multiply_move_wrapping() {
     let mut changes = HashMap::new();
-    changes.insert(1, 3);
+    changes.insert(1, Wrapping(3));
     let instrs = vec![
-        Increment(100),
+        Increment(Wrapping(100)),
         MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
@@ -198,8 +201,8 @@ fn multiply_move_wrapping() {
 
 #[test]
 fn multiply_move_offset_too_high() {
-    let mut changes: HashMap<isize,u8> = HashMap::new();
-    changes.insert(MAX_CELL_INDEX as isize + 1, 1);
+    let mut changes: HashMap<isize,Cell> = HashMap::new();
+    changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
     let instrs = vec![MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
@@ -214,7 +217,7 @@ fn multiply_move_offset_too_high() {
 #[test]
 fn multiply_move_offset_too_low() {
     let mut changes = HashMap::new();
-    changes.insert(-1, 1);
+    changes.insert(-1, Wrapping(1));
     let instrs = vec![MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
@@ -227,7 +230,7 @@ fn multiply_move_offset_too_low() {
 
 #[test]
 fn set_executed() {
-    let instrs = vec![Set(2)];
+    let instrs = vec![Set(Wrapping(2))];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(
@@ -238,7 +241,7 @@ fn set_executed() {
 
 #[test]
 fn set_wraps() {
-    let instrs = vec![Set(255)];
+    let instrs = vec![Set(Wrapping(255))];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(
@@ -261,7 +264,7 @@ fn decrement_executed() {
 // TODO: find out what the most common BF implementation choice is here.
 #[test]
 fn increment_wraps() {
-    let instrs = vec![Increment(255), Increment(1)];
+    let instrs = vec![Increment(Wrapping(255)), Increment(Wrapping(1))];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(
