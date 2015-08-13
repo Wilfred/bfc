@@ -1,3 +1,5 @@
+#![warn(trivial_numeric_casts)]
+
 #[cfg(test)]
 use std::collections::HashMap;
 use std::num::Wrapping;

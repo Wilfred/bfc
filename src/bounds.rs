@@ -1,3 +1,5 @@
+#![warn(trivial_numeric_casts)]
+
 use std::collections::HashMap;
 use std::ops::Add;
 use std::cmp::{Ord,Ordering,max};

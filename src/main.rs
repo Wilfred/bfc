@@ -1,6 +1,8 @@
 #![feature(plugin)]
 #![plugin(quickcheck_macros)]
 
+#![warn(trivial_numeric_casts)]
+
 // TODO: find a way to avoid this.
 #![feature(convert)]
 
