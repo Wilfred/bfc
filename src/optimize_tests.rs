@@ -8,6 +8,7 @@ use bfir::parse;
 use rand::Rng;
 use quickcheck::{Arbitrary,Gen,TestResult};
 
+// TODO: MultiplyMove here.
 impl Arbitrary for Instruction {
     fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
         let i = g.next_u32();
