@@ -15,6 +15,7 @@ use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::io::prelude::Read;
+use std::num::Wrapping;
 use std::path::Path;
 use std::process::Command;
 use tempfile::NamedTempFile;
@@ -90,10 +91,12 @@ fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
 
     // TODO: highest_cell_index should return a usize.
     let state = execution::execute(&instrs, execution::MAX_STEPS);
+    let initial_cells: Vec<u8> = state.cells.iter()
+        .map(|x: &Wrapping<u8>| x.0).collect();
 
     let remaining_instrs = &instrs[state.instr_ptr..];
     let llvm_ir_raw = llvm::compile_to_ir(
-        &path, &remaining_instrs.to_vec(), &state.cells, state.cell_ptr as i32,
+        &path, &remaining_instrs.to_vec(), &initial_cells, state.cell_ptr as i32,
         &state.outputs);
 
     if dump_llvm {
