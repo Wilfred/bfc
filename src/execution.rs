@@ -60,8 +60,7 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                 state.instr_ptr += 1;
             }
             &PointerIncrement(amount) => {
-                // TODO: PointerIncrement should use an isize.
-                let new_cell_ptr = state.cell_ptr + amount as isize;
+                let new_cell_ptr = state.cell_ptr + amount;
                 if new_cell_ptr < 0 || new_cell_ptr >= state.cells.len() as isize {
                     return (state, Outcome::RuntimeError);
                 } else {

@@ -300,7 +300,7 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize,u8> {
                 changes.insert(cell_index, current_amount.wrapping_add(amount));
             }
             &PointerIncrement(amount) => {
-                cell_index += amount as isize;
+                cell_index += amount;
             }
             // We assume this is only called from is_multiply_loop.
             _ => unreachable!()

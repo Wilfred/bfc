@@ -4,7 +4,7 @@ use std::collections::HashMap;
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
     Increment(u8),
-    PointerIncrement(i32),
+    PointerIncrement(isize),
     Read,
     Write,
     Loop(Vec<Instruction>),

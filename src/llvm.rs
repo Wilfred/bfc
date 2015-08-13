@@ -245,7 +245,7 @@ unsafe fn compile_set<'a>(amount: u8, module: &mut Module, bb: &'a mut LLVMBasic
     bb
 }
 
-unsafe fn compile_ptr_increment<'a>(amount: i32, module: &mut Module, bb: &'a mut LLVMBasicBlock,
+unsafe fn compile_ptr_increment<'a>(amount: isize, module: &mut Module, bb: &'a mut LLVMBasicBlock,
                                     cell_index_ptr: LLVMValueRef)
                                     -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();

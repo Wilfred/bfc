@@ -194,7 +194,7 @@ fn unbounded_movement() {
 #[test]
 fn excessive_bounds_truncated() {
     // TODO: we should generate a warning in this situation.
-    let instrs = vec![PointerIncrement(MAX_CELL_INDEX as i32 + 1)];
+    let instrs = vec![PointerIncrement(MAX_CELL_INDEX as isize + 1)];
     assert_eq!(highest_cell_index(&instrs), MAX_CELL_INDEX);
 }
 
