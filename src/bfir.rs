@@ -2,6 +2,8 @@ use std::fmt;
 use std::num::Wrapping;
 use std::collections::HashMap;
 
+use self::Instruction::*;
+
 pub type Cell = Wrapping<u8>;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -23,7 +25,7 @@ fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
     }
     
     match instr {
-        &Instruction::Loop(ref loop_body) => {
+        &Loop(ref loop_body) => {
             let _ = write!(f, "Loop");
 
             for loop_instr in loop_body.iter() {
@@ -63,21 +65,21 @@ fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instructi
     while index < end {
         match chars[index] {
             '+' => 
-                instructions.push(Instruction::Increment(Wrapping(1))),
+                instructions.push(Increment(Wrapping(1))),
             '-' => 
-                instructions.push(Instruction::Increment(Wrapping(255))),
+                instructions.push(Increment(Wrapping(255))),
             '>' => 
-                instructions.push(Instruction::PointerIncrement(1)),
+                instructions.push(PointerIncrement(1)),
             '<' => 
-                instructions.push(Instruction::PointerIncrement(-1)),
+                instructions.push(PointerIncrement(-1)),
             ',' => 
-                instructions.push(Instruction::Read),
+                instructions.push(Read),
             '.' => 
-                instructions.push(Instruction::Write),
+                instructions.push(Write),
             '[' => {
                 let close_index = try!(find_close(source, index));
                 let loop_body = try!(parse_between(source, index + 1, close_index));
-                instructions.push(Instruction::Loop(loop_body));
+                instructions.push(Loop(loop_body));
 
                 index = close_index;
             },
@@ -119,55 +121,55 @@ fn find_close(source: &str, open_index: usize) -> Result<usize, String> {
 
 #[test]
 fn parse_increment() {
-    assert_eq!(parse("+").unwrap(), [Instruction::Increment(Wrapping(1))]);
-    assert_eq!(parse("++").unwrap(), [Instruction::Increment(Wrapping(1)),
-                                      Instruction::Increment(Wrapping(1))]);
+    assert_eq!(parse("+").unwrap(), [Increment(Wrapping(1))]);
+    assert_eq!(parse("++").unwrap(), [Increment(Wrapping(1)),
+                                      Increment(Wrapping(1))]);
 }
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("-").unwrap(), [Instruction::Increment(Wrapping(255))]);
+    assert_eq!(parse("-").unwrap(), [Increment(Wrapping(255))]);
 }
 
 #[test]
 fn parse_pointer_increment() {
-    assert_eq!(parse(">").unwrap(), [Instruction::PointerIncrement(1)]);
+    assert_eq!(parse(">").unwrap(), [PointerIncrement(1)]);
 }
 
 #[test]
 fn parse_pointer_decrement() {
-    assert_eq!(parse("<").unwrap(), [Instruction::PointerIncrement(-1)]);
+    assert_eq!(parse("<").unwrap(), [PointerIncrement(-1)]);
 }
 
 #[test]
 fn parse_read() {
-    assert_eq!(parse(",").unwrap(), [Instruction::Read]);
+    assert_eq!(parse(",").unwrap(), [Read]);
 }
 
 #[test]
 fn parse_write() {
-    assert_eq!(parse(".").unwrap(), [Instruction::Write]);
+    assert_eq!(parse(".").unwrap(), [Write]);
 }
 
 #[test]
 fn parse_empty_loop() {
-    let expected = [Instruction::Loop(vec![])];
+    let expected = [Loop(vec![])];
     assert_eq!(parse("[]").unwrap(), expected);
 }
 
 #[test]
 fn parse_simple_loop() {
-    let loop_body = vec![Instruction::Increment(Wrapping(1))];
-    let expected = [Instruction::Loop(loop_body)];
+    let loop_body = vec![Increment(Wrapping(1))];
+    let expected = [Loop(loop_body)];
     assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
 fn parse_complex_loop() {
-    let loop_body = vec![Instruction::Read, Instruction::Increment(Wrapping(1))];
-    let expected = [Instruction::Write,
-                    Instruction::Loop(loop_body),
-                    Instruction::Increment(Wrapping(255))];
+    let loop_body = vec![Read, Increment(Wrapping(1))];
+    let expected = [Write,
+                    Loop(loop_body),
+                    Increment(Wrapping(255))];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 
