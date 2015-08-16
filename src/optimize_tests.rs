@@ -371,6 +371,12 @@ fn should_not_extract_multiply_net_movement() {
 }
 
 #[test]
+fn should_not_extract_multiply_from_clear_loop() {
+    let instrs = parse("[-]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
 fn should_not_extract_multiply_nested() {
     let instrs = parse("[->+++<[]]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);

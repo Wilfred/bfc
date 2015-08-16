@@ -283,6 +283,10 @@ fn is_multiply_loop(instr: &Instruction) -> bool {
             return false;
         }
 
+        if changes.len() < 2 {
+            return false;
+        }
+
         return true;
     }
     false
