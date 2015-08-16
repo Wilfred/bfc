@@ -151,8 +151,6 @@ unsafe fn add_cells_init(init_values: &[u8], module: &mut Module,
                                            offset_vec.len() as u32, module.new_string_ptr("offset_cell_ptr"));
         
         let mut memset_args = vec![
-            // TODO: is one the correct alignment here? I've just blindly
-            // copied from clang output.
             offset_cell_ptr, llvm_cell_val, llvm_cell_count, one, false_];
         add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
 
