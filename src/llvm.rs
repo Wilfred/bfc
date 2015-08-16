@@ -413,6 +413,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut Module,
         &Write =>
             compile_write(module, bb, cells, cell_index_ptr),
         &Loop(ref body) => {
+            // TODO: we should pass arguments in a consistent order.
             compile_loop(module, bb, body, main_fn, cells, cell_index_ptr)
         }
     }
