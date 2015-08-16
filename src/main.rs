@@ -12,6 +12,7 @@ extern crate itertools;
 extern crate quickcheck;
 extern crate rand;
 extern crate tempfile;
+extern crate getopts;
 
 use std::env;
 use std::fs::File;
@@ -20,6 +21,7 @@ use std::io::prelude::Read;
 use std::num::Wrapping;
 use std::path::Path;
 use std::process::Command;
+use getopts::{Options,Matches};
 use tempfile::NamedTempFile;
 
 mod bfir;
@@ -57,11 +59,11 @@ fn obj_file_name(bf_file_name: &str) -> String {
 }
 
 fn print_usage(bin_name: &str) {
-    println!("Usage: {} <BF source file> [options...]", bin_name);
+    println!("Usage: {} [options...] <BF source file> ", bin_name);
     println!("Examples:");
     println!("  {} foo.bf", bin_name);
-    println!("  {} foo.bf --dump-bf-ir", bin_name);
-    println!("  {} foo.bf --dump-llvm", bin_name);
+    println!("  {} --dump-bf-ir foo.bf", bin_name);
+    println!("  {} --dump-llvm foo.bf", bin_name);
 }
 
 fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
@@ -75,16 +77,16 @@ fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
     }
 }
 
-fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
-                -> Result<(),String> {
-    let src = try!(convert_io_error(slurp(&path)));
+fn compile_file(matches: &Matches) -> Result<(),String> {
+    let ref path = matches.free[0];
+    let src = try!(convert_io_error(slurp(path)));
 
     let instrs = try!(bfir::parse(&src));
     
     // TODO: allow users to specify optimisation level.
     let instrs = optimize::optimize(instrs);
 
-    if dump_bf_ir {
+    if matches.opt_present("dump-bf-ir") {
         for instr in &instrs {
             println!("{}", instr);
         }
@@ -98,10 +100,10 @@ fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
 
     let remaining_instrs = &instrs[state.instr_ptr..];
     let llvm_ir_raw = llvm::compile_to_ir(
-        &path, &remaining_instrs.to_vec(), &initial_cells, state.cell_ptr as i32,
+        path, &remaining_instrs.to_vec(), &initial_cells, state.cell_ptr as i32,
         &state.outputs);
 
-    if dump_llvm {
+    if matches.opt_present("dump-llvm") {
         let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
         println!("{}", llvm_ir);
         return Ok(());
@@ -139,25 +141,32 @@ fn compile_file(path: &str, dump_bf_ir: bool, dump_llvm: bool)
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args: Vec<_> = env::args().collect();
-    if args.len() > 1 {
 
-        // TODO: proper options parsing
-        let dump_bf_ir = args.len() > 2 && args[2] == "--dump-bf-ir";
-        let dump_llvm = args.len() > 2 && args[2] == "--dump-llvm";
-        
-        let ref file_path = args[1];
+    let mut opts = Options::new();
+    
+    opts.optflag("h", "help", "show usage");
+    opts.optflag("", "dump-llvm", "print LLVM IR generated");
+    opts.optflag("", "dump-bf-ir", "print BF IR generated");
 
-        match compile_file(file_path, dump_bf_ir, dump_llvm) {
-            Ok(_) => {}
-            Err(e) => {
-                // TODO: this should go to stderr.
-                println!("{}", e);
-                std::process::exit(2);
-            }
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => { m }
+        Err(_) => {
+            print_usage(&args[0]);
+            std::process::exit(1);
         }
-        
-    } else {
+    };
+
+    if matches.free.len() != 1 {
         print_usage(&args[0]);
         std::process::exit(1);
+    }
+
+    match compile_file(&matches) {
+        Ok(_) => {}
+        Err(e) => {
+            // TODO: this should go to stderr.
+            println!("{}", e);
+            std::process::exit(2);
+        }
     }
 }
