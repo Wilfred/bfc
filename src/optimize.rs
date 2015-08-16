@@ -26,7 +26,8 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
-    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(annotated)));
+    let extracted = extract_multiply(annotated);
+    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
     remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
 }
 
