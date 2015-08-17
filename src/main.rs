@@ -81,10 +81,12 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
     let ref path = matches.free[0];
     let src = try!(convert_io_error(slurp(path)));
 
-    let instrs = try!(bfir::parse(&src));
-    
-    // TODO: allow users to specify optimisation level.
-    let instrs = optimize::optimize(instrs);
+    let mut instrs = try!(bfir::parse(&src));
+
+    let opt_level = matches.opt_str("opt").unwrap_or(String::from("3"));
+    if opt_level != "0" {
+        instrs = optimize::optimize(instrs);
+    }
 
     if matches.opt_present("dump-bf-ir") {
         for instr in &instrs {
@@ -148,6 +150,8 @@ fn main() {
     opts.optflag("", "dump-llvm", "print LLVM IR generated");
     opts.optflag("", "dump-bf-ir", "print BF IR generated");
 
+    opts.optopt("O", "opt", "optimization level (0, 1 or 2)", "LEVEL");
+    
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
         Err(_) => {
