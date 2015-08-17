@@ -95,8 +95,6 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
         return Ok(());
     }
 
-    // TODO: highest_cell_index should return a usize.
-    let state = execution::execute(&instrs, execution::MAX_STEPS);
     let initial_cells: Vec<u8> = state.cells.iter()
         .map(|x: &Wrapping<u8>| x.0).collect();
 

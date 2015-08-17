@@ -19,6 +19,7 @@ pub const MAX_CELL_INDEX: u64 = 29999;
 
 /// Return the highest cell index that can be reached during program
 /// execution. Zero-indexed.
+// TODO: should return a usize.
 pub fn highest_cell_index(instrs: &[Instruction]) -> u64 {
     let (highest_index, _) = overall_movement(instrs);
 
