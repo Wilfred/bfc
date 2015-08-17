@@ -83,22 +83,37 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
 
     let mut instrs = try!(bfir::parse(&src));
 
-    let opt_level = matches.opt_str("opt").unwrap_or(String::from("3"));
+    let opt_level = matches.opt_str("opt").unwrap_or(String::from("2"));
     if opt_level != "0" {
         instrs = optimize::optimize(instrs);
     }
 
+    let state = if opt_level == "2" {
+        execution::execute(&instrs, execution::MAX_STEPS)
+    } else {
+        execution::ExecutionState {
+            instr_ptr: 0,
+            cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) as usize],
+            cell_ptr: 0,
+            outputs: vec![]
+        }
+    };
+    let initial_cells: Vec<u8> = state.cells.iter()
+        .map(|x: &Wrapping<u8>| x.0).collect();
+
+    let remaining_instrs = &instrs[state.instr_ptr..];
+
     if matches.opt_present("dump-bf-ir") {
-        for instr in &instrs {
+        if remaining_instrs.is_empty() {
+            println!("(optimized out)");
+        }
+        
+        for instr in remaining_instrs {
             println!("{}", instr);
         }
         return Ok(());
     }
 
-    let initial_cells: Vec<u8> = state.cells.iter()
-        .map(|x: &Wrapping<u8>| x.0).collect();
-
-    let remaining_instrs = &instrs[state.instr_ptr..];
     let llvm_ir_raw = llvm::compile_to_ir(
         path, &remaining_instrs.to_vec(), &initial_cells, state.cell_ptr as i32,
         &state.outputs);

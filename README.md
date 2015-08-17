@@ -39,7 +39,8 @@ You will need LLVM and Rust beta installed to compile bfc.
     $ cargo build --release
 
 Debug builds work, but large programs will take a large amount of time
-in speculative execution if bfc is compiled without optimisations.
+in speculative execution if bfc is compiled without optimisations. You
+can disable this by passing `--opt=0` or `--opt=1`.
 
 ## Usage
 
