@@ -342,6 +342,19 @@ fn should_extract_multiply_simple() {
 }
 
 #[test]
+fn should_extract_multiply_nested() {
+    let instrs = parse("[[->+<]]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(1));
+    let expected = vec![
+        Loop(vec![
+            MultiplyMove(dest_cells)])];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
 fn should_extract_multiply_negative_number() {
     let instrs = parse("[->--<]").unwrap();
 
@@ -377,7 +390,7 @@ fn should_not_extract_multiply_from_clear_loop() {
 }
 
 #[test]
-fn should_not_extract_multiply_nested() {
+fn should_not_extract_multiply_with_inner_loop() {
     let instrs = parse("[->+++<[]]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }

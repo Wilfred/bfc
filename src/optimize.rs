@@ -326,10 +326,10 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     // the cell we're moving from.
                     changes.remove(&0);
                         
-                    return MultiplyMove(changes);
+                    MultiplyMove(changes)
+                } else {
+                    Loop(extract_multiply(body))
                 }
-
-                Loop(body)
             }
             i => i
         }
