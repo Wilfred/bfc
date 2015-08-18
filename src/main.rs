@@ -41,15 +41,13 @@ fn slurp(path: &str) -> Result<String, std::io::Error> {
     Ok(contents)
 }
 
-/// Convert "foo.bf" to "foo.o".
+/// Convert "foo.bf" to "foo".
 #[allow(deprecated)] // .connect is in stable 1.2, but beta has deprecated it.
-fn obj_file_name(bf_file_name: &str) -> String {
+fn executable_name(bf_file_name: &str) -> String {
     let mut name_parts: Vec<_> = bf_file_name.split('.').collect();
     let parts_len = name_parts.len();
     if parts_len > 1 {
-        name_parts[parts_len - 1] = "o";
-    } else {
-        name_parts.push("o");
+        name_parts.pop();
     }
 
     name_parts.connect(".")
@@ -138,19 +136,30 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
         return Ok(());
     }                        
 
-    let bf_name = Path::new(path).file_name().unwrap();
-    let obj_name = obj_file_name(bf_name.to_str().unwrap());
+    // Write the LLVM IR to a temporary file.
+    let mut llvm_ir_file = try!(convert_io_error(NamedTempFile::new()));
+    let _ = llvm_ir_file.write(llvm_ir_raw.as_bytes());
 
-    let mut f = try!(convert_io_error(NamedTempFile::new()));
-
-    let _ = f.write(llvm_ir_raw.as_bytes());
-
-    // TODO: link as well.
+    // Compile the LLVM IR to a temporary object file.
+    let object_file = try!(convert_io_error(NamedTempFile::new()));
     let llc_args = ["-O3", "-filetype=obj",
-                    f.path().to_str().unwrap(),
-                    "-o", &obj_name[..]];
+                    llvm_ir_file.path().to_str().unwrap(),
+                    "-o", object_file.path().to_str().unwrap()];
     try!(shell_command("llc", &llc_args[..]));
-    println!("Wrote {}", obj_name);
+
+    // TODO: do path munging in executable_name().
+    let bf_name = Path::new(path).file_name().unwrap();
+    let output_name = executable_name(bf_name.to_str().unwrap());
+
+    // Link the object file.
+    let clang_args = [object_file.path().to_str().unwrap(),
+                      "-o", &output_name[..]];
+    try!(shell_command("clang", &clang_args[..]));
+
+    // Strip the executable.
+    let strip_args = ["-s", &output_name[..]];
+    try!(shell_command("strip", &strip_args[..]));
+    
     Ok(())
 }
 
