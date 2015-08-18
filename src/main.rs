@@ -20,7 +20,7 @@ use std::io::Write;
 use std::io::prelude::Read;
 use std::num::Wrapping;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command,Output};
 use getopts::{Options,Matches};
 use tempfile::NamedTempFile;
 
@@ -75,6 +75,14 @@ fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
             Err(format!("{}", e))
         }
     }
+}
+
+fn shell_command(command: &str, args: &[&str]) -> Result<Output, std::io::Error> {
+    let mut c = Command::new(command);
+    for arg in args {
+        c.arg(arg);
+    }
+    c.output()
 }
 
 fn compile_file(matches: &Matches) -> Result<(),String> {
@@ -132,12 +140,10 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
     let _ = f.write(llvm_ir_raw.as_bytes());
 
     // TODO: link as well.
+    let llc_args = ["-O3", "-filetype=obj",
+                    f.path(), "-o", obj_name.to_owned()];
     let llc_result = try!(
-        convert_io_error(
-            Command::new("llc")
-                .arg("-O3").arg("-filetype=obj").arg(f.path())
-                .arg("-o").arg(obj_name.to_owned())
-                .output()));
+        convert_io_error(shell_command("llc", &llc_args)));
 
     let llc_stderr = String::from_utf8_lossy(llc_result.stderr.as_slice());
 
