@@ -3,9 +3,6 @@
 
 #![warn(trivial_numeric_casts)]
 
-// TODO: find a way to avoid this.
-#![feature(convert)]
-
 extern crate libc;
 extern crate llvm_sys;
 extern crate itertools;
@@ -20,7 +17,7 @@ use std::io::Write;
 use std::io::prelude::Read;
 use std::num::Wrapping;
 use std::path::Path;
-use std::process::{Command,Output};
+use std::process::Command;
 use getopts::{Options,Matches};
 use tempfile::NamedTempFile;
 
@@ -77,12 +74,21 @@ fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
     }
 }
 
-fn shell_command(command: &str, args: &[&str]) -> Result<Output, std::io::Error> {
+fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
     let mut c = Command::new(command);
     for arg in args {
         c.arg(arg);
     }
-    c.output()
+    
+    let result = try!(convert_io_error(c.output()));
+    if result.status.success() {
+        let stdout = String::from_utf8_lossy(&result.stdout);
+        Ok((*stdout).to_owned())
+    } else {
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        Err((*stderr).to_owned())
+    }
+    
 }
 
 fn compile_file(matches: &Matches) -> Result<(),String> {
@@ -141,22 +147,11 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
 
     // TODO: link as well.
     let llc_args = ["-O3", "-filetype=obj",
-                    f.path(), "-o", obj_name.to_owned()];
-    let llc_result = try!(
-        convert_io_error(shell_command("llc", &llc_args)));
-
-    let llc_stderr = String::from_utf8_lossy(llc_result.stderr.as_slice());
-
-    // TODO: it would be nice to have a function that wraps
-    // Command::new so we don't have to inspect .status.success() and
-    // wrap in Err as below.
-    if llc_result.status.success() {
-        // TODO: it would be cleaner to return this in Ok().
-        println!("Wrote {}", obj_name);
-        Ok(())
-    } else {
-        Err(llc_stderr.into_owned())
-    }
+                    f.path().to_str().unwrap(),
+                    "-o", &obj_name[..]];
+    try!(shell_command("llc", &llc_args[..]));
+    println!("Wrote {}", obj_name);
+    Ok(())
 }
 
 #[cfg_attr(test, allow(dead_code))]
