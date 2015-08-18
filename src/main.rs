@@ -93,7 +93,7 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
     } else {
         execution::ExecutionState {
             instr_ptr: 0,
-            cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) as usize],
+            cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) as usize + 1],
             cell_ptr: 0,
             outputs: vec![]
         }
