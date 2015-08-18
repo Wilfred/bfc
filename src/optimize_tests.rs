@@ -403,3 +403,14 @@ fn should_not_extract_multiply_without_decrement() {
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
+#[test]
+fn should_not_extract_multiply_with_read() {
+    let instrs = parse("[+>++<,]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_with_write() {
+    let instrs = parse("[+>++<.]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}

@@ -256,11 +256,12 @@ fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// E.g. "[->>>++]" sets cell #3 to 2*cell #0.
 fn is_multiply_loop(instr: &Instruction) -> bool {
     if let &Loop(ref body) = instr {
-        // A multiply loop must be straight line code, it cannot
-        // contain other loops.
+        // A multiply loop may only contain increments and pointer increments.
         for body_instr in body {
-            if let &Loop(_) = body_instr {
-                return false;
+            match body_instr {
+                &Increment(_) => {}
+                &PointerIncrement(_) => {}
+                _ => return false
             }
         }
         
