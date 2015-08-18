@@ -15,20 +15,19 @@ use bfir::Instruction::*;
 use bfir::parse;
 
 // 30,000 cells, zero-indexed.
-pub const MAX_CELL_INDEX: u64 = 29999;
+pub const MAX_CELL_INDEX: usize = 29999;
 
 /// Return the highest cell index that can be reached during program
 /// execution. Zero-indexed.
-// TODO: should return a usize.
-pub fn highest_cell_index(instrs: &[Instruction]) -> u64 {
+pub fn highest_cell_index(instrs: &[Instruction]) -> usize {
     let (highest_index, _) = overall_movement(instrs);
 
     match highest_index {
         SaturatingInt::Number(x) => {
-            if x as u64 > MAX_CELL_INDEX {
+            if x > MAX_CELL_INDEX as i64 {
                 MAX_CELL_INDEX
             } else {
-                x as u64
+                x as usize
             }
         }
         SaturatingInt::Max => MAX_CELL_INDEX

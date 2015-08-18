@@ -41,7 +41,7 @@ pub const MAX_STEPS: u64 = 10000000;
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
 pub fn execute(instrs: &[Instruction], steps: u64) -> ExecutionState {
-    let cells = vec![Wrapping(0); (highest_cell_index(instrs) + 1) as usize];
+    let cells = vec![Wrapping(0); highest_cell_index(instrs) + 1];
     let state = ExecutionState {
         instr_ptr: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
     let (final_state, _) = execute_inner(instrs, state, steps);
@@ -209,7 +209,7 @@ fn multiply_move_offset_too_high() {
     assert_eq!(
         final_state, ExecutionState {
             // TODO: MAX_CELL_INDEX should be a usize.
-            instr_ptr: 0, cells: vec![Wrapping(0); MAX_CELL_INDEX as usize + 1],
+            instr_ptr: 0, cells: vec![Wrapping(0); MAX_CELL_INDEX + 1],
             cell_ptr: 0, outputs: vec![],
         });
 }
