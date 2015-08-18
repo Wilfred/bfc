@@ -9,18 +9,17 @@ use bfir::parse;
 use rand::Rng;
 use quickcheck::{Arbitrary,Gen,TestResult};
 
-// TODO: MultiplyMove here.
 impl Arbitrary for Instruction {
     fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
         let i = g.next_u32();
-        match i % 11 {
+        match i % 13 {
             0 => Increment(Wrapping(Arbitrary::arbitrary(g))),
             1 => PointerIncrement(Arbitrary::arbitrary(g)),
             2 => Set(Wrapping(Arbitrary::arbitrary(g))),
             3 => Read,
             4 => Write,
             // TODO: we should be able to generate arbitrary nested
-            // instructions, instead of limited range. See
+            // instructions, instead of this limited range. See
             // https://github.com/BurntSushi/quickcheck/issues/23
             5 => Loop(vec![]),
             6 => Loop(vec![Increment(Wrapping(Arbitrary::arbitrary(g)))]),
@@ -28,6 +27,17 @@ impl Arbitrary for Instruction {
             8 => Loop(vec![Set(Wrapping(Arbitrary::arbitrary(g)))]),
             9 => Loop(vec![Read]),
             10 => Loop(vec![Read]),
+            11 => {
+                let mut changes = HashMap::new();
+                changes.insert(1, Wrapping(255));
+                MultiplyMove(changes)
+            }
+            12 => {
+                let mut changes = HashMap::new();
+                changes.insert(1, Wrapping(2));
+                changes.insert(4, Wrapping(10));
+                MultiplyMove(changes)
+            }
             _ => unreachable!()
         }
     }
