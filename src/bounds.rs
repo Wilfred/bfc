@@ -80,9 +80,9 @@ fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
     let mut net_movement = SaturatingInt::Number(0);
     let mut max_index = SaturatingInt::Number(0);
 
-    for (current_highest, current_at_end) in instrs.iter().map(movement) {
-        net_movement = net_movement + current_at_end;
-        max_index = max(net_movement, max(current_highest, max_index));
+    for (instr_highest_offset, instr_net_movement) in instrs.iter().map(movement) {
+        max_index = max(net_movement, max(net_movement + instr_highest_offset, max_index));
+        net_movement = net_movement + instr_net_movement;
     }
     (max_index, net_movement)
 }
@@ -181,12 +181,14 @@ fn multiply_move_bounds() {
 #[test]
 fn multiply_move_bounds_are_relative() {
     let mut dest_cells = HashMap::new();
-    dest_cells.insert(1, Wrapping(3));
+    dest_cells.insert(1, Wrapping(5));
     let instrs = vec![
+        // Move to cell #2.
         PointerIncrement(2),
+        // Move (with multiply) to cell #3 (#2 offset 1).
         MultiplyMove(dest_cells)];
     
-    assert_eq!(highest_cell_index(&instrs), 4);
+    assert_eq!(highest_cell_index(&instrs), 3);
 }
 
 #[test]
