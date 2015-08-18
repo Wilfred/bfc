@@ -233,3 +233,8 @@ fn loop_with_no_net_movement() {
     assert_eq!(highest_cell_index(&instrs), 2);
 }
 
+#[quickcheck]
+fn highest_cell_index_in_bounds(instrs: Vec<Instruction>) -> bool {
+    let index = highest_cell_index(&instrs);
+    index <= MAX_CELL_INDEX
+}
