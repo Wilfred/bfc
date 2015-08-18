@@ -177,6 +177,19 @@ fn multiply_move_bounds() {
     assert_eq!(highest_cell_index(&instrs), 4);
 }
 
+/// Multiply move uses offsets to the current pointer value.
+/// Verify we add to the current pointer value.
+#[test]
+fn multiply_move_bounds_are_relative() {
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(3));
+    let instrs = vec![
+        PointerIncrement(2),
+        MultiplyMove(dest_cells)];
+    
+    assert_eq!(highest_cell_index(&instrs), 4);
+}
+
 #[test]
 fn multiply_move_backwards_bounds() {
     let mut dest_cells = HashMap::new();
