@@ -208,7 +208,6 @@ fn multiply_move_offset_too_high() {
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(
         final_state, ExecutionState {
-            // TODO: MAX_CELL_INDEX should be a usize.
             instr_ptr: 0, cells: vec![Wrapping(0); MAX_CELL_INDEX + 1],
             cell_ptr: 0, outputs: vec![],
         });
