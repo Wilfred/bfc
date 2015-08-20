@@ -46,8 +46,7 @@ can disable this by passing `--opt=0` or `--opt=1`.
 
 ```
 $ target/release/bfc sample_programs/hello_world.bf
-$ gcc hello_world.o
-$ ./a.out
+$ ./hello_world
 Hello World!
 ```
 
