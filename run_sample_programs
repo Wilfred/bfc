@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -ex
+
+cargo build --release
+
+# TODO: Use a loop here.
+target/release/bfc --opt=0 sample_programs/hello_world.bf
+./hello_world
+
+target/release/bfc --opt=1 sample_programs/hello_world.bf
+./hello_world
+
+target/release/bfc --opt=2 sample_programs/hello_world.bf
+./hello_world
+
+target/release/bfc --opt=0 sample_programs/bottles.bf
+./bottles
+
+target/release/bfc --opt=1 sample_programs/bottles.bf
+./bottles
+
+target/release/bfc --opt=2 sample_programs/bottles.bf
+./bottles
