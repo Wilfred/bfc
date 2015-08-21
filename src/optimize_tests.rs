@@ -208,6 +208,16 @@ fn should_remove_redundant_set() {
     assert_eq!(remove_redundant_sets(initial), expected);
 }
 
+#[test]
+fn should_remove_redundant_set_multiply() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(1));
+
+    let initial = vec![MultiplyMove(changes.clone()), Set(Wrapping(0))];
+    let expected = vec![MultiplyMove(changes)];
+    assert_eq!(remove_redundant_sets(initial), expected);
+}
+
 fn is_pure(instrs: &[Instruction]) -> bool {
     for instr in instrs {
         match instr {

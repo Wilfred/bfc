@@ -188,6 +188,10 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
         if let (loop_instr @ Loop(_), &Set(Wrapping(0))) = (prev_instr.clone(), &instr) {
             return Ok(loop_instr);
         }
+        if let (multiply_instr @ MultiplyMove(_), &Set(Wrapping(0))) = (prev_instr.clone(), &instr) {
+            return Ok(multiply_instr);
+        }
+
         Err((prev_instr, instr))
     }).map(|instr| {
         match instr {
