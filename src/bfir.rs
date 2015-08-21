@@ -4,6 +4,8 @@ use std::collections::HashMap;
 
 use self::Instruction::*;
 
+// TODO: a Wrapping<i8> would be much clearer as we'd use -1 rather
+// than 255 everywhere.
 pub type Cell = Wrapping<u8>;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
