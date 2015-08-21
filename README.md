@@ -11,7 +11,8 @@ It is written in Rust and uses LLVM.
 BF source -> BF IR -> LLVM IR -> x86_32 Binary
 ```
 
-GPLv2 or later license.
+GPLv2 or later license. Sample programs are largely written by other
+authors and are under other licenses.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
 **Table of Contents**
