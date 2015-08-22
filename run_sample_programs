@@ -5,6 +5,15 @@ set -ex
 cargo build --release
 
 # TODO: Use a loop here.
+target/release/bfc --opt=0 sample_programs/bangbang.bf
+./bangbang
+
+target/release/bfc --opt=1 sample_programs/bangbang.bf
+./bangbang
+
+target/release/bfc --opt=2 sample_programs/bangbang.bf
+./bangbang
+
 target/release/bfc --opt=0 sample_programs/hello_world.bf
 ./hello_world
 
