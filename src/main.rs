@@ -180,6 +180,11 @@ fn main() {
         }
     };
 
+    if matches.opt_present("h") {
+        print_usage(&args[0], opts);
+        return;
+    }
+
     if matches.free.len() != 1 {
         print_usage(&args[0], opts);
         std::process::exit(1);
