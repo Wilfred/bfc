@@ -20,7 +20,7 @@ pub struct ExecutionState {
     pub instr_ptr: usize,
     pub cells: Vec<Cell>,
     pub cell_ptr: isize,
-    pub outputs: Vec<u8>,
+    pub outputs: Vec<i8>,
 }
 
 #[derive(Debug,PartialEq,Eq)]
@@ -240,12 +240,12 @@ fn set_executed() {
 
 #[test]
 fn set_wraps() {
-    let instrs = vec![Set(Wrapping(255))];
+    let instrs = vec![Set(Wrapping(-1))];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(255)], cell_ptr: 0, outputs: vec![],
+            instr_ptr: 1, cells: vec![Wrapping(-1)], cell_ptr: 0, outputs: vec![],
         });
 }
 
@@ -256,14 +256,14 @@ fn decrement_executed() {
 
     assert_eq!(
         final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(255)], cell_ptr: 0, outputs: vec![],
+            instr_ptr: 1, cells: vec![Wrapping(-1)], cell_ptr: 0, outputs: vec![],
         });
 }
 
 // TODO: find out what the most common BF implementation choice is here.
 #[test]
 fn increment_wraps() {
-    let instrs = vec![Increment(Wrapping(255)), Increment(Wrapping(1))];
+    let instrs = vec![Increment(Wrapping(-1)), Increment(Wrapping(1))];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(

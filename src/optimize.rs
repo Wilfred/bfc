@@ -111,8 +111,8 @@ fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
         if let &Loop(ref body) = &instr {
-            // If the loop is [-] (255 is -1 mod 256)
-            if *body == vec![Increment(Wrapping(255))] {
+            // If the loop is [-]
+            if *body == vec![Increment(Wrapping(-1))] {
                 return Set(Wrapping(0))
             }
         }
@@ -283,7 +283,7 @@ fn is_multiply_loop(instr: &Instruction) -> bool {
 
         let changes = cell_changes(body);
         // A multiply loop must decrement cell #0.
-        if let Some(&Wrapping(255)) = changes.get(&0) {
+        if let Some(&Wrapping(-1)) = changes.get(&0) {
         } else {
             return false;
         }

@@ -166,7 +166,7 @@ fn should_remove_dead_loops_nested() {
 }
 
 #[quickcheck]
-fn should_combine_set_and_increment(set_amount: u8, increment_amount: u8)
+fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8)
                                     -> bool {
     let set_amount = Wrapping(set_amount);
     let increment_amount = Wrapping(increment_amount);
@@ -178,7 +178,7 @@ fn should_combine_set_and_increment(set_amount: u8, increment_amount: u8)
 }
 
 #[quickcheck]
-fn should_combine_set_and_set(set_amount_before: u8, set_amount_after: u8)
+fn should_combine_set_and_set(set_amount_before: i8, set_amount_after: i8)
                               -> bool {
     let initial = vec![
         Set(Wrapping(set_amount_before)),

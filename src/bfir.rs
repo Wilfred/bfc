@@ -4,9 +4,7 @@ use std::collections::HashMap;
 
 use self::Instruction::*;
 
-// TODO: a Wrapping<i8> would be much clearer as we'd use -1 rather
-// than 255 everywhere.
-pub type Cell = Wrapping<u8>;
+pub type Cell = Wrapping<i8>;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
@@ -69,7 +67,7 @@ fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instructi
             '+' => 
                 instructions.push(Increment(Wrapping(1))),
             '-' => 
-                instructions.push(Increment(Wrapping(255))),
+                instructions.push(Increment(Wrapping(-1))),
             '>' => 
                 instructions.push(PointerIncrement(1)),
             '<' => 
@@ -130,7 +128,7 @@ fn parse_increment() {
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("-").unwrap(), [Increment(Wrapping(255))]);
+    assert_eq!(parse("-").unwrap(), [Increment(Wrapping(-1))]);
 }
 
 #[test]
@@ -171,7 +169,7 @@ fn parse_complex_loop() {
     let loop_body = vec![Read, Increment(Wrapping(1))];
     let expected = [Write,
                     Loop(loop_body),
-                    Increment(Wrapping(255))];
+                    Increment(Wrapping(-1))];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 

@@ -117,7 +117,7 @@ unsafe fn add_function_call(module: &mut Module, bb: &mut LLVMBasicBlock,
 
 /// Given a vector of cells [1, 1, 0, 0, 0, ...] return a vector
 /// [(1, 2), (0, 3), ...].
-fn run_length_encode(cells: &[u8]) -> Vec<(u8, usize)> {
+fn run_length_encode(cells: &[i8]) -> Vec<(i8, usize)> {
     cells.into_iter().map(|val| {
         (*val, 1)
     }).coalesce(|(prev_val, prev_count), (val, count)| {
@@ -129,7 +129,7 @@ fn run_length_encode(cells: &[u8]) -> Vec<(u8, usize)> {
     }).collect()
 }
 
-unsafe fn add_cells_init(init_values: &[u8], module: &mut Module,
+unsafe fn add_cells_init(init_values: &[i8], module: &mut Module,
                          bb: &mut LLVMBasicBlock) -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
@@ -422,7 +422,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction, module: &mut Module,
 }
 
 unsafe fn compile_static_outputs(module: &mut Module,
-                                 bb: &mut LLVMBasicBlock, outputs: &[u8]) {
+                                 bb: &mut LLVMBasicBlock, outputs: &[i8]) {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -452,7 +452,7 @@ unsafe fn compile_static_outputs(module: &mut Module,
 // TODO: take a compile state rather than passing tons of variables.
 // TODO: use init_values terminology consistently for names here.
 pub fn compile_to_ir(module_name: &str, instrs: &[Instruction],
-                     cells: &[u8], cell_ptr: i32, static_outputs: &[u8])
+                     cells: &[i8], cell_ptr: i32, static_outputs: &[i8])
                      -> CString {
     let llvm_ir_owned;
     unsafe {

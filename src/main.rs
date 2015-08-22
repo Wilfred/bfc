@@ -110,8 +110,8 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
             outputs: vec![]
         }
     };
-    let initial_cells: Vec<u8> = state.cells.iter()
-        .map(|x: &Wrapping<u8>| x.0).collect();
+    let initial_cells: Vec<i8> = state.cells.iter()
+        .map(|x: &Wrapping<i8>| x.0).collect();
 
     let remaining_instrs = &instrs[state.instr_ptr..];
 
