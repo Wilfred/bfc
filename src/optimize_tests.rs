@@ -29,7 +29,7 @@ impl Arbitrary for Instruction {
             10 => Loop(vec![Read]),
             11 => {
                 let mut changes = HashMap::new();
-                changes.insert(1, Wrapping(255));
+                changes.insert(1, Wrapping(-1));
                 MultiplyMove(changes)
             }
             12 => {
@@ -72,13 +72,13 @@ fn combine_increments_remove_redundant() {
 
 #[test]
 fn combine_increment_sum_to_zero() {
-    let initial = vec![Increment(Wrapping(255)), Increment(Wrapping(1))];
+    let initial = vec![Increment(Wrapping(-1)), Increment(Wrapping(1))];
     assert_eq!(combine_increments(initial), vec![]);
 }
 
 #[test]
 fn combine_set_sum_to_zero() {
-    let initial = vec![Set(Wrapping(255)), Increment(Wrapping(1))];
+    let initial = vec![Set(Wrapping(-1)), Increment(Wrapping(1))];
     assert_eq!(combine_set_and_increments(initial), vec![Set(Wrapping(0))]);
 }
 
@@ -321,9 +321,9 @@ fn pathological_optimisation_opportunity() {
                       Increment(Wrapping(1)),
                       PointerIncrement(1),
                       PointerIncrement(-1),
-                      Increment(Wrapping(255)),
+                      Increment(Wrapping(-1)),
                       PointerIncrement(-1),
-                      Increment(Wrapping(255)),
+                      Increment(Wrapping(-1)),
                       Write];
 
     let expected = vec![Read, Write];
@@ -379,7 +379,7 @@ fn should_extract_multiply_negative_number() {
     let instrs = parse("[->--<]").unwrap();
 
     let mut dest_cells = HashMap::new();
-    dest_cells.insert(1, Wrapping(254));
+    dest_cells.insert(1, Wrapping(-2));
     let expected = vec![MultiplyMove(dest_cells)];
 
     assert_eq!(extract_multiply(instrs), expected);
