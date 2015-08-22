@@ -53,12 +53,9 @@ fn executable_name(bf_file_name: &str) -> String {
     name_parts.connect(".")
 }
 
-fn print_usage(bin_name: &str) {
-    println!("Usage: {} [options...] <BF source file> ", bin_name);
-    println!("Examples:");
-    println!("  {} foo.bf", bin_name);
-    println!("  {} --dump-bf-ir foo.bf", bin_name);
-    println!("  {} --dump-llvm foo.bf", bin_name);
+fn print_usage(bin_name: &str, opts: Options) {
+    let brief = format!("Usage: {} <BF source file> [options]", bin_name);
+    print!("{}", opts.usage(&brief));
 }
 
 fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
@@ -178,13 +175,13 @@ fn main() {
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
         Err(_) => {
-            print_usage(&args[0]);
+            print_usage(&args[0], opts);
             std::process::exit(1);
         }
     };
 
     if matches.free.len() != 1 {
-        print_usage(&args[0]);
+        print_usage(&args[0], opts);
         std::process::exit(1);
     }
 
