@@ -112,7 +112,7 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
 
     let remaining_instrs = &instrs[state.instr_ptr..];
 
-    if matches.opt_present("dump-bf-ir") {
+    if matches.opt_present("dump-ir") {
         if remaining_instrs.is_empty() {
             println!("(optimized out)");
         }
@@ -168,7 +168,7 @@ fn main() {
     
     opts.optflag("h", "help", "show usage");
     opts.optflag("", "dump-llvm", "print LLVM IR generated");
-    opts.optflag("", "dump-bf-ir", "print BF IR generated");
+    opts.optflag("", "dump-ir", "print BF IR generated");
 
     opts.optopt("O", "opt", "optimization level (0, 1 or 2)", "LEVEL");
     
