@@ -117,7 +117,8 @@ unsafe fn add_function_call(module: &mut Module, bb: &mut LLVMBasicBlock,
 
 /// Given a vector of cells [1, 1, 0, 0, 0, ...] return a vector
 /// [(1, 2), (0, 3), ...].
-fn run_length_encode(cells: &[i8]) -> Vec<(i8, usize)> {
+fn run_length_encode<T>(cells: &[T]) -> Vec<(T, usize)>
+    where T: Eq + Copy {
     cells.into_iter().map(|val| {
         (*val, 1)
     }).coalesce(|(prev_val, prev_count), (val, count)| {
