@@ -184,9 +184,8 @@ unsafe fn add_main_fn(module: &mut Module) -> LLVMValueRef {
     main_fn
 }
 
-// TODO: name our pointers cell_base_ptr and
-// cell_current_ptr. Currently, cell_index_ptr is an offset, which
-// means we need to add cell_base_ptr over and over.
+// TODO: name our pointers cell_base and
+// cell_offset_ptr.
 /// Initialise the value that contains the current cell index.
 unsafe fn add_cell_index_init(init_value: i32, bb: *mut LLVMBasicBlock,
                               module: &mut Module) -> LLVMValueRef {
