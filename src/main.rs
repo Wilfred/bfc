@@ -23,12 +23,12 @@ use tempfile::NamedTempFile;
 
 mod bfir;
 mod llvm;
-mod optimize;
+mod peephole;
 mod bounds;
 mod execution;
 
 #[cfg(test)]
-mod optimize_tests;
+mod peephole_tests;
 #[cfg(test)]
 mod llvm_tests;
 
@@ -97,7 +97,7 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
 
     let opt_level = matches.opt_str("opt").unwrap_or(String::from("2"));
     if opt_level != "0" {
-        instrs = optimize::optimize(instrs);
+        instrs = peephole::optimize(instrs);
     }
 
     let state = if opt_level == "2" {

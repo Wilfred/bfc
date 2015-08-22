@@ -4,7 +4,7 @@ use std::num::Wrapping;
 use bfir::Instruction;
 use bfir::Instruction::*;
 
-use optimize::*;
+use peephole::*;
 use bfir::parse;
 use rand::Rng;
 use quickcheck::{Arbitrary,Gen,TestResult};
