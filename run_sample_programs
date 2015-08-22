@@ -14,6 +14,8 @@ target/release/bfc --opt=1 sample_programs/bangbang.bf
 target/release/bfc --opt=2 sample_programs/bangbang.bf
 ./bangbang
 
+rm bangbang
+
 target/release/bfc --opt=0 sample_programs/hello_world.bf
 ./hello_world
 
@@ -23,6 +25,8 @@ target/release/bfc --opt=1 sample_programs/hello_world.bf
 target/release/bfc --opt=2 sample_programs/hello_world.bf
 ./hello_world
 
+rm hello_world
+
 target/release/bfc --opt=0 sample_programs/bottles.bf
 ./bottles
 
@@ -31,3 +35,16 @@ target/release/bfc --opt=1 sample_programs/bottles.bf
 
 target/release/bfc --opt=2 sample_programs/bottles.bf
 ./bottles
+
+rm bottles
+
+target/release/bfc --opt=0 sample_programs/mandelbrot.bf
+./mandelbrot
+
+target/release/bfc --opt=1 sample_programs/mandelbrot.bf
+./mandelbrot
+
+target/release/bfc --opt=2 sample_programs/mandelbrot.bf
+./mandelbrot
+
+rm mandelbrot
