@@ -260,7 +260,6 @@ fn decrement_executed() {
         });
 }
 
-// TODO: find out what the most common BF implementation choice is here.
 #[test]
 fn increment_wraps() {
     let instrs = vec![Increment(Wrapping(-1)), Increment(Wrapping(1))];
