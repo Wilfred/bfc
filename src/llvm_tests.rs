@@ -171,12 +171,12 @@ entry:
   %current_cell_ptr = getelementptr i8* %cells, i32 %cell_index
   %cell_value = load i8* %current_cell_ptr
   store i8 0, i8* %current_cell_ptr
-  %target_cell_ptr = getelementptr i8* %cells, i32 1
+  %target_cell_ptr = getelementptr i8* %current_cell_ptr, i32 1
   %target_cell_val = load i8* %target_cell_ptr
   %additional_val = mul i8 %cell_value, 2
   %new_target_val = add i8 %target_cell_val, %additional_val
   store i8 %new_target_val, i8* %target_cell_ptr
-  %target_cell_ptr1 = getelementptr i8* %cells, i32 2
+  %target_cell_ptr1 = getelementptr i8* %current_cell_ptr, i32 2
   %target_cell_val2 = load i8* %target_cell_ptr1
   %additional_val3 = mul i8 %cell_value, 3
   %new_target_val4 = add i8 %target_cell_val2, %additional_val3

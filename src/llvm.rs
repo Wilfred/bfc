@@ -281,7 +281,7 @@ unsafe fn compile_multiply_move<'a>(changes: &HashMap<isize,Cell>, module: &mut 
         // Calculate the position of this target cell.
         let mut indices = vec![int32(*target as c_ulonglong)];
         let target_cell_ptr = LLVMBuildGEP(
-            builder.builder, cells, indices.as_mut_ptr(),
+            builder.builder, cell_val_ptr, indices.as_mut_ptr(),
             indices.len() as c_uint, module.new_string_ptr("target_cell_ptr"));
 
         // Get the current value of the current cell.
