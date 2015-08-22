@@ -450,7 +450,6 @@ unsafe fn compile_static_outputs(module: &mut Module,
     add_function_call(module, bb, "write", &mut vec![stdout_fd, known_outputs_ptr, llvm_num_outputs], "");
 }
 
-// TODO: take a compile state rather than passing tons of variables.
 // TODO: use init_values terminology consistently for names here.
 pub fn compile_to_ir(module_name: &str, instrs: &[Instruction],
                      cells: &[i8], cell_ptr: i32, static_outputs: &[i8])
