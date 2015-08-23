@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::num::Wrapping;
 
 use std::ops::Add;
-use std::cmp::{Ord,Ordering,max};
+use std::cmp::{Ord, Ordering, max};
 
 use bfir::Instruction;
 use bfir::Instruction::*;
@@ -30,7 +30,7 @@ pub fn highest_cell_index(instrs: &[Instruction]) -> usize {
                 x as usize
             }
         }
-        SaturatingInt::Max => MAX_CELL_INDEX
+        SaturatingInt::Max => MAX_CELL_INDEX,
     }
 }
 
@@ -56,14 +56,10 @@ impl Add for SaturatingInt {
 impl Ord for SaturatingInt {
     fn cmp(&self, other: &SaturatingInt) -> Ordering {
         match (self, other) {
-            (&SaturatingInt::Max, &SaturatingInt::Max) =>
-                Ordering::Equal,
-            (&SaturatingInt::Number(_), &SaturatingInt::Max) =>
-                Ordering::Less,
-            (&SaturatingInt::Max, &SaturatingInt::Number(_)) =>
-                Ordering::Greater,
-            (&SaturatingInt::Number(x), &SaturatingInt::Number(y)) =>
-                x.cmp(&y)
+            (&SaturatingInt::Max, &SaturatingInt::Max) => Ordering::Equal,
+            (&SaturatingInt::Number(_), &SaturatingInt::Max) => Ordering::Less,
+            (&SaturatingInt::Max, &SaturatingInt::Number(_)) => Ordering::Greater,
+            (&SaturatingInt::Number(x), &SaturatingInt::Number(y)) => x.cmp(&y),
         }
     }
 }
@@ -91,12 +87,11 @@ fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
 /// If movement is unbounded, return Max.
 fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
     match instr {
-        &PointerIncrement(amount) =>
-            if amount < 0 {
-                (SaturatingInt::Number(0), SaturatingInt::Number(amount as i64))
-            } else {
-                (SaturatingInt::Number(amount as i64), SaturatingInt::Number(amount as i64))
-            },
+        &PointerIncrement(amount) => if amount < 0 {
+            (SaturatingInt::Number(0), SaturatingInt::Number(amount as i64))
+        } else {
+            (SaturatingInt::Number(amount as i64), SaturatingInt::Number(amount as i64))
+        },
         &MultiplyMove(ref changes) => {
             let mut highest_affected = 0;
             for cell in changes.keys() {
@@ -122,15 +117,15 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
                         // assume any bounds.
                         (SaturatingInt::Max, SaturatingInt::Max)
                     }
-                },
+                }
                 SaturatingInt::Max => {
                     // Unbounded movement somewhere inside the loop,
                     // so this loop is unbounded.
                     (SaturatingInt::Max, SaturatingInt::Max)
                 }
             }
-        },
-        _ => (SaturatingInt::Number(0), SaturatingInt::Number(0))
+        }
+        _ => (SaturatingInt::Number(0), SaturatingInt::Number(0)),
     }
 }
 
@@ -172,7 +167,7 @@ fn multiply_move_bounds() {
         // reached, but not the current cell. This instruction
         // should not affect the output:
         PointerIncrement(2)];
-    
+
     assert_eq!(highest_cell_index(&instrs), 4);
 }
 
@@ -187,7 +182,7 @@ fn multiply_move_bounds_are_relative() {
         PointerIncrement(2),
         // Move (with multiply) to cell #3 (#2 offset 1).
         MultiplyMove(dest_cells)];
-    
+
     assert_eq!(highest_cell_index(&instrs), 3);
 }
 
@@ -198,7 +193,7 @@ fn multiply_move_backwards_bounds() {
     let instrs = vec![
         PointerIncrement(1),
         MultiplyMove(dest_cells)];
-    
+
     assert_eq!(highest_cell_index(&instrs), 1);
 }
 

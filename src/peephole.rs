@@ -1,9 +1,10 @@
+
 use std::collections::HashMap;
 use std::num::Wrapping;
 
 use itertools::Itertools;
 
-use bfir::{Instruction,Cell};
+use bfir::{Instruction, Cell};
 use bfir::Instruction::*;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
@@ -223,7 +224,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
             Loop(body) => {
                 result.push(Loop(annotate_known_zero_inner(body)));
                 result.push(Set(Wrapping(0)))
-            },
+            }
             i => {
                 result.push(i);
             }
@@ -265,10 +266,10 @@ fn is_multiply_loop(instr: &Instruction) -> bool {
             match body_instr {
                 &Increment(_) => {}
                 &PointerIncrement(_) => {}
-                _ => return false
+                _ => return false,
             }
         }
-        
+
         // A multiply loop must have a net pointer movement of
         // zero.
         let mut net_movement = 0;
@@ -300,7 +301,7 @@ fn is_multiply_loop(instr: &Instruction) -> bool {
 /// Return a hashmap of all the cells that are affected by this
 /// sequence of instructions, and how much they change.
 /// E.g. "->>+++>+" -> {0: -1, 2: 3, 3: 1}
-fn cell_changes(instrs: &[Instruction]) -> HashMap<isize,Cell> {
+fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
     let mut changes = HashMap::new();
     let mut cell_index: isize = 0;
 
@@ -314,7 +315,7 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize,Cell> {
                 cell_index += amount;
             }
             // We assume this is only called from is_multiply_loop.
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -330,7 +331,7 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     // MultiplyMove is for where we move to, so ignore
                     // the cell we're moving from.
                     changes.remove(&0);
-                        
+
                     MultiplyMove(changes)
                 } else {
                     Loop(extract_multiply(body))

@@ -1,3 +1,4 @@
+
 use std::collections::HashMap;
 use std::num::Wrapping;
 
@@ -7,7 +8,7 @@ use bfir::Instruction::*;
 use peephole::*;
 use bfir::parse;
 use rand::Rng;
-use quickcheck::{Arbitrary,Gen,TestResult};
+use quickcheck::{Arbitrary, Gen, TestResult};
 
 impl Arbitrary for Instruction {
     fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
@@ -38,7 +39,7 @@ impl Arbitrary for Instruction {
                 changes.insert(4, Wrapping(10));
                 MultiplyMove(changes)
             }
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -166,8 +167,7 @@ fn should_remove_dead_loops_nested() {
 }
 
 #[quickcheck]
-fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8)
-                                    -> bool {
+fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8) -> bool {
     let set_amount = Wrapping(set_amount);
     let increment_amount = Wrapping(increment_amount);
     let initial = vec![
@@ -178,8 +178,7 @@ fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8)
 }
 
 #[quickcheck]
-fn should_combine_set_and_set(set_amount_before: i8, set_amount_after: i8)
-                              -> bool {
+fn should_combine_set_and_set(set_amount_before: i8, set_amount_after: i8) -> bool {
     let initial = vec![
         Set(Wrapping(set_amount_before)),
         Set(Wrapping(set_amount_after))];
@@ -223,14 +222,14 @@ fn is_pure(instrs: &[Instruction]) -> bool {
         match instr {
             &Loop(_) => {
                 return false;
-            },
+            }
             &Read => {
                 return false;
-            },
+            }
             &Write => {
                 return false;
-            },
-            _ => ()
+            }
+            _ => (),
         }
     }
     true
@@ -242,7 +241,7 @@ fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
 
     match annotated[0] {
         Set(Wrapping(0)) => TestResult::from_bool(true),
-        _ => TestResult::from_bool(false)
+        _ => TestResult::from_bool(false),
     }
 }
 

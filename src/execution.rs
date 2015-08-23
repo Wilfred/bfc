@@ -7,7 +7,7 @@ use std::num::Wrapping;
 #[cfg(test)]
 use bfir::parse;
 
-use bfir::{Instruction,Cell};
+use bfir::{Instruction, Cell};
 use bfir::Instruction::*;
 
 #[cfg(test)]
@@ -42,13 +42,14 @@ pub const MAX_STEPS: u64 = 10000000;
 /// the code we reached.
 pub fn execute(instrs: &[Instruction], steps: u64) -> ExecutionState {
     let cells = vec![Wrapping(0); highest_cell_index(instrs) + 1];
-    let state = ExecutionState {
-        instr_ptr: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
+    let state = ExecutionState { instr_ptr: 0, cells: cells, cell_ptr: 0, outputs: vec![] };
     let (final_state, _) = execute_inner(instrs, state, steps);
     final_state
 }
 
-fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
+fn execute_inner(instrs: &[Instruction],
+                 state: ExecutionState,
+                 steps: u64)
                  -> (ExecutionState, Outcome) {
     let mut steps_left = steps;
     let mut state = state;
@@ -86,14 +87,14 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                     if dest_ptr as usize >= state.cells.len() {
                         return (state, Outcome::RuntimeError);
                     }
-                    
+
                     let current_val = state.cells[dest_ptr as usize];
                     state.cells[dest_ptr as usize] = current_val + cell_value * (*factor);
                 }
 
                 // Finally, zero the cell we used.
                 state.cells[cell_ptr] = Wrapping(0);
-                
+
                 state.instr_ptr += 1;
             }
             &Write => {
@@ -120,8 +121,7 @@ fn execute_inner(instrs: &[Instruction], state: ExecutionState, steps: u64)
                         state.cell_ptr = state_after.cell_ptr;
                         // We've run several steps during the loop body, so update for that too.
                         steps_left = remaining_steps;
-                    }
-                    else {
+                    } else {
                         // We couldn't evaluate the loop body.
                         return (state, loop_outcome);
                     }
@@ -173,7 +173,7 @@ fn multiply_move_executed() {
         PointerIncrement(1),
         Increment(Wrapping(1)),
         PointerIncrement(-1),
-        
+
         MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
@@ -374,8 +374,7 @@ fn instr_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
 #[quickcheck]
 fn cell_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
     let state = execute(&instrs, 100);
-    (state.cell_ptr >= 0) &&
-        (state.cell_ptr <= state.cells.len() as isize)
+    (state.cell_ptr >= 0) && (state.cell_ptr <= state.cells.len() as isize)
 }
 
 #[test]

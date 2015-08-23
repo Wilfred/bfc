@@ -18,7 +18,7 @@ use std::io::prelude::Read;
 use std::num::Wrapping;
 use std::path::Path;
 use std::process::Command;
-use getopts::{Options,Matches};
+use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
 
 mod bfir;
@@ -74,7 +74,7 @@ fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
     for arg in args {
         c.arg(arg);
     }
-    
+
     let result = try!(convert_io_error(c.output()));
     if result.status.success() {
         let stdout = String::from_utf8_lossy(&result.stdout);
@@ -83,10 +83,10 @@ fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
         let stderr = String::from_utf8_lossy(&result.stderr);
         Err((*stderr).to_owned())
     }
-    
+
 }
 
-fn compile_file(matches: &Matches) -> Result<(),String> {
+fn compile_file(matches: &Matches) -> Result<(), String> {
     let ref path = matches.free[0];
     let src = try!(convert_io_error(slurp(path)));
 
@@ -104,7 +104,7 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
             instr_ptr: 0,
             cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) + 1],
             cell_ptr: 0,
-            outputs: vec![]
+            outputs: vec![],
         }
     };
     let initial_cells: Vec<i8> = state.cells.iter()
@@ -116,7 +116,7 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
         if remaining_instrs.is_empty() {
             println!("(optimized out)");
         }
-        
+
         for instr in remaining_instrs {
             println!("{}", instr);
         }
@@ -141,7 +141,7 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
     let object_file = try!(convert_io_error(NamedTempFile::new()));
 
     let llvm_opt_arg = format!("-O{}", matches.opt_str("llvm-opt").unwrap_or(String::from("3")));
-    
+
     let llc_args = [&llvm_opt_arg[..], "-filetype=obj",
                     llvm_ir_file.path().to_str().unwrap(),
                     "-o", object_file.path().to_str().unwrap()];
@@ -159,7 +159,7 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
     // Strip the executable.
     let strip_args = ["-s", &output_name[..]];
     try!(shell_command("strip", &strip_args[..]));
-    
+
     Ok(())
 }
 
@@ -168,16 +168,18 @@ fn main() {
     let args: Vec<_> = env::args().collect();
 
     let mut opts = Options::new();
-    
+
     opts.optflag("h", "help", "show usage");
     opts.optflag("", "dump-llvm", "print LLVM IR generated");
     opts.optflag("", "dump-ir", "print BF IR generated");
 
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
     opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
-    
+
     let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
+        Ok(m) => {
+            m
+        }
         Err(_) => {
             print_usage(&args[0], opts);
             std::process::exit(1);

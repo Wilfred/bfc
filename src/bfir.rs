@@ -1,3 +1,4 @@
+
 use std::fmt;
 use std::num::Wrapping;
 use std::collections::HashMap;
@@ -16,14 +17,14 @@ pub enum Instruction {
     // These instruction have no direct equivalent in BF, but we
     // generate them during optimisation.
     Set(Cell),
-    MultiplyMove(HashMap<isize,Cell>),
+    MultiplyMove(HashMap<isize, Cell>),
 }
 
 fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
     for _ in 0..indent {
         let _ = write!(f, "  ");
     }
-    
+
     match instr {
         &Loop(ref loop_body) => {
             let _ = write!(f, "Loop");
@@ -48,45 +49,39 @@ impl fmt::Display for Instruction {
 
 /// Given a string of BF source code, parse and return our BF IR
 /// representation.
-pub fn parse(source: &str) -> Result<Vec<Instruction>,String> {
+pub fn parse(source: &str) -> Result<Vec<Instruction>, String> {
     parse_between(source, 0, source.chars().count())
 }
 
 /// Parse BF source code from index `start` up to (but excluding)
 /// index `end`.
-fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instruction>,String> {
+fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instruction>, String> {
     let chars: Vec<_> = source.chars().collect();
     assert!(start <= end);
     assert!(end <= chars.len());
 
     let mut instructions = Vec::new();
     let mut index = start;
-    
+
     while index < end {
         match chars[index] {
-            '+' => 
-                instructions.push(Increment(Wrapping(1))),
-            '-' => 
-                instructions.push(Increment(Wrapping(-1))),
-            '>' => 
-                instructions.push(PointerIncrement(1)),
-            '<' => 
-                instructions.push(PointerIncrement(-1)),
-            ',' => 
-                instructions.push(Read),
-            '.' => 
-                instructions.push(Write),
+            '+' => instructions.push(Increment(Wrapping(1))),
+            '-' => instructions.push(Increment(Wrapping(-1))),
+            '>' => instructions.push(PointerIncrement(1)),
+            '<' => instructions.push(PointerIncrement(-1)),
+            ',' => instructions.push(Read),
+            '.' => instructions.push(Write),
             '[' => {
                 let close_index = try!(find_close(source, index));
                 let loop_body = try!(parse_between(source, index + 1, close_index));
                 instructions.push(Loop(loop_body));
 
                 index = close_index;
-            },
+            }
             ']' => {
                 return Err(format!("Unmatched ] at index {}.", index));
             }
-            _ => ()
+            _ => (),
         }
 
         index += 1;
@@ -108,7 +103,7 @@ fn find_close(source: &str, open_index: usize) -> Result<usize, String> {
         match c {
             '[' => nesting_depth += 1,
             ']' => nesting_depth -= 1,
-            _ => ()
+            _ => (),
         }
 
         if nesting_depth == 0 {
