@@ -139,7 +139,10 @@ fn compile_file(matches: &Matches) -> Result<(),String> {
 
     // Compile the LLVM IR to a temporary object file.
     let object_file = try!(convert_io_error(NamedTempFile::new()));
-    let llc_args = ["-O3", "-filetype=obj",
+
+    let llvm_opt_arg = format!("-O{}", matches.opt_str("llvm-opt").unwrap_or(String::from("3")));
+    
+    let llc_args = [&llvm_opt_arg[..], "-filetype=obj",
                     llvm_ir_file.path().to_str().unwrap(),
                     "-o", object_file.path().to_str().unwrap()];
     try!(shell_command("llc", &llc_args[..]));
@@ -170,7 +173,8 @@ fn main() {
     opts.optflag("", "dump-llvm", "print LLVM IR generated");
     opts.optflag("", "dump-ir", "print BF IR generated");
 
-    opts.optopt("O", "opt", "optimization level (0, 1 or 2)", "LEVEL");
+    opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
+    opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
     
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
