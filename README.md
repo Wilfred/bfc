@@ -66,7 +66,9 @@ bfc considers cells to be single bytes, and arithmetic wraps
 around. As a result, `-` sets cell #0 to 255.
 
 bfc provides 30,000 cells. Accessing cells outside of this range is
-explicitly undefined, and will probably segfault your program.
+explicitly undefined, and will probably segfault your program. This is
+not guaranteed: your program may terminate normally (e.g. `<-` will be
+optimised away rather than crashing).
 
 bfc requires brackets to be balanced, so `+[]]` is rejected.
 
