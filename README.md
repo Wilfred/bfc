@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Wilfred/bfc.svg?branch=master)](https://travis-ci.org/Wilfred/bfc)
 
-BFC is an optimising compiler for
+bfc is an optimising compiler for
 [BF](https://en.wikipedia.org/wiki/Brainfuck).
 
 It is written in Rust and uses LLVM.
