@@ -285,6 +285,8 @@ There are also some interesting other projects for optimising BF
 programs:
 
 * https://code.google.com/p/esotope-bfc/wiki/Optimization
+* http://www.nayuki.io/page/optimizing-brainfuck-compiler
+* http://mearie.org/projects/esotope/bfc/
 * http://calmerthanyouare.org/2015/01/07/optimizing-brainfuck.html
 * [http://2π.com/10/brainfuck-using-llvm](http://2π.com/10/brainfuck-using-llvm)
 * https://github.com/stedolan/bf.sed (simple optimisations, but
