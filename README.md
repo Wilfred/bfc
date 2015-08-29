@@ -288,7 +288,7 @@ programs:
 * http://www.nayuki.io/page/optimizing-brainfuck-compiler
 * http://mearie.org/projects/esotope/bfc/
 * http://calmerthanyouare.org/2015/01/07/optimizing-brainfuck.html
-* [http://2π.com/10/brainfuck-using-llvm](http://2π.com/10/brainfuck-using-llvm)
+* [http://xn--2-umb.com/10/brainfuck-using-llvm](http://xn--2-umb.com/10/brainfuck-using-llvm)
 * https://github.com/stedolan/bf.sed (simple optimisations, but
 compiles directly to asm)
 * https://github.com/matslina/bfoptimization
