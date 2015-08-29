@@ -509,7 +509,7 @@ unsafe fn compile_static_outputs(module: &mut Module, bb: &mut LLVMBasicBlock, o
     LLVMSetInitializer(known_outputs, llvm_outputs_arr);
     LLVMSetGlobalConstant(known_outputs, LLVM_TRUE);
 
-    let stdout_fd = int32(0);
+    let stdout_fd = int32(1);
     let llvm_num_outputs = int32(outputs.len() as c_ulonglong);
 
     // TODO: worth factoring out this type too.

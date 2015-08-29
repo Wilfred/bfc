@@ -247,7 +247,7 @@ declare i32 @getchar()
 
 define i32 @main() {
 entry:
-  %0 = call i32 @write(i32 0, i8* getelementptr inbounds ([2 x i8]* @known_outputs, i32 0, i32 0), i32 2)
+  %0 = call i32 @write(i32 1, i8* getelementptr inbounds ([2 x i8]* @known_outputs, i32 0, i32 0), i32 2)
   ret i32 0
 }
 
