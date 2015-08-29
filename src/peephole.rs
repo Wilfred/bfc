@@ -86,7 +86,7 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        // Remove dead code before a read.
+        // Remove redundant code before a read.
         match (prev_instr.clone(), instr.clone()) {
             (Increment(_), Read) => {
                 Ok(Read)
