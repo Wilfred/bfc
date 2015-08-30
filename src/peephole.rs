@@ -44,10 +44,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
     }).filter(|instr| {
         // Remove any increments of 0.
-        if let &Increment(Wrapping(0)) = instr {
-            return false;
-        }
-        true
+        instr != &Increment(Wrapping(0))
     }).map(|instr| {
         // Combine increments in nested loops too.
         match instr {
@@ -69,10 +66,7 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
     }).filter(|instr| {
         // Remove any increments of 0.
-        if let &PointerIncrement(0) = instr {
-            return false;
-        }
-        true
+        instr != &PointerIncrement(0)
     }).map(|instr| {
         // Combine increments in nested loops too.
         match instr {
@@ -239,14 +233,14 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut seen_side_effect = false;
     let truncated: Vec<Instruction> = instrs.into_iter().rev().skip_while(|instr| {
-        match instr {
-            &Write => {
+        match *instr {
+            Write => {
                 seen_side_effect = true;
             },
-            &Read => {
+            Read => {
                 seen_side_effect = true;
             },
-            &Loop(_) => {
+            Loop(_) => {
                 seen_side_effect = true;
             }
             _ => {}
@@ -263,9 +257,9 @@ fn is_multiply_loop(instr: &Instruction) -> bool {
     if let &Loop(ref body) = instr {
         // A multiply loop may only contain increments and pointer increments.
         for body_instr in body {
-            match body_instr {
-                &Increment(_) => {}
-                &PointerIncrement(_) => {}
+            match *body_instr {
+                Increment(_) => {}
+                PointerIncrement(_) => {}
                 _ => return false,
             }
         }
@@ -274,7 +268,7 @@ fn is_multiply_loop(instr: &Instruction) -> bool {
         // zero.
         let mut net_movement = 0;
         for body_instr in body {
-            if let &PointerIncrement(amount) = body_instr {
+            if let PointerIncrement(amount) = *body_instr {
                 net_movement += amount;
             }
         }
@@ -306,12 +300,12 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
     let mut cell_index: isize = 0;
 
     for instr in instrs {
-        match instr {
-            &Increment(amount) => {
+        match *instr {
+            Increment(amount) => {
                 let current_amount = *changes.get(&cell_index).unwrap_or(&Wrapping(0));
                 changes.insert(cell_index, current_amount + amount);
             }
-            &PointerIncrement(amount) => {
+            PointerIncrement(amount) => {
                 cell_index += amount;
             }
             // We assume this is only called from is_multiply_loop.

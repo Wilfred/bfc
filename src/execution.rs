@@ -56,16 +56,16 @@ fn execute_inner(instrs: &[Instruction],
 
     while state.instr_ptr < instrs.len() && steps_left > 0 {
         let cell_ptr = state.cell_ptr as usize;
-        match &instrs[state.instr_ptr] {
-            &Increment(amount) => {
+        match instrs[state.instr_ptr] {
+            Increment(amount) => {
                 state.cells[cell_ptr] = state.cells[cell_ptr] + amount;
                 state.instr_ptr += 1;
             }
-            &Set(amount) => {
+            Set(amount) => {
                 state.cells[cell_ptr] = amount;
                 state.instr_ptr += 1;
             }
-            &PointerIncrement(amount) => {
+            PointerIncrement(amount) => {
                 let new_cell_ptr = state.cell_ptr + amount;
                 if new_cell_ptr < 0 || new_cell_ptr >= state.cells.len() as isize {
                     return (state, Outcome::RuntimeError);
@@ -74,11 +74,11 @@ fn execute_inner(instrs: &[Instruction],
                     state.instr_ptr += 1;
                 }
             }
-            &MultiplyMove(ref changes) => {
+            MultiplyMove(ref changes) => {
                 // We will multiply by the current cell value.
                 let cell_value = state.cells[cell_ptr];
 
-                for (cell_offset, factor) in changes.iter() {
+                for (cell_offset, factor) in changes {
                     let dest_ptr = cell_ptr as isize + *cell_offset;
                     if dest_ptr < 0 {
                         // Tried to access a cell before cell #0.
@@ -97,15 +97,15 @@ fn execute_inner(instrs: &[Instruction],
 
                 state.instr_ptr += 1;
             }
-            &Write => {
+            Write => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value.0);
                 state.instr_ptr += 1;
             }
-            &Read => {
+            Read => {
                 return (state, Outcome::ReachedRuntimeValue);
             }
-            &Loop(ref body) => {
+            Loop(ref body) => {
                 if state.cells[state.cell_ptr as usize].0 == 0 {
                     // Step over the loop because the current cell is
                     // zero.

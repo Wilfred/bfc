@@ -174,7 +174,7 @@ fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8) -> boo
         Set(set_amount),
         Increment(increment_amount)];
     let expected = vec![Set(set_amount + increment_amount)];
-    return combine_set_and_increments(initial) == expected;
+    combine_set_and_increments(initial) == expected
 }
 
 #[quickcheck]
@@ -183,7 +183,7 @@ fn should_combine_set_and_set(set_amount_before: i8, set_amount_after: i8) -> bo
         Set(Wrapping(set_amount_before)),
         Set(Wrapping(set_amount_after))];
     let expected = vec![Set(Wrapping(set_amount_after))];
-    return combine_set_and_increments(initial) == expected;
+    combine_set_and_increments(initial) == expected
 }
 
 #[test]
@@ -219,14 +219,14 @@ fn should_remove_redundant_set_multiply() {
 
 fn is_pure(instrs: &[Instruction]) -> bool {
     for instr in instrs {
-        match instr {
-            &Loop(_) => {
+        match *instr {
+            Loop(_) => {
                 return false;
             }
-            &Read => {
+            Read => {
                 return false;
             }
-            &Write => {
+            Write => {
                 return false;
             }
             _ => (),
@@ -300,7 +300,7 @@ fn should_remove_dead_pure_code(instrs: Vec<Instruction>) -> TestResult {
     if !is_pure(&instrs) {
         return TestResult::discard();
     }
-    return TestResult::from_bool(optimize(instrs) == vec![]);
+    TestResult::from_bool(optimize(instrs) == vec![])
 }
 
 #[quickcheck]
@@ -309,7 +309,7 @@ fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
     // instructions further. If it does, we're probably running our
     // optimisations in the wrong order.
     let minimal = optimize(instrs.clone());
-    return optimize(minimal.clone()) == minimal;
+    optimize(minimal.clone()) == minimal
 }
 
 #[test]
@@ -346,7 +346,7 @@ fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
     // The result of optimize() should never increase the number of
     // instructions.
     let result = optimize(instrs.clone());
-    return count_instrs(&result) <= count_instrs(&instrs);
+    count_instrs(&result) <= count_instrs(&instrs)
 }
 
 #[test]

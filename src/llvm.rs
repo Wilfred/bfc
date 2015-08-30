@@ -473,16 +473,16 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
                             cells: LLVMValueRef,
                             cell_index_ptr: LLVMValueRef)
                             -> &'a mut LLVMBasicBlock {
-    match instr {
-        &Increment(amount) => compile_increment(amount, module, bb, cells, cell_index_ptr),
-        &Set(amount) => compile_set(amount, module, bb, cells, cell_index_ptr),
-        &MultiplyMove(ref changes) => {
+    match *instr {
+        Increment(amount) => compile_increment(amount, module, bb, cells, cell_index_ptr),
+        Set(amount) => compile_set(amount, module, bb, cells, cell_index_ptr),
+        MultiplyMove(ref changes) => {
             compile_multiply_move(changes, module, bb, cells, cell_index_ptr)
         }
-        &PointerIncrement(amount) => compile_ptr_increment(amount, module, bb, cell_index_ptr),
-        &Read => compile_read(module, bb, cells, cell_index_ptr),
-        &Write => compile_write(module, bb, cells, cell_index_ptr),
-        &Loop(ref body) => {
+        PointerIncrement(amount) => compile_ptr_increment(amount, module, bb, cell_index_ptr),
+        Read => compile_read(module, bb, cells, cell_index_ptr),
+        Write => compile_write(module, bb, cells, cell_index_ptr),
+        Loop(ref body) => {
             // TODO: we should pass arguments in a consistent order.
             compile_loop(module, bb, body, main_fn, cells, cell_index_ptr)
         }

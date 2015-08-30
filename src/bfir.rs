@@ -29,12 +29,12 @@ fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
         &Loop(ref loop_body) => {
             let _ = write!(f, "Loop");
 
-            for loop_instr in loop_body.iter() {
+            for loop_instr in loop_body {
                 let _ = write!(f, "\n");
                 fmt_with_indent(loop_instr, indent + 1, f);
             }
         }
-        instr @ _ => {
+        instr => {
             let _ = write!(f, "{:?}", instr);
         }
     }
