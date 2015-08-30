@@ -292,4 +292,4 @@ programs:
 * https://github.com/stedolan/bf.sed (simple optimisations, but
 compiles directly to asm)
 * https://github.com/matslina/bfoptimization
-
+* https://github.com/rmmh/beefit - using LuaJIT
