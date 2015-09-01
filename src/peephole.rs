@@ -97,16 +97,10 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Remove redundant code before a read.
-        match (prev_instr.clone(), instr.clone()) {
-            (Increment(_), Read) => {
-                Ok(Read)
-            },
-            (Set(_), Read) => {
-                Ok(Read)
-            },
-            _ => {
-                Err((prev_instr, instr))
-            }
+        match (prev_instr, instr) {
+            (Increment(_), Read) => Ok(Read),
+            (Set(_), Read) => Ok(Read),
+            tuple => Err(tuple)
         }
     }).map_loops(combine_before_read)
 }
@@ -166,14 +160,11 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (loop_instr @ Loop(_), &Set(Wrapping(0))) = (prev_instr.clone(), &instr) {
-            return Ok(loop_instr);
+        match (&prev_instr, &instr) {
+            (&Loop(_), &Set(Wrapping(0))) => Ok(prev_instr),
+            (&MultiplyMove(_), &Set(Wrapping(0))) => Ok(prev_instr),
+            _ => Err((prev_instr, instr))
         }
-        if let (multiply_instr @ MultiplyMove(_), &Set(Wrapping(0))) = (prev_instr.clone(), &instr) {
-            return Ok(multiply_instr);
-        }
-
-        Err((prev_instr, instr))
     }).map_loops(remove_redundant_sets_inner)
 }
 
@@ -230,45 +221,38 @@ fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
     truncated.into_iter().rev().collect()
 }
 
-/// Does this loop represent a multiplication operation?
+/// Does this loop body represent a multiplication operation?
 /// E.g. "[->>>++]" sets cell #3 to 2*cell #0.
-fn is_multiply_loop(instr: &Instruction) -> bool {
-    if let &Loop(ref body) = instr {
-        // A multiply loop may only contain increments and pointer increments.
-        for body_instr in body {
-            match *body_instr {
-                Increment(_) => {}
-                PointerIncrement(_) => {}
-                _ => return false,
-            }
+fn is_multiply_loop_body(body: &[Instruction]) -> bool {
+    // A multiply loop may only contain increments and pointer increments.
+    for body_instr in body {
+        match *body_instr {
+            Increment(_) => {}
+            PointerIncrement(_) => {}
+            _ => return false,
         }
-
-        // A multiply loop must have a net pointer movement of
-        // zero.
-        let mut net_movement = 0;
-        for body_instr in body {
-            if let PointerIncrement(amount) = *body_instr {
-                net_movement += amount;
-            }
-        }
-        if net_movement != 0 {
-            return false;
-        }
-
-        let changes = cell_changes(body);
-        // A multiply loop must decrement cell #0.
-        if let Some(&Wrapping(-1)) = changes.get(&0) {
-        } else {
-            return false;
-        }
-
-        if changes.len() < 2 {
-            return false;
-        }
-
-        return true;
     }
-    false
+
+    // A multiply loop must have a net pointer movement of
+    // zero.
+    let mut net_movement = 0;
+    for body_instr in body {
+        if let PointerIncrement(amount) = *body_instr {
+            net_movement += amount;
+        }
+    }
+    if net_movement != 0 {
+        return false;
+    }
+
+    let changes = cell_changes(body);
+    // A multiply loop must decrement cell #0.
+    if let Some(&Wrapping(-1)) = changes.get(&0) {
+    } else {
+        return false;
+    }
+
+    changes.len() >= 2
 }
 
 /// Return a hashmap of all the cells that are affected by this
@@ -299,7 +283,7 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
         match instr {
             Loop(body) => {
-                if is_multiply_loop(&Loop(body.clone())) {
+                if is_multiply_loop_body(&body) {
                     let mut changes = cell_changes(&body);
                     // MultiplyMove is for where we move to, so ignore
                     // the cell we're moving from.
