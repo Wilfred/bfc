@@ -53,10 +53,11 @@ impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
-        // TODO: combine increments with any matching offset.
-        if let &Increment { amount: prev_amount, offset: 0 } = &prev_instr {
-            if let &Increment { amount, offset: 0 } = &instr {
-                return Ok(Increment { amount: amount + prev_amount, offset: 0 });
+        if let &Increment { amount: prev_amount, offset: prev_offset } = &prev_instr {
+            if let &Increment { amount, offset } = &instr {
+                if prev_offset == offset {
+                    return Ok(Increment { amount: amount + prev_amount, offset: offset });
+                }
             }
         }
         return Err((prev_instr, instr));
