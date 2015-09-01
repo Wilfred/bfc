@@ -14,7 +14,8 @@ impl Arbitrary for Instruction {
     fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
         let i = g.next_u32();
         match i % 13 {
-            0 => Increment(Wrapping(Arbitrary::arbitrary(g))),
+            // TODO: use arbitrary offsets.
+            0 => Increment { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 },
             1 => PointerIncrement(Arbitrary::arbitrary(g)),
             2 => Set(Wrapping(Arbitrary::arbitrary(g))),
             3 => Read,
@@ -23,7 +24,7 @@ impl Arbitrary for Instruction {
             // instructions, instead of this limited range. See
             // https://github.com/BurntSushi/quickcheck/issues/23
             5 => Loop(vec![]),
-            6 => Loop(vec![Increment(Wrapping(Arbitrary::arbitrary(g)))]),
+            6 => Loop(vec![Increment { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 }]),
             7 => Loop(vec![PointerIncrement(Arbitrary::arbitrary(g))]),
             8 => Loop(vec![Set(Wrapping(Arbitrary::arbitrary(g)))]),
             9 => Loop(vec![Read]),
@@ -47,7 +48,7 @@ impl Arbitrary for Instruction {
 #[test]
 fn combine_increments_flat() {
     let initial = parse("++").unwrap();
-    let expected = vec![Increment(Wrapping(2))];
+    let expected = vec![Increment { amount: Wrapping(2), offset: 0 }];
     assert_eq!(combine_increments(initial), expected);
 }
 
@@ -61,7 +62,7 @@ fn combine_increments_unrelated() {
 #[test]
 fn combine_increments_nested() {
     let initial = parse("[++]").unwrap();
-    let expected = vec![Loop(vec![Increment(Wrapping(2))])];
+    let expected = vec![Loop(vec![Increment { amount: Wrapping(2), offset: 0 }])];
     assert_eq!(combine_increments(initial), expected);
 }
 
@@ -73,13 +74,13 @@ fn combine_increments_remove_redundant() {
 
 #[test]
 fn combine_increment_sum_to_zero() {
-    let initial = vec![Increment(Wrapping(-1)), Increment(Wrapping(1))];
+    let initial = vec![Increment { amount: Wrapping(-1), offset: 0 }, Increment { amount: Wrapping(1), offset: 0 }];
     assert_eq!(combine_increments(initial), vec![]);
 }
 
 #[test]
 fn combine_set_sum_to_zero() {
-    let initial = vec![Set(Wrapping(-1)), Increment(Wrapping(1))];
+    let initial = vec![Set(Wrapping(-1)), Increment { amount: Wrapping(1), offset: 0 }];
     assert_eq!(combine_set_and_increments(initial), vec![Set(Wrapping(0))]);
 }
 
@@ -170,9 +171,10 @@ fn should_remove_dead_loops_nested() {
 fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8) -> bool {
     let set_amount = Wrapping(set_amount);
     let increment_amount = Wrapping(increment_amount);
+    // TODO: test for a range of offsets.
     let initial = vec![
         Set(set_amount),
-        Increment(increment_amount)];
+        Increment { amount: increment_amount, offset: 0 }];
     let expected = vec![Set(set_amount + increment_amount)];
     combine_set_and_increments(initial) == expected
 }
@@ -195,7 +197,7 @@ fn should_combine_set_and_set_nested() {
 
 #[test]
 fn should_combine_increment_and_set() {
-    let initial = vec![Increment(Wrapping(2)), Set(Wrapping(3))];
+    let initial = vec![Increment { amount: Wrapping(2), offset: 0 }, Set(Wrapping(3))];
     let expected = vec![Set(Wrapping(3))];
     assert_eq!(combine_set_and_increments(initial), expected);
 }
@@ -250,7 +252,7 @@ fn should_annotate_known_zero() {
     let initial = parse("+[]").unwrap();
     let expected = vec![
         Set(Wrapping(0)),
-        Increment(Wrapping(1)),
+        Increment { amount: Wrapping(1), offset: 0 },
         Loop(vec![]),
         Set(Wrapping(0))];
     assert_eq!(annotate_known_zero(initial), expected);
@@ -315,14 +317,14 @@ fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
 #[test]
 fn pathological_optimisation_opportunity() {
     let instrs = vec![Read,
-                      Increment(Wrapping(1)),
+                      Increment { amount: Wrapping(1), offset: 0 },
                       PointerIncrement(1),
-                      Increment(Wrapping(1)),
+                      Increment { amount: Wrapping(1), offset: 0 },
                       PointerIncrement(1),
                       PointerIncrement(-1),
-                      Increment(Wrapping(-1)),
+                      Increment { amount: Wrapping(-1), offset: 0 },
                       PointerIncrement(-1),
-                      Increment(Wrapping(-1)),
+                      Increment { amount: Wrapping(-1), offset: 0 },
                       Write];
 
     let expected = vec![Read, Write];

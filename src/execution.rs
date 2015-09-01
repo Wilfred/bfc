@@ -57,8 +57,9 @@ fn execute_inner(instrs: &[Instruction],
     while state.instr_ptr < instrs.len() && steps_left > 0 {
         let cell_ptr = state.cell_ptr as usize;
         match instrs[state.instr_ptr] {
-            Increment(amount) => {
-                state.cells[cell_ptr] = state.cells[cell_ptr] + amount;
+            Increment { amount, offset } => {
+                let target_cell_ptr = (cell_ptr as isize + offset) as usize;
+                state.cells[target_cell_ptr] = state.cells[target_cell_ptr] + amount;
                 state.instr_ptr += 1;
             }
             Set(amount) => {
@@ -169,9 +170,9 @@ fn multiply_move_executed() {
     changes.insert(3, Wrapping(3));
     let instrs = vec![
         // Initial cells: [2, 1, 0, 0]
-        Increment(Wrapping(2)),
+        Increment { amount: Wrapping(2), offset: 0 },
         PointerIncrement(1),
-        Increment(Wrapping(1)),
+        Increment { amount: Wrapping(1), offset: 0 },
         PointerIncrement(-1),
 
         MultiplyMove(changes)];
@@ -188,7 +189,7 @@ fn multiply_move_wrapping() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(3));
     let instrs = vec![
-        Increment(Wrapping(100)),
+        Increment { amount: Wrapping(100), offset: 0 },
         MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
@@ -262,7 +263,8 @@ fn decrement_executed() {
 
 #[test]
 fn increment_wraps() {
-    let instrs = vec![Increment(Wrapping(-1)), Increment(Wrapping(1))];
+    let instrs = vec![Increment { amount: Wrapping(-1), offset: 0 },
+                      Increment { amount: Wrapping(1), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(

@@ -7,7 +7,7 @@ use bfir::Instruction::*;
 
 #[test]
 fn compile_loop() {
-    let result = compile_to_ir("foo", &vec![Loop(vec![Increment(Wrapping(1))])],
+    let result = compile_to_ir("foo", &vec![Loop(vec![Increment { amount: Wrapping(1), offset: 0 }])],
                                &vec![0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
@@ -292,7 +292,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment() {
-    let result = compile_to_ir("foo", &vec![Increment(Wrapping(1))], &vec![0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 0 }], &vec![0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind

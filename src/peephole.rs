@@ -53,14 +53,16 @@ impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
-        if let (&Increment(prev_amount), &Increment(amount)) = (&prev_instr, &instr) {
-            Ok(Increment(amount + prev_amount))
-        } else {
-            Err((prev_instr, instr))
+        // TODO: combine increments with any matching offset.
+        if let &Increment { amount: prev_amount, offset: 0 } = &prev_instr {
+            if let &Increment { amount, offset: 0 } = &instr {
+                return Ok(Increment { amount: amount + prev_amount, offset: 0 });
+            }
         }
+        return Err((prev_instr, instr));
     }).filter(|instr| {
         // Remove any increments of 0.
-        instr != &Increment(Wrapping(0))
+        instr != &Increment{ amount: Wrapping(0), offset: 0 }
     }).map(|instr| {
         // Combine increments in nested loops too.
         match instr {
@@ -98,7 +100,7 @@ fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Remove redundant code before a read.
         match (prev_instr, instr) {
-            (Increment(_), Read) => Ok(Read),
+            (Increment{..}, Read) => Ok(Read),
             (Set(_), Read) => Ok(Read),
             tuple => Err(tuple)
         }
@@ -109,7 +111,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
         if let &Loop(ref body) = &instr {
             // If the loop is [-]
-            if *body == vec![Increment(Wrapping(-1))] {
+            if *body == vec![Increment { amount: Wrapping(-1), offset: 0 }] {
                 return Set(Wrapping(0))
             }
         }
@@ -131,12 +133,12 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// increments.
 pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (&Increment(_), &Set(amount)) = (&prev_instr, &instr) {
+        if let (&Increment {..}, &Set(amount)) = (&prev_instr, &instr) {
             return Ok(Set(amount));
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (&Set(set_amount), &Increment(inc_amount)) = (&prev_instr, &instr) {
+        if let (&Set(set_amount), &Increment { amount: inc_amount, offset: 0 }) = (&prev_instr, &instr) {
             return Ok(Set(set_amount + inc_amount));
         }
         Err((prev_instr, instr))
@@ -219,7 +221,7 @@ fn is_multiply_loop_body(body: &[Instruction]) -> bool {
     // A multiply loop may only contain increments and pointer increments.
     for body_instr in body {
         match *body_instr {
-            Increment(_) => {}
+            Increment{..} => {}
             PointerIncrement(_) => {}
             _ => return false,
         }
@@ -256,8 +258,8 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
 
     for instr in instrs {
         match *instr {
-            Increment(amount) => {
-                let current_amount = *changes.get(&cell_index).unwrap_or(&Wrapping(0));
+            Increment{ amount, offset } => {
+                let current_amount = *changes.get(&(cell_index + offset)).unwrap_or(&Wrapping(0));
                 changes.insert(cell_index, current_amount + amount);
             }
             PointerIncrement(amount) => {
