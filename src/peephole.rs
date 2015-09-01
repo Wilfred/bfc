@@ -200,25 +200,17 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Remove code at the end of the program that has no side
 /// effects. This means we have no write commands afterwards, nor
 /// loops (which may not terminate so we should not remove).
-fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let mut seen_side_effect = false;
-    let truncated: Vec<Instruction> = instrs.into_iter().rev().skip_while(|instr| {
-        match *instr {
-            Write => {
-                seen_side_effect = true;
-            },
-            Read => {
-                seen_side_effect = true;
-            },
-            Loop(_) => {
-                seen_side_effect = true;
+fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
+    for index in (0..instrs.len()).rev() {
+        match instrs[index] {
+            Read | Write | Loop(_) => {
+                instrs.truncate(index + 1);
+                return instrs;
             }
             _ => {}
         }
-        !seen_side_effect
-    }).collect();
-
-    truncated.into_iter().rev().collect()
+    }
+    vec![]
 }
 
 /// Does this loop body represent a multiplication operation?
