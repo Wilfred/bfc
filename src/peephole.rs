@@ -32,6 +32,22 @@ fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
     remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
 }
 
+/// Defines a method on iterators to map a function over all loop bodies.
+trait MapLoopsExt: Iterator<Item=Instruction> {
+    fn map_loops<F>(&mut self, f: F) -> Vec<Instruction>
+        where F: Fn(Vec<Instruction>) -> Vec<Instruction>
+    {
+        self.map(|instr| {
+            match instr {
+                Loop(body) => Loop(f(body)),
+                other => other
+            }
+        }).collect()
+    }
+}
+
+impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
+
 /// Combine consecutive increments into a single increment
 /// instruction.
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -92,15 +108,7 @@ fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
                 Err((prev_instr, instr))
             }
         }
-    }).map(|instr| {
-        // Do the same in nested loops.
-        match instr {
-            Loop(body) => {
-                Loop(combine_before_read(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(combine_before_read)
 }
 
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -112,15 +120,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
             }
         }
         instr
-    }).map(|instr| {
-        // Simplify zeroing loops nested in other loops.
-        match instr {
-            Loop(body) => {
-                Loop(simplify_loops(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(simplify_loops)
 }
 
 /// Remove any loops where we know the current cell is zero.
@@ -130,14 +130,7 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
             return Ok(Set(Wrapping(0)));
         }
         Err((prev_instr, instr))
-    }).map(|instr| {
-        match instr {
-            Loop(body) => {
-                Loop(remove_dead_loops(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(remove_dead_loops)
 }
 
 /// Combine set instructions with other set instructions or
@@ -158,14 +151,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
             return Ok(Set(amount));
         }
         Err((prev_instr, instr))
-    }).map(|instr| {
-        match instr {
-            Loop(body) => {
-                Loop(combine_set_and_increments(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(combine_set_and_increments)
 }
 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -188,14 +174,7 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
 
         Err((prev_instr, instr))
-    }).map(|instr| {
-        match instr {
-            Loop(body) => {
-                Loop(remove_redundant_sets_inner(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(remove_redundant_sets_inner)
 }
 
 pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
