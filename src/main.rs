@@ -3,6 +3,9 @@
 
 #![warn(trivial_numeric_casts)]
 
+// TODO: enable this warning and cleanup.
+#![allow(option_unwrap_used)]
+
 extern crate libc;
 extern crate llvm_sys;
 extern crate itertools;
@@ -143,8 +146,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let llvm_opt_arg = format!("-O{}", matches.opt_str("llvm-opt").unwrap_or(String::from("3")));
 
     let llc_args = [&llvm_opt_arg[..], "-filetype=obj",
-                    llvm_ir_file.path().to_str().unwrap(),
-                    "-o", object_file.path().to_str().unwrap()];
+                    llvm_ir_file.path().to_str().expect("path not valid utf-8"),
+                    "-o", object_file.path().to_str().expect("path not valid utf-8")];
     try!(shell_command("llc", &llc_args[..]));
 
     // TODO: do path munging in executable_name().
@@ -152,7 +155,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let output_name = executable_name(bf_name.to_str().unwrap());
 
     // Link the object file.
-    let clang_args = [object_file.path().to_str().unwrap(),
+    let clang_args = [object_file.path().to_str().expect("path not valid utf-8"),
                       "-o", &output_name[..]];
     try!(shell_command("clang", &clang_args[..]));
 
