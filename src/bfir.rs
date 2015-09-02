@@ -16,7 +16,7 @@ pub enum Instruction {
     Loop(Vec<Instruction>),
     // These instruction have no direct equivalent in BF, but we
     // generate them during optimisation.
-    Set(Cell),
+    Set { amount: Cell, offset: isize },
     MultiplyMove(HashMap<isize, Cell>),
 }
 

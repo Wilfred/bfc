@@ -17,7 +17,8 @@ impl Arbitrary for Instruction {
             // TODO: use arbitrary offsets.
             0 => Increment { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 },
             1 => PointerIncrement(Arbitrary::arbitrary(g)),
-            2 => Set(Wrapping(Arbitrary::arbitrary(g))),
+            // TODO: use arbitrary offsets.
+            2 => Set { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 },
             3 => Read,
             4 => Write,
             // TODO: we should be able to generate arbitrary nested
@@ -26,7 +27,7 @@ impl Arbitrary for Instruction {
             5 => Loop(vec![]),
             6 => Loop(vec![Increment { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 }]),
             7 => Loop(vec![PointerIncrement(Arbitrary::arbitrary(g))]),
-            8 => Loop(vec![Set(Wrapping(Arbitrary::arbitrary(g)))]),
+            8 => Loop(vec![Set { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 }]),
             9 => Loop(vec![Read]),
             10 => Loop(vec![Read]),
             11 => {
@@ -80,8 +81,10 @@ fn combine_increment_sum_to_zero() {
 
 #[test]
 fn combine_set_sum_to_zero() {
-    let initial = vec![Set(Wrapping(-1)), Increment { amount: Wrapping(1), offset: 0 }];
-    assert_eq!(combine_set_and_increments(initial), vec![Set(Wrapping(0))]);
+    let initial = vec![Set { amount: Wrapping(-1), offset: 0 },
+                       Increment { amount: Wrapping(1), offset: 0 }];
+    assert_eq!(combine_set_and_increments(initial),
+               vec![Set { amount: Wrapping(0), offset: 0 }]);
 }
 
 #[test]
@@ -123,21 +126,21 @@ fn should_combine_before_read() {
 #[test]
 fn should_combine_before_read_nested() {
     let initial = parse("+[+,]").unwrap();
-    let expected = vec![Set(Wrapping(1)), Loop(vec![Read])];
+    let expected = vec![Set { amount: Wrapping(1), offset: 0 }, Loop(vec![Read])];
     assert_eq!(optimize(initial), expected);
 }
 
 #[test]
 fn simplify_zeroing_loop() {
     let initial = parse("[-]").unwrap();
-    let expected = vec![Set(Wrapping(0))];
+    let expected = vec![Set { amount: Wrapping(0), offset: 0 }];
     assert_eq!(simplify_loops(initial), expected);
 }
 
 #[test]
 fn simplify_nested_zeroing_loop() {
     let initial = parse("[[-]]").unwrap();
-    let expected = vec![Loop(vec![Set(Wrapping(0))])];
+    let expected = vec![Loop(vec![Set { amount: Wrapping(0), offset: 0 }])];
     assert_eq!(simplify_loops(initial), expected);
 }
 
@@ -153,17 +156,17 @@ fn dont_simplify_multiple_decrement_loop() {
 #[test]
 fn should_remove_dead_loops() {
     let initial = vec![
-        Set(Wrapping(0)),
+        Set { amount: Wrapping(0), offset: 0 },
         Loop(vec![]),
         Loop(vec![])];
-    let expected = vec![Set(Wrapping(0))];
+    let expected = vec![Set { amount: Wrapping(0), offset: 0 }];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
 #[test]
 fn should_remove_dead_loops_nested() {
-    let initial = vec![Loop(vec![Set(Wrapping(0)),Loop(vec![])])];
-    let expected = vec![Loop(vec![Set(Wrapping(0))])];
+    let initial = vec![Loop(vec![Set { amount: Wrapping(0), offset: 0 },Loop(vec![])])];
+    let expected = vec![Loop(vec![Set { amount: Wrapping(0), offset: 0 }])];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
@@ -173,38 +176,38 @@ fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8) -> boo
     let increment_amount = Wrapping(increment_amount);
     // TODO: test for a range of offsets.
     let initial = vec![
-        Set(set_amount),
+        Set { amount: set_amount, offset: 0 },
         Increment { amount: increment_amount, offset: 0 }];
-    let expected = vec![Set(set_amount + increment_amount)];
+    let expected = vec![Set{ amount: set_amount + increment_amount, offset: 0 }];
     combine_set_and_increments(initial) == expected
 }
 
 #[quickcheck]
 fn should_combine_set_and_set(set_amount_before: i8, set_amount_after: i8) -> bool {
     let initial = vec![
-        Set(Wrapping(set_amount_before)),
-        Set(Wrapping(set_amount_after))];
-    let expected = vec![Set(Wrapping(set_amount_after))];
+        Set { amount: Wrapping(set_amount_before), offset: 0 },
+        Set { amount: Wrapping(set_amount_after), offset: 0 }];
+    let expected = vec![Set { amount: Wrapping(set_amount_after), offset: 0 }];
     combine_set_and_increments(initial) == expected
 }
 
 #[test]
 fn should_combine_set_and_set_nested() {
-    let initial = vec![Loop(vec![Set(Wrapping(0)), Set(Wrapping(1))])];
-    let expected = vec![Loop(vec![Set(Wrapping(1))])];
+    let initial = vec![Loop(vec![Set { amount: Wrapping(0), offset: 0 }, Set { amount: Wrapping(1), offset: 0 }])];
+    let expected = vec![Loop(vec![Set { amount: Wrapping(1), offset: 0 }])];
     assert_eq!(combine_set_and_increments(initial), expected);
 }
 
 #[test]
 fn should_combine_increment_and_set() {
-    let initial = vec![Increment { amount: Wrapping(2), offset: 0 }, Set(Wrapping(3))];
-    let expected = vec![Set(Wrapping(3))];
+    let initial = vec![Increment { amount: Wrapping(2), offset: 0 }, Set { amount: Wrapping(3), offset: 0 }];
+    let expected = vec![Set { amount: Wrapping(3), offset: 0 }];
     assert_eq!(combine_set_and_increments(initial), expected);
 }
 
 #[test]
 fn should_remove_redundant_set() {
-    let initial = vec![Loop(vec![]), Set(Wrapping(0))];
+    let initial = vec![Loop(vec![]), Set { amount: Wrapping(0), offset: 0 }];
     let expected = vec![Loop(vec![])];
     assert_eq!(remove_redundant_sets(initial), expected);
 }
@@ -214,7 +217,7 @@ fn should_remove_redundant_set_multiply() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(1));
 
-    let initial = vec![MultiplyMove(changes.clone()), Set(Wrapping(0))];
+    let initial = vec![MultiplyMove(changes.clone()), Set { amount: Wrapping(0), offset: 0 }];
     let expected = vec![MultiplyMove(changes)];
     assert_eq!(remove_redundant_sets(initial), expected);
 }
@@ -241,8 +244,9 @@ fn is_pure(instrs: &[Instruction]) -> bool {
 fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
     let annotated = annotate_known_zero(instrs);
 
+    // TODO: just use a normal boolean rather than TestResult here.
     match annotated[0] {
-        Set(Wrapping(0)) => TestResult::from_bool(true),
+        Set { amount: Wrapping(0), offset: 0 } => TestResult::from_bool(true),
         _ => TestResult::from_bool(false),
     }
 }
@@ -251,10 +255,10 @@ fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
 fn should_annotate_known_zero() {
     let initial = parse("+[]").unwrap();
     let expected = vec![
-        Set(Wrapping(0)),
+        Set { amount: Wrapping(0), offset: 0 },
         Increment { amount: Wrapping(1), offset: 0 },
         Loop(vec![]),
-        Set(Wrapping(0))];
+        Set { amount: Wrapping(0), offset: 0 }];
     assert_eq!(annotate_known_zero(initial), expected);
 }
 
@@ -262,11 +266,11 @@ fn should_annotate_known_zero() {
 fn should_annotate_known_zero_nested() {
     let initial = parse("[[]]").unwrap();
     let expected = vec![
-        Set(Wrapping(0)),
+        Set { amount: Wrapping(0), offset: 0 },
         Loop(vec![
             Loop(vec![]),
-            Set(Wrapping(0))]),
-        Set(Wrapping(0))];
+            Set { amount: Wrapping(0), offset: 0 }]),
+        Set { amount: Wrapping(0), offset: 0 }];
     assert_eq!(annotate_known_zero(initial), expected);
 }
 
@@ -282,7 +286,7 @@ fn should_annotate_known_zero_cleaned_up() {
 #[test]
 fn should_preserve_set_0_in_loop() {
     // Regression test.
-    let initial = vec![Read, Loop(vec![Set(Wrapping(0))])];
+    let initial = vec![Read, Loop(vec![Set { amount: Wrapping(0), offset: 0 }])];
     assert_eq!(optimize(initial.clone()), initial);
 }
 
@@ -292,7 +296,7 @@ fn should_remove_pure_code() {
     // removed.
     let initial = parse("+.+").unwrap();
     let expected = vec![
-        Set(Wrapping(1)),
+        Set { amount: Wrapping(1), offset: 0 },
         Write];
     assert_eq!(optimize(initial), expected);
 }

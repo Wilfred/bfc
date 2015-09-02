@@ -275,6 +275,7 @@ unsafe fn compile_increment<'a>(amount: Cell,
 }
 
 unsafe fn compile_set<'a>(amount: Cell,
+                          offset: isize,
                           module: &mut Module,
                           bb: &'a mut LLVMBasicBlock,
                           cells: LLVMValueRef,
@@ -475,8 +476,12 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
                             cell_index_ptr: LLVMValueRef)
                             -> &'a mut LLVMBasicBlock {
     match *instr {
-        Increment{amount, offset} => compile_increment(amount, offset, module, bb, cells, cell_index_ptr),
-        Set(amount) => compile_set(amount, module, bb, cells, cell_index_ptr),
+        Increment { amount, offset } => {
+            compile_increment(amount, offset, module, bb, cells, cell_index_ptr)
+        },
+        Set { amount, offset } => {
+            compile_set(amount, offset, module, bb, cells, cell_index_ptr)
+        },
         MultiplyMove(ref changes) => {
             compile_multiply_move(changes, module, bb, cells, cell_index_ptr)
         }

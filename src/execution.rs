@@ -62,8 +62,9 @@ fn execute_inner(instrs: &[Instruction],
                 state.cells[target_cell_ptr] = state.cells[target_cell_ptr] + amount;
                 state.instr_ptr += 1;
             }
-            Set(amount) => {
-                state.cells[cell_ptr] = amount;
+            Set { amount, offset } => {
+                let target_cell_ptr = (cell_ptr as isize + offset) as usize;
+                state.cells[target_cell_ptr] = amount;
                 state.instr_ptr += 1;
             }
             PointerIncrement(amount) => {
@@ -230,7 +231,7 @@ fn multiply_move_offset_too_low() {
 
 #[test]
 fn set_executed() {
-    let instrs = vec![Set(Wrapping(2))];
+    let instrs = vec![Set { amount: Wrapping(2), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(
@@ -241,7 +242,7 @@ fn set_executed() {
 
 #[test]
 fn set_wraps() {
-    let instrs = vec![Set(Wrapping(-1))];
+    let instrs = vec![Set { amount: Wrapping(-1), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(

@@ -102,7 +102,7 @@ fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
         // Remove redundant code before a read.
         match (prev_instr, instr) {
             (Increment{..}, Read) => Ok(Read),
-            (Set(_), Read) => Ok(Read),
+            (Set{ offset: 0, .. }, Read) => Ok(Read),
             tuple => Err(tuple)
         }
     }).map_loops(combine_before_read)
@@ -113,7 +113,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
         if let &Loop(ref body) = &instr {
             // If the loop is [-]
             if *body == vec![Increment { amount: Wrapping(-1), offset: 0 }] {
-                return Set(Wrapping(0))
+                return Set { amount: Wrapping(0), offset: 0 }
             }
         }
         instr
@@ -122,9 +122,10 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Remove any loops where we know the current cell is zero.
 pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    // TODO: search back further if we've normalised increments.
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (&Set(Wrapping(0)), &Loop(_)) = (&prev_instr, &instr) {
-            return Ok(Set(Wrapping(0)));
+        if let (&Set { amount: Wrapping(0), offset: 0 }, &Loop(_)) = (&prev_instr, &instr) {
+            return Ok(Set { amount: Wrapping(0), offset: 0 });
         }
         Err((prev_instr, instr))
     }).map_loops(remove_dead_loops)
@@ -133,19 +134,20 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Combine set instructions with other set instructions or
 /// increments.
 pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    // TODO: Handle arbitrary offsets, or rewrite as a normalise_increments optimisation.
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (&Increment {..}, &Set(amount)) = (&prev_instr, &instr) {
-            return Ok(Set(amount));
+        if let (&Increment { offset: 0, .. }, &Set { amount, offset: 0 }) = (&prev_instr, &instr) {
+            return Ok(Set { amount: amount, offset: 0 });
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (&Set(set_amount), &Increment { amount: inc_amount, offset: 0 }) = (&prev_instr, &instr) {
-            return Ok(Set(set_amount + inc_amount));
+        if let (&Set { amount: set_amount, offset: 0 }, &Increment { amount: inc_amount, offset: 0 }) = (&prev_instr, &instr) {
+            return Ok(Set { amount: set_amount + inc_amount, offset: 0 });
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (&Set(_), &Set(amount)) = (&prev_instr, &instr) {
-            return Ok(Set(amount));
+        if let (&Set { offset: 0, .. }, &Set { amount, offset: 0 }) = (&prev_instr, &instr) {
+            return Ok(Set { amount: amount, offset: 0 });
         }
         Err((prev_instr, instr))
     }).map_loops(combine_set_and_increments)
@@ -154,7 +156,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut reduced = remove_redundant_sets_inner(instrs);
 
-    if let Some(&Set(Wrapping(0))) = reduced.first() {
+    if let Some(&Set { amount: Wrapping(0), offset: 0 }) = reduced.first() {
         reduced.remove(0);
     }
 
@@ -164,8 +166,8 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         match (&prev_instr, &instr) {
-            (&Loop(_), &Set(Wrapping(0))) => Ok(prev_instr),
-            (&MultiplyMove(_), &Set(Wrapping(0))) => Ok(prev_instr),
+            (&Loop(_), &Set{ amount: Wrapping(0), offset: 0 }) => Ok(prev_instr),
+            (&MultiplyMove(_), &Set{ amount: Wrapping(0), offset: 0}) => Ok(prev_instr),
             _ => Err((prev_instr, instr))
         }
     }).map_loops(remove_redundant_sets_inner)
@@ -176,7 +178,7 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     // Cells in BF are initialised to zero, so we know the current
     // cell is zero at the start of execution.
-    result.push(Set(Wrapping(0)));
+    result.push(Set { amount: Wrapping(0), offset: 0 });
 
     result.extend(annotate_known_zero_inner(instrs));
     result
@@ -190,7 +192,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
             // After a loop, we know the cell is currently zero.
             Loop(body) => {
                 result.push(Loop(annotate_known_zero_inner(body)));
-                result.push(Set(Wrapping(0)))
+                result.push(Set { amount: Wrapping(0), offset: 0 })
             }
             i => {
                 result.push(i);

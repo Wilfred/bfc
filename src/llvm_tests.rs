@@ -79,7 +79,8 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_set() {
-    let result = compile_to_ir("foo", &vec![Set(Wrapping(1))], &vec![0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 0 }],
+                               &vec![0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
