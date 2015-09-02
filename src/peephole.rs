@@ -32,6 +32,22 @@ fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
     remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
 }
 
+/// Defines a method on iterators to map a function over all loop bodies.
+trait MapLoopsExt: Iterator<Item=Instruction> {
+    fn map_loops<F>(&mut self, f: F) -> Vec<Instruction>
+        where F: Fn(Vec<Instruction>) -> Vec<Instruction>
+    {
+        self.map(|instr| {
+            match instr {
+                Loop(body) => Loop(f(body)),
+                other => other
+            }
+        }).collect()
+    }
+}
+
+impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
+
 /// Combine consecutive increments into a single increment
 /// instruction.
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -44,10 +60,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
     }).filter(|instr| {
         // Remove any increments of 0.
-        if let &Increment(Wrapping(0)) = instr {
-            return false;
-        }
-        true
+        instr != &Increment(Wrapping(0))
     }).map(|instr| {
         // Combine increments in nested loops too.
         match instr {
@@ -69,10 +82,7 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
     }).filter(|instr| {
         // Remove any increments of 0.
-        if let &PointerIncrement(0) = instr {
-            return false;
-        }
-        true
+        instr != &PointerIncrement(0)
     }).map(|instr| {
         // Combine increments in nested loops too.
         match instr {
@@ -87,26 +97,12 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Remove redundant code before a read.
-        match (prev_instr.clone(), instr.clone()) {
-            (Increment(_), Read) => {
-                Ok(Read)
-            },
-            (Set(_), Read) => {
-                Ok(Read)
-            },
-            _ => {
-                Err((prev_instr, instr))
-            }
+        match (prev_instr, instr) {
+            (Increment(_), Read) => Ok(Read),
+            (Set(_), Read) => Ok(Read),
+            tuple => Err(tuple)
         }
-    }).map(|instr| {
-        // Do the same in nested loops.
-        match instr {
-            Loop(body) => {
-                Loop(combine_before_read(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(combine_before_read)
 }
 
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -118,15 +114,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
             }
         }
         instr
-    }).map(|instr| {
-        // Simplify zeroing loops nested in other loops.
-        match instr {
-            Loop(body) => {
-                Loop(simplify_loops(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(simplify_loops)
 }
 
 /// Remove any loops where we know the current cell is zero.
@@ -136,14 +124,7 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
             return Ok(Set(Wrapping(0)));
         }
         Err((prev_instr, instr))
-    }).map(|instr| {
-        match instr {
-            Loop(body) => {
-                Loop(remove_dead_loops(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(remove_dead_loops)
 }
 
 /// Combine set instructions with other set instructions or
@@ -164,14 +145,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
             return Ok(Set(amount));
         }
         Err((prev_instr, instr))
-    }).map(|instr| {
-        match instr {
-            Loop(body) => {
-                Loop(combine_set_and_increments(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(combine_set_and_increments)
 }
 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -186,22 +160,12 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (loop_instr @ Loop(_), &Set(Wrapping(0))) = (prev_instr.clone(), &instr) {
-            return Ok(loop_instr);
+        match (&prev_instr, &instr) {
+            (&Loop(_), &Set(Wrapping(0))) => Ok(prev_instr),
+            (&MultiplyMove(_), &Set(Wrapping(0))) => Ok(prev_instr),
+            _ => Err((prev_instr, instr))
         }
-        if let (multiply_instr @ MultiplyMove(_), &Set(Wrapping(0))) = (prev_instr.clone(), &instr) {
-            return Ok(multiply_instr);
-        }
-
-        Err((prev_instr, instr))
-    }).map(|instr| {
-        match instr {
-            Loop(body) => {
-                Loop(remove_redundant_sets_inner(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(remove_redundant_sets_inner)
 }
 
 pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -236,66 +200,51 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Remove code at the end of the program that has no side
 /// effects. This means we have no write commands afterwards, nor
 /// loops (which may not terminate so we should not remove).
-fn remove_pure_code(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let mut seen_side_effect = false;
-    let truncated: Vec<Instruction> = instrs.into_iter().rev().skip_while(|instr| {
-        match instr {
-            &Write => {
-                seen_side_effect = true;
-            },
-            &Read => {
-                seen_side_effect = true;
-            },
-            &Loop(_) => {
-                seen_side_effect = true;
+fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
+    for index in (0..instrs.len()).rev() {
+        match instrs[index] {
+            Read | Write | Loop(_) => {
+                instrs.truncate(index + 1);
+                return instrs;
             }
             _ => {}
         }
-        !seen_side_effect
-    }).collect();
-
-    truncated.into_iter().rev().collect()
+    }
+    vec![]
 }
 
-/// Does this loop represent a multiplication operation?
+/// Does this loop body represent a multiplication operation?
 /// E.g. "[->>>++]" sets cell #3 to 2*cell #0.
-fn is_multiply_loop(instr: &Instruction) -> bool {
-    if let &Loop(ref body) = instr {
-        // A multiply loop may only contain increments and pointer increments.
-        for body_instr in body {
-            match body_instr {
-                &Increment(_) => {}
-                &PointerIncrement(_) => {}
-                _ => return false,
-            }
+fn is_multiply_loop_body(body: &[Instruction]) -> bool {
+    // A multiply loop may only contain increments and pointer increments.
+    for body_instr in body {
+        match *body_instr {
+            Increment(_) => {}
+            PointerIncrement(_) => {}
+            _ => return false,
         }
-
-        // A multiply loop must have a net pointer movement of
-        // zero.
-        let mut net_movement = 0;
-        for body_instr in body {
-            if let &PointerIncrement(amount) = body_instr {
-                net_movement += amount;
-            }
-        }
-        if net_movement != 0 {
-            return false;
-        }
-
-        let changes = cell_changes(body);
-        // A multiply loop must decrement cell #0.
-        if let Some(&Wrapping(-1)) = changes.get(&0) {
-        } else {
-            return false;
-        }
-
-        if changes.len() < 2 {
-            return false;
-        }
-
-        return true;
     }
-    false
+
+    // A multiply loop must have a net pointer movement of
+    // zero.
+    let mut net_movement = 0;
+    for body_instr in body {
+        if let PointerIncrement(amount) = *body_instr {
+            net_movement += amount;
+        }
+    }
+    if net_movement != 0 {
+        return false;
+    }
+
+    let changes = cell_changes(body);
+    // A multiply loop must decrement cell #0.
+    if let Some(&Wrapping(-1)) = changes.get(&0) {
+    } else {
+        return false;
+    }
+
+    changes.len() >= 2
 }
 
 /// Return a hashmap of all the cells that are affected by this
@@ -306,12 +255,12 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
     let mut cell_index: isize = 0;
 
     for instr in instrs {
-        match instr {
-            &Increment(amount) => {
+        match *instr {
+            Increment(amount) => {
                 let current_amount = *changes.get(&cell_index).unwrap_or(&Wrapping(0));
                 changes.insert(cell_index, current_amount + amount);
             }
-            &PointerIncrement(amount) => {
+            PointerIncrement(amount) => {
                 cell_index += amount;
             }
             // We assume this is only called from is_multiply_loop.
@@ -326,7 +275,7 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
         match instr {
             Loop(body) => {
-                if is_multiply_loop(&Loop(body.clone())) {
+                if is_multiply_loop_body(&body) {
                     let mut changes = cell_changes(&body);
                     // MultiplyMove is for where we move to, so ignore
                     // the cell we're moving from.

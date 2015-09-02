@@ -86,13 +86,13 @@ fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
 /// Return a tuple (highest cell index reached, cell index at end).
 /// If movement is unbounded, return Max.
 fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
-    match instr {
-        &PointerIncrement(amount) => if amount < 0 {
+    match *instr {
+        PointerIncrement(amount) => if amount < 0 {
             (SaturatingInt::Number(0), SaturatingInt::Number(amount as i64))
         } else {
             (SaturatingInt::Number(amount as i64), SaturatingInt::Number(amount as i64))
         },
-        &MultiplyMove(ref changes) => {
+        MultiplyMove(ref changes) => {
             let mut highest_affected = 0;
             for cell in changes.keys() {
                 if *cell > highest_affected {
@@ -101,7 +101,7 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
             }
             (SaturatingInt::Number(highest_affected as i64), SaturatingInt::Number(0))
         }
-        &Loop(ref body) => {
+        Loop(ref body) => {
             let (max_in_body, net_in_body) = overall_movement(body);
 
             match net_in_body {

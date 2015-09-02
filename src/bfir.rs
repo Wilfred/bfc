@@ -29,12 +29,12 @@ fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
         &Loop(ref loop_body) => {
             let _ = write!(f, "Loop");
 
-            for loop_instr in loop_body.iter() {
+            for loop_instr in loop_body {
                 let _ = write!(f, "\n");
                 fmt_with_indent(loop_instr, indent + 1, f);
             }
         }
-        instr @ _ => {
+        instr => {
             let _ = write!(f, "{:?}", instr);
         }
     }
@@ -50,21 +50,15 @@ impl fmt::Display for Instruction {
 /// Given a string of BF source code, parse and return our BF IR
 /// representation.
 pub fn parse(source: &str) -> Result<Vec<Instruction>, String> {
-    parse_between(source, 0, source.chars().count())
-}
+    // Instructions in the current loop (or toplevel).
+    let mut instructions = vec![];
+    // Contains the instructions of open parent loops (or toplevel),
+    // and the starting indices of the loops.
+    let mut stack = vec![];
 
-/// Parse BF source code from index `start` up to (but excluding)
-/// index `end`.
-fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instruction>, String> {
-    let chars: Vec<_> = source.chars().collect();
-    assert!(start <= end);
-    assert!(end <= chars.len());
 
-    let mut instructions = Vec::new();
-    let mut index = start;
-
-    while index < end {
-        match chars[index] {
+    for (index, c) in source.chars().enumerate() {
+        match c {
             '+' => instructions.push(Increment(Wrapping(1))),
             '-' => instructions.push(Increment(Wrapping(-1))),
             '>' => instructions.push(PointerIncrement(1)),
@@ -72,46 +66,28 @@ fn parse_between(source: &str, start: usize, end: usize) -> Result<Vec<Instructi
             ',' => instructions.push(Read),
             '.' => instructions.push(Write),
             '[' => {
-                let close_index = try!(find_close(source, index));
-                let loop_body = try!(parse_between(source, index + 1, close_index));
-                instructions.push(Loop(loop_body));
-
-                index = close_index;
+                stack.push((instructions, index));
+                instructions = vec![];
             }
             ']' => {
-                return Err(format!("Unmatched ] at index {}.", index));
+                if let Some((mut parent_instr, _)) = stack.pop() {
+                    parent_instr.push(Loop(instructions));
+                    instructions = parent_instr;
+                } else {
+                    return Err(format!("Unmatched ] at index {}.", index));
+                }
             }
             _ => (),
         }
+    }
 
-        index += 1;
+    if !stack.is_empty() {
+        // TODO: show line number
+        return Err(format!("Could not find matching ] for [ at index {}.",
+                           stack.last().unwrap().1))
     }
 
     Ok(instructions)
-}
-
-/// Find the index of the `]` that matches the `[` at `open_index`.
-fn find_close(source: &str, open_index: usize) -> Result<usize, String> {
-    assert_eq!(source.chars().nth(open_index), Some('['));
-
-    let mut nesting_depth = 0;
-    for (index, c) in source.chars().enumerate() {
-        if index < open_index {
-            continue;
-        }
-
-        match c {
-            '[' => nesting_depth += 1,
-            ']' => nesting_depth -= 1,
-            _ => (),
-        }
-
-        if nesting_depth == 0 {
-            return Ok(index)
-        }
-    }
-    // TODO: show line number
-    Err(format!("Could not find matching ] for [ at index {}.", open_index))
 }
 
 #[test]
