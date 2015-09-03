@@ -1,4 +1,4 @@
-
+use std::hash::Hash;
 use std::collections::HashMap;
 use std::num::Wrapping;
 
@@ -29,7 +29,8 @@ fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let annotated = annotate_known_zero(combined);
     let extracted = extract_multiply(annotated);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
-    remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
+    let removed = remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
+    combine_using_offsets(removed)
 }
 
 /// Defines a method on iterators to map a function over all loop bodies.
@@ -129,6 +130,69 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
         Err((prev_instr, instr))
     }).map_loops(remove_dead_loops)
+}
+
+pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    combine_sequence_using_offsets(instrs)
+}
+
+/// Given a HashMap with ordeable keys, return the values according to
+/// the key order.
+/// {2: 'foo': 1: 'bar'} => vec!['bar', 'foo']
+fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
+    let mut items: Vec<_> = map.into_iter().collect();
+    items.sort_by(|a, b| a.0.cmp(&b.0));
+    items.into_iter().map(|(_, v)| { v }).collect()
+}
+
+/// Given a BF program, combine sets/increments using offsets so we
+/// have single PointerIncrement at the end.
+pub fn combine_sequence_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut effects: HashMap<isize,Instruction> = HashMap::new();
+    let mut current_offset = 0;
+
+    for instr in instrs {
+        match instr {
+            Increment { amount: current_amount, offset: 0 } => {
+                // Get the current effect at this cell.
+                match effects.remove(&current_offset) {
+                    // If it's an increment, combine the previous
+                    // increment with this one.
+                    Some(Increment { amount: prev_amount, .. }) => {
+                        // Combine this increment with the previous one.
+                        effects.insert(current_offset,
+                                       Increment { amount: current_amount + prev_amount, offset: current_offset });
+                    },
+                    Some(Set { amount: set_amount, .. }) => {
+                        // Add this increment to the previous set.
+                        effects.insert(current_offset,
+                                       Set { amount: set_amount + current_amount, offset: current_offset });
+                    },
+                    None => {
+                        effects.insert(current_offset,
+                                       Increment { amount: current_amount, offset: current_offset });
+                    },
+                    _ => unreachable!()
+                }
+            }
+            Set { amount, offset: 0 } => {
+                // Set this current cell, replacing any sets or
+                // increments that previously occurred here.
+                effects.insert(current_offset, Set { amount: amount, offset: current_offset });
+            },
+            PointerIncrement(amount) => {
+                current_offset += amount;
+            },
+            // We assume that we were only given a Vec of
+            // Increment/Set/PointerIncrement with no offsets. It's
+            // the job of this function to create instructions with
+            // offsete.
+            _ => unreachable!()
+        }
+    }
+
+    // TODO: add pointer increment at end too.
+    ordered_values(effects)
 }
 
 /// Combine set instructions with other set instructions or

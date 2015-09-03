@@ -439,3 +439,12 @@ fn should_not_extract_multiply_with_write() {
     let instrs = parse("[+>++<.]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
+
+#[quickcheck]
+fn combine_offsets_set_after_set(before_amount: i8, after_amount: i8) -> bool {
+    // If offsets match, we should comine.
+    let instrs = vec![Set { amount: Wrapping(before_amount), offset: 0},
+                      Set { amount: Wrapping(after_amount), offset: 0 }];
+    let expected = vec![Set { amount: Wrapping(after_amount), offset: 0 }];
+    combine_using_offsets(instrs) == expected
+}
