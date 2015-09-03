@@ -100,7 +100,43 @@ entry:
   %cell_index_ptr = alloca i32
   store i32 0, i32* %cell_index_ptr
   %cell_index = load i32* %cell_index_ptr
-  %current_cell_ptr = getelementptr i8* %cells, i32 %cell_index
+  %offset_cell_index = add i32 %cell_index, 0
+  %current_cell_ptr = getelementptr i8* %cells, i32 %offset_cell_index
+  store i8 1, i8* %current_cell_ptr
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+
+    assert_eq!(result, CString::new(expected).unwrap());
+}
+
+#[test]
+fn compile_set_with_offset() {
+    let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 42 }],
+                               &vec![0; 50], 0, &vec![]);
+    let expected = "; ModuleID = \'foo\'
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+entry:
+  %cells = alloca i8, i32 50
+  %offset_cell_ptr = getelementptr i8* %cells, i32 0
+  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 50, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  %cell_index = load i32* %cell_index_ptr
+  %offset_cell_index = add i32 %cell_index, 42
+  %current_cell_ptr = getelementptr i8* %cells, i32 %offset_cell_index
   store i8 1, i8* %current_cell_ptr
   ret i32 0
 }

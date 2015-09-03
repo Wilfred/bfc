@@ -288,7 +288,12 @@ unsafe fn compile_set<'a>(amount: Cell,
                                    cell_index_ptr,
                                    module.new_string_ptr("cell_index"));
 
-    let mut indices = vec![cell_index];
+    let offset_cell_index = LLVMBuildAdd(builder.builder,
+                                         cell_index,
+                                         int32(offset as c_ulonglong),
+                                         module.new_string_ptr("offset_cell_index"));
+
+    let mut indices = vec![offset_cell_index];
     let current_cell_ptr = LLVMBuildGEP(builder.builder,
                                         cells,
                                         indices.as_mut_ptr(),
