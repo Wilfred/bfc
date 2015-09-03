@@ -219,7 +219,7 @@ fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 /// Does this loop body represent a multiplication operation?
-/// E.g. "[->>>++]" sets cell #3 to 2*cell #0.
+/// E.g. "[->>>++<<<]" sets cell #3 to 2*cell #0.
 fn is_multiply_loop_body(body: &[Instruction]) -> bool {
     // A multiply loop may only contain increments and pointer increments.
     for body_instr in body {
