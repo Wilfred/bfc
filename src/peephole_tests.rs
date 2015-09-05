@@ -440,10 +440,31 @@ fn should_not_extract_multiply_with_write() {
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
+#[test]
+fn combine_offsets_increment() {
+    let instrs = parse("+>+>").unwrap();
+    let expected = vec![Increment { amount: Wrapping(1), offset: 0 },
+                        Increment { amount: Wrapping(1), offset: 1 },
+                        PointerIncrement(2)];
+    assert_eq!(combine_using_offsets(instrs), expected);
+}
+
 #[quickcheck]
-fn combine_offsets_set_after_set(before_amount: i8, after_amount: i8) -> bool {
+fn combine_offsets_set(amount1: i8, amount2: i8) -> bool {
+    let instrs = vec![Set { amount: Wrapping(amount1), offset: 0 },
+                      PointerIncrement(-1),
+                      Set { amount: Wrapping(amount2), offset: 0 }];
+
+    let expected = vec![Set { amount: Wrapping(amount2), offset: -1 },
+                        Set { amount: Wrapping(amount1), offset: 0 },
+                        PointerIncrement(-1)];
+    combine_using_offsets(instrs) == expected
+}
+
+#[quickcheck]
+fn combine_offsets_set_same_offset(before_amount: i8, after_amount: i8) -> bool {
     // If offsets match, we should combine.
-    let instrs = vec![Set { amount: Wrapping(before_amount), offset: 0},
+    let instrs = vec![Set { amount: Wrapping(before_amount), offset: 0 },
                       Set { amount: Wrapping(after_amount), offset: 0 }];
     let expected = vec![Set { amount: Wrapping(after_amount), offset: 0 }];
     combine_using_offsets(instrs) == expected
