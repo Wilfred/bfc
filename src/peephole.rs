@@ -132,8 +132,35 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).map_loops(remove_dead_loops)
 }
 
+// TODO: remove the optimisations that this makes redundant.
+// TODO: document in README
+// TODO: recurse into nested loops.
+// TODO: update other optimisations now that we can't just
+// look at the next/previous instruction.
 pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    combine_sequence_using_offsets(instrs)
+    let mut sequence = vec![];
+    let mut result = vec![];
+
+    for instr in instrs {
+        match instr {
+            Increment{..} | Set{..} | PointerIncrement(_) => {
+                sequence.push(instr);
+            }
+            _ => {
+                if !sequence.is_empty() {
+                    result.extend(combine_sequence_using_offsets(sequence));
+                    sequence = vec![];
+                }
+                result.push(instr);
+            }
+        }
+    }
+    
+    if !sequence.is_empty() {
+        result.extend(combine_sequence_using_offsets(sequence));
+    }
+
+    result
 }
 
 /// Given a HashMap with ordeable keys, return the values according to

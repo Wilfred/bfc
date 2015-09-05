@@ -449,6 +449,19 @@ fn combine_offsets_increment() {
     assert_eq!(combine_using_offsets(instrs), expected);
 }
 
+// If there's a read instruction, we should only combine before and
+// after.
+// TODO: Read could use an offset too for further combination
+// opportunities.
+#[test]
+fn combine_offsets_read() {
+    let instrs = parse(">>,>>").unwrap();
+    let expected = vec![PointerIncrement(2),
+                        Read,
+                        PointerIncrement(2)];
+    assert_eq!(combine_using_offsets(instrs), expected);
+}
+
 #[quickcheck]
 fn combine_offsets_set(amount1: i8, amount2: i8) -> bool {
     let instrs = vec![Set { amount: Wrapping(amount1), offset: 0 },
