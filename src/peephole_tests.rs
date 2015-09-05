@@ -442,9 +442,27 @@ fn should_not_extract_multiply_with_write() {
 
 #[quickcheck]
 fn combine_offsets_set_after_set(before_amount: i8, after_amount: i8) -> bool {
-    // If offsets match, we should comine.
+    // If offsets match, we should combine.
     let instrs = vec![Set { amount: Wrapping(before_amount), offset: 0},
                       Set { amount: Wrapping(after_amount), offset: 0 }];
     let expected = vec![Set { amount: Wrapping(after_amount), offset: 0 }];
     combine_using_offsets(instrs) == expected
+}
+
+#[quickcheck]
+fn combine_offsets_pointer_increments(amount1: isize, amount2: isize) -> TestResult {
+    // Although in principle our optimisations would work outside
+    // MAX_CELL_INDEX, we restrict the range to avoid overflow.
+    if amount1 < -30000 || amount1 > 30000 || amount2 < -30000 || amount2 > 30000 {
+        return TestResult::discard();
+    }
+    // We should discard the pointer increment if the two cancel out,
+    // but we don't test that here.
+    if amount1 + amount2 == 0 {
+        return TestResult::discard();
+    }
+    
+    let instrs = vec![PointerIncrement(amount1), PointerIncrement(amount2)];
+    let expected = vec![PointerIncrement(amount1 + amount2)];
+    TestResult::from_bool(combine_using_offsets(instrs) == expected)
 }

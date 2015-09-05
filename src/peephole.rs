@@ -191,8 +191,11 @@ pub fn combine_sequence_using_offsets(instrs: Vec<Instruction>) -> Vec<Instructi
         }
     }
 
-    // TODO: add pointer increment at end too.
-    ordered_values(effects)
+    let mut results = ordered_values(effects);
+    if current_offset != 0 {
+        results.push(PointerIncrement(current_offset));
+    }
+    results
 }
 
 /// Combine set instructions with other set instructions or
