@@ -134,7 +134,6 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 // TODO: remove the optimisations that this makes redundant.
 // TODO: document in README
-// TODO: recurse into nested loops.
 // TODO: update other optimisations now that we can't just
 // look at the next/previous instruction.
 pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
@@ -151,7 +150,11 @@ pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     result.extend(combine_sequence_using_offsets(sequence));
                     sequence = vec![];
                 }
-                result.push(instr);
+                if let Loop(body) = instr {
+                    result.push(Loop(combine_using_offsets(body)));
+                } else {
+                    result.push(instr);
+                }
             }
         }
     }
