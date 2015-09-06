@@ -163,7 +163,7 @@ pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     result
 }
 
-/// Given a HashMap with ordeable keys, return the values according to
+/// Given a HashMap with orderable keys, return the values according to
 /// the key order.
 /// {2: 'foo': 1: 'bar'} => vec!['bar', 'foo']
 fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
