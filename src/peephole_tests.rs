@@ -73,6 +73,12 @@ fn combine_increments_remove_redundant() {
     assert_eq!(combine_increments(initial), vec![]);
 }
 
+#[quickcheck]
+fn combine_increments_remove_zero_any_offset(offset: isize) -> bool {
+    let initial = vec![Increment { amount: Wrapping(0), offset: offset}];
+    combine_increments(initial) == vec![]
+}
+
 #[test]
 fn combine_increment_sum_to_zero() {
     let initial = vec![Increment { amount: Wrapping(-1), offset: 0 }, Increment { amount: Wrapping(1), offset: 0 }];
