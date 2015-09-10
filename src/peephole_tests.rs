@@ -462,8 +462,6 @@ fn combine_offsets_increment_nested() {
 
 // If there's a read instruction, we should only combine before and
 // after.
-// TODO: Read could use an offset too for further combination
-// opportunities.
 #[test]
 fn combine_offsets_read() {
     let instrs = parse(">>,>>").unwrap();
