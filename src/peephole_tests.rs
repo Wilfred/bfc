@@ -484,15 +484,6 @@ fn combine_offsets_set(amount1: i8, amount2: i8) -> bool {
 }
 
 #[quickcheck]
-fn combine_offsets_set_same_offset(before_amount: i8, after_amount: i8) -> bool {
-    // If offsets match, we should combine.
-    let instrs = vec![Set { amount: Wrapping(before_amount), offset: 0 },
-                      Set { amount: Wrapping(after_amount), offset: 0 }];
-    let expected = vec![Set { amount: Wrapping(after_amount), offset: 0 }];
-    sort_by_offset(instrs) == expected
-}
-
-#[quickcheck]
 fn combine_offsets_pointer_increments(amount1: isize, amount2: isize) -> TestResult {
     // Although in principle our optimisations would work outside
     // MAX_CELL_INDEX, we restrict the range to avoid overflow.
