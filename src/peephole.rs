@@ -178,50 +178,39 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 /// Given a BF program, combine sets/increments using offsets so we
 /// have single PointerIncrement at the end.
 pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let mut effects: HashMap<isize,Instruction> = HashMap::new();
+    let mut instrs_by_offset: HashMap<isize,Vec<Instruction>> = HashMap::new();
     let mut current_offset = 0;
 
     for instr in instrs {
         match instr {
-            Increment { amount: current_amount, offset: 0 } => {
-                // Get the current effect at this cell.
-                match effects.remove(&current_offset) {
-                    // If it's an increment, combine the previous
-                    // increment with this one.
-                    Some(Increment { amount: prev_amount, .. }) => {
-                        // Combine this increment with the previous one.
-                        effects.insert(current_offset,
-                                       Increment { amount: current_amount + prev_amount, offset: current_offset });
-                    },
-                    Some(Set { amount: set_amount, .. }) => {
-                        // Add this increment to the previous set.
-                        effects.insert(current_offset,
-                                       Set { amount: set_amount + current_amount, offset: current_offset });
-                    },
-                    None => {
-                        effects.insert(current_offset,
-                                       Increment { amount: current_amount, offset: current_offset });
-                    },
-                    _ => unreachable!()
-                }
+            Increment { amount, offset } => {
+                let new_offset = offset + current_offset;
+                let same_offset_instrs = instrs_by_offset.entry(new_offset)
+                    .or_insert(vec![]);
+                same_offset_instrs.push(Increment { amount: amount, offset: new_offset});
             }
-            Set { amount, offset: 0 } => {
-                // Set this current cell, replacing any sets or
-                // increments that previously occurred here.
-                effects.insert(current_offset, Set { amount: amount, offset: current_offset });
+            Set { amount, offset } => {
+                let new_offset = offset + current_offset;
+                let same_offset_instrs = instrs_by_offset.entry(new_offset)
+                    .or_insert(vec![]);
+                same_offset_instrs.push(Set { amount: amount, offset: new_offset});
             },
             PointerIncrement(amount) => {
                 current_offset += amount;
             },
             // We assume that we were only given a Vec of
-            // Increment/Set/PointerIncrement with no offsets. It's
+            // Increment/Set/PointerIncrement instructions. It's
             // the job of this function to create instructions with
-            // offsete.
+            // offset.
             _ => unreachable!()
         }
     }
 
-    let mut results = ordered_values(effects);
+    let mut results: Vec<Instruction> = vec![];
+    for same_offset_instrs in ordered_values(instrs_by_offset) {
+        results.extend(same_offset_instrs.into_iter());
+    }
+
     if current_offset != 0 {
         results.push(PointerIncrement(current_offset));
     }
