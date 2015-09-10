@@ -30,7 +30,7 @@ fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let extracted = extract_multiply(annotated);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
     let removed = remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
-    combine_using_offsets(removed)
+    sort_by_offset(removed)
 }
 
 /// Defines a method on iterators to map a function over all loop bodies.
@@ -132,11 +132,11 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).map_loops(remove_dead_loops)
 }
 
-// TODO: remove the optimisations that this makes redundant.
+// TODO: remove combine_ptr_increments.
 // TODO: document in README
 // TODO: update other optimisations now that we can't just
 // look at the next/previous instruction.
-pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut sequence = vec![];
     let mut result = vec![];
 
@@ -147,11 +147,11 @@ pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
             }
             _ => {
                 if !sequence.is_empty() {
-                    result.extend(combine_sequence_using_offsets(sequence));
+                    result.extend(sort_sequence_by_offset(sequence));
                     sequence = vec![];
                 }
                 if let Loop(body) = instr {
-                    result.push(Loop(combine_using_offsets(body)));
+                    result.push(Loop(sort_by_offset(body)));
                 } else {
                     result.push(instr);
                 }
@@ -160,7 +160,7 @@ pub fn combine_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }
     
     if !sequence.is_empty() {
-        result.extend(combine_sequence_using_offsets(sequence));
+        result.extend(sort_sequence_by_offset(sequence));
     }
 
     result
@@ -177,7 +177,7 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 
 /// Given a BF program, combine sets/increments using offsets so we
 /// have single PointerIncrement at the end.
-pub fn combine_sequence_using_offsets(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut effects: HashMap<isize,Instruction> = HashMap::new();
     let mut current_offset = 0;
 
