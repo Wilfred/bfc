@@ -446,7 +446,7 @@ fn combine_offsets_increment() {
     let expected = vec![Increment { amount: Wrapping(1), offset: 0 },
                         Increment { amount: Wrapping(1), offset: 1 },
                         PointerIncrement(2)];
-    assert_eq!(combine_using_offsets(instrs), expected);
+    assert_eq!(sort_by_offset(instrs), expected);
 }
 
 #[test]
@@ -457,7 +457,7 @@ fn combine_offsets_increment_nested() {
             Increment { amount: Wrapping(1), offset: 0 },
             Increment { amount: Wrapping(1), offset: 1 },
             PointerIncrement(2)])];
-    assert_eq!(combine_using_offsets(instrs), expected);
+    assert_eq!(sort_by_offset(instrs), expected);
 }
 
 // If there's a read instruction, we should only combine before and
@@ -470,7 +470,7 @@ fn combine_offsets_read() {
     let expected = vec![PointerIncrement(2),
                         Read,
                         PointerIncrement(2)];
-    assert_eq!(combine_using_offsets(instrs), expected);
+    assert_eq!(sort_by_offset(instrs), expected);
 }
 
 #[quickcheck]
@@ -482,7 +482,7 @@ fn combine_offsets_set(amount1: i8, amount2: i8) -> bool {
     let expected = vec![Set { amount: Wrapping(amount2), offset: -1 },
                         Set { amount: Wrapping(amount1), offset: 0 },
                         PointerIncrement(-1)];
-    combine_using_offsets(instrs) == expected
+    sort_by_offset(instrs) == expected
 }
 
 #[quickcheck]
@@ -491,7 +491,7 @@ fn combine_offsets_set_same_offset(before_amount: i8, after_amount: i8) -> bool 
     let instrs = vec![Set { amount: Wrapping(before_amount), offset: 0 },
                       Set { amount: Wrapping(after_amount), offset: 0 }];
     let expected = vec![Set { amount: Wrapping(after_amount), offset: 0 }];
-    combine_using_offsets(instrs) == expected
+    sort_by_offset(instrs) == expected
 }
 
 #[quickcheck]
@@ -509,5 +509,5 @@ fn combine_offsets_pointer_increments(amount1: isize, amount2: isize) -> TestRes
     
     let instrs = vec![PointerIncrement(amount1), PointerIncrement(amount2)];
     let expected = vec![PointerIncrement(amount1 + amount2)];
-    TestResult::from_bool(combine_using_offsets(instrs) == expected)
+    TestResult::from_bool(sort_by_offset(instrs) == expected)
 }
