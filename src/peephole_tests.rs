@@ -419,7 +419,7 @@ fn should_not_extract_multiply_with_write() {
 }
 
 #[test]
-fn combine_offsets_increment() {
+fn sort_by_offset_increment() {
     let instrs = parse("+>+>").unwrap();
     let expected = vec![Increment { amount: Wrapping(1), offset: 0 },
                         Increment { amount: Wrapping(1), offset: 1 },
@@ -428,7 +428,7 @@ fn combine_offsets_increment() {
 }
 
 #[test]
-fn combine_offsets_increment_nested() {
+fn sort_by_offset_increment_nested() {
     let instrs = parse("[+>+>]").unwrap();
     let expected = vec![
         Loop(vec![
@@ -439,7 +439,7 @@ fn combine_offsets_increment_nested() {
 }
 
 #[test]
-fn combine_offset_remove_redundant() {
+fn sort_by_offset_remove_redundant() {
     let initial = parse("><").unwrap();
     assert_eq!(sort_by_offset(initial), vec![]);
 }
@@ -447,7 +447,7 @@ fn combine_offset_remove_redundant() {
 // If there's a read instruction, we should only combine before and
 // after.
 #[test]
-fn combine_offsets_read() {
+fn sort_by_offset_read() {
     let instrs = parse(">>,>>").unwrap();
     let expected = vec![PointerIncrement(2),
                         Read,
@@ -456,7 +456,7 @@ fn combine_offsets_read() {
 }
 
 #[quickcheck]
-fn combine_offsets_set(amount1: i8, amount2: i8) -> bool {
+fn sort_by_offset_set(amount1: i8, amount2: i8) -> bool {
     let instrs = vec![Set { amount: Wrapping(amount1), offset: 0 },
                       PointerIncrement(-1),
                       Set { amount: Wrapping(amount2), offset: 0 }];
@@ -468,7 +468,7 @@ fn combine_offsets_set(amount1: i8, amount2: i8) -> bool {
 }
 
 #[quickcheck]
-fn combine_offsets_pointer_increments(amount1: isize, amount2: isize) -> TestResult {
+fn sort_by_offset_pointer_increments(amount1: isize, amount2: isize) -> TestResult {
     // Although in principle our optimisations would work outside
     // MAX_CELL_INDEX, we restrict the range to avoid overflow.
     if amount1 < -30000 || amount1 > 30000 || amount2 < -30000 || amount2 > 30000 {
