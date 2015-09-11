@@ -484,3 +484,16 @@ fn sort_by_offset_pointer_increments(amount1: isize, amount2: isize) -> TestResu
     let expected = vec![PointerIncrement(amount1 + amount2)];
     TestResult::from_bool(sort_by_offset(instrs) == expected)
 }
+
+/// Ensure that we combine after sorting, since sorting creates new
+/// combination opportunities.
+#[test]
+fn combine_increments_after_sort() {
+    let instrs = parse(",+>+<+.").unwrap();
+    let expected = vec![
+        Read,
+        Increment { amount: Wrapping(2), offset: 0 },
+        Increment { amount: Wrapping(1), offset: 1 },
+        Write];
+    assert_eq!(optimize(instrs), expected);
+}
