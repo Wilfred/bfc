@@ -94,34 +94,6 @@ fn combine_set_sum_to_zero() {
 }
 
 #[test]
-fn combine_ptr_increments_flat() {
-    let initial = parse(">>").unwrap();
-    let expected = vec![PointerIncrement(2)];
-    assert_eq!(combine_ptr_increments(initial), expected);
-}
-
-#[test]
-fn combine_ptr_increments_unrelated() {
-    let initial = parse(">+>.").unwrap();
-    let expected = initial.clone();
-    assert_eq!(combine_ptr_increments(initial), expected);
-}
-
-#[test]
-fn combine_ptr_increments_nested() {
-    let initial = parse("[>>]").unwrap();
-    let expected = vec![Loop(vec![
-        PointerIncrement(2)])];
-    assert_eq!(combine_ptr_increments(initial), expected);
-}
-
-#[test]
-fn combine_ptr_increments_remove_redundant() {
-    let initial = parse("><").unwrap();
-    assert_eq!(combine_ptr_increments(initial), vec![]);
-}
-
-#[test]
 fn should_combine_before_read() {
     // The increment before the read is dead and can be removed.
     let initial = parse("+,.").unwrap();
@@ -464,6 +436,12 @@ fn combine_offsets_increment_nested() {
             Increment { amount: Wrapping(1), offset: 1 },
             PointerIncrement(2)])];
     assert_eq!(sort_by_offset(instrs), expected);
+}
+
+#[test]
+fn combine_offset_remove_redundant() {
+    let initial = parse("><").unwrap();
+    assert_eq!(sort_by_offset(initial), vec![]);
 }
 
 // If there's a read instruction, we should only combine before and

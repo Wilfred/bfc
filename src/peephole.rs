@@ -25,7 +25,7 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Apply all our peephole optimisations once and return the result.
 fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let combined = combine_ptr_increments(combine_increments(instrs));
+    let combined = combine_increments(instrs);
     let annotated = annotate_known_zero(combined);
     let extracted = extract_multiply(annotated);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
@@ -76,28 +76,6 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).collect()
 }
 
-pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        // Collapse consecutive increments.
-        if let (&PointerIncrement(prev_amount), &PointerIncrement(amount)) = (&prev_instr, &instr) {
-            Ok(PointerIncrement(amount + prev_amount))
-        } else {
-            Err((prev_instr, instr))
-        }
-    }).filter(|instr| {
-        // Remove any increments of 0.
-        instr != &PointerIncrement(0)
-    }).map(|instr| {
-        // Combine increments in nested loops too.
-        match instr {
-            Loop(body) => {
-                Loop(combine_ptr_increments(body))
-            },
-            i => i
-        }
-    }).collect()
-}
-
 fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Remove redundant code before a read.
@@ -132,7 +110,6 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).map_loops(remove_dead_loops)
 }
 
-// TODO: remove combine_ptr_increments.
 // TODO: document in README
 // TODO: update other optimisations now that we can't just
 // look at the next/previous instruction.
