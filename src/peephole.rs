@@ -64,7 +64,10 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
         return Err((prev_instr, instr));
     }).filter(|instr| {
         // Remove any increments of 0.
-        instr != &Increment{ amount: Wrapping(0), .. }
+        if let &Increment{ amount: Wrapping(0), .. } = instr {
+            return true;
+        }
+        false
     }).map(|instr| {
         // Combine increments in nested loops too.
         match instr {
