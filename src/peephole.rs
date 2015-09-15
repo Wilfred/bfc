@@ -247,18 +247,23 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Combine set instructions with other set instructions or
 /// increments.
 pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    // TODO: Handle arbitrary offsets, or rewrite as a normalise_increments optimisation.
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (&Increment { offset: 0, .. }, &Set { amount, offset: 0 }) = (&prev_instr, &instr) {
-            return Ok(Set { amount: amount, offset: 0 });
+        if let (&Increment { offset: inc_offset, .. }, &Set { amount: set_amount, offset: set_offset }) = (&prev_instr, &instr) {
+            if inc_offset == set_offset {
+                return Ok(Set { amount: set_amount, offset: set_offset });
+            }
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (&Set { amount: set_amount, offset: 0 }, &Increment { amount: inc_amount, offset: 0 }) = (&prev_instr, &instr) {
-            return Ok(Set { amount: set_amount + inc_amount, offset: 0 });
+        if let (&Set { amount: set_amount, offset: set_offset }, &Increment { amount: inc_amount, offset: inc_offset }) = (&prev_instr, &instr) {
+            // TODO: add tests for the != case.
+            if inc_offset == set_offset {
+                return Ok(Set { amount: set_amount + inc_amount, offset: set_offset });
+            }
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
+        // TODO: arbitrary offsets here too.
         if let (&Set { offset: 0, .. }, &Set { amount, offset: 0 }) = (&prev_instr, &instr) {
             return Ok(Set { amount: amount, offset: 0 });
         }

@@ -149,14 +149,14 @@ fn should_remove_dead_loops_nested() {
 }
 
 #[quickcheck]
-fn should_combine_set_and_increment(set_amount: i8, increment_amount: i8) -> bool {
+fn should_combine_set_and_increment(offset: isize, set_amount: i8, increment_amount: i8) -> bool {
     let set_amount = Wrapping(set_amount);
     let increment_amount = Wrapping(increment_amount);
-    // TODO: test for a range of offsets.
+
     let initial = vec![
-        Set { amount: set_amount, offset: 0 },
-        Increment { amount: increment_amount, offset: 0 }];
-    let expected = vec![Set{ amount: set_amount + increment_amount, offset: 0 }];
+        Set { amount: set_amount, offset: offset },
+        Increment { amount: increment_amount, offset: offset }];
+    let expected = vec![Set{ amount: set_amount + increment_amount, offset: offset }];
     combine_set_and_increments(initial) == expected
 }
 
@@ -176,10 +176,10 @@ fn should_combine_set_and_set_nested() {
     assert_eq!(combine_set_and_increments(initial), expected);
 }
 
-#[test]
-fn should_combine_increment_and_set() {
-    let initial = vec![Increment { amount: Wrapping(2), offset: 0 }, Set { amount: Wrapping(3), offset: 0 }];
-    let expected = vec![Set { amount: Wrapping(3), offset: 0 }];
+#[quickcheck]
+fn should_combine_increment_and_set(offset: isize) {
+    let initial = vec![Increment { amount: Wrapping(2), offset: offset }, Set { amount: Wrapping(3), offset: offset }];
+    let expected = vec![Set { amount: Wrapping(3), offset: offset }];
     assert_eq!(combine_set_and_increments(initial), expected);
 }
 
