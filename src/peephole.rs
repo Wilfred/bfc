@@ -49,6 +49,53 @@ trait MapLoopsExt: Iterator<Item=Instruction> {
 
 impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 
+/// Given an index into a vector of instructions, find the previous
+/// instruction that modified the current cell. If we're unsure, or
+/// there isn't one, return None.
+///
+/// Note this ignores offsets of the instruction at the index. E.g. if
+/// that instruction is Set{amount:100, offset: 1}, we're still
+/// considering previous instructions that modify the current cell,
+/// not the (cell_index + 1)th cell.
+pub fn previous_cell_change(instrs: Vec<Instruction>, index: usize) -> Option<Instruction> {
+    assert!(index < instrs.len());
+
+    let mut needed_offset = 0;
+    for i in (0..index).rev() {
+        match instrs[i] {
+            Increment { amount, offset} => {
+                if offset == needed_offset {
+                    return Some(Increment { amount: amount, offset: offset })
+                }
+            }
+            Set { amount, offset} => {
+                if offset == needed_offset {
+                    return Some(Set { amount: amount, offset: offset })
+                }
+            }
+            PointerIncrement(amount) => {
+                needed_offset += amount;
+            }
+            MultiplyMove(ref changes) => {
+                // These cells are written to.
+                let mut offsets: Vec<isize> = changes.keys().into_iter().map(|offset| { *offset }).collect();
+                // This cell is zeroed.
+                offsets.push(0);
+                
+                if offsets.contains(&needed_offset) {
+                    return Some(MultiplyMove(changes.clone()));
+                }
+            }
+            // No cells changed, so just keep working backwards.
+            Write => {}
+            // These instructions may have modified the cell, so
+            // we return None for "I don't know".
+            Read | Loop(_) => return None,
+        }
+    }
+    None
+}
+
 /// Combine consecutive increments into a single increment
 /// instruction.
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
