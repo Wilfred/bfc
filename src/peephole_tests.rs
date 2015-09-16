@@ -161,6 +161,36 @@ fn should_combine_set_and_increment(offset: isize, set_amount: i8, increment_amo
 }
 
 #[quickcheck]
+fn combine_set_and_increment_different_offsets(set_offset: isize, set_amount: i8,
+                                               inc_offset: isize, inc_amount: i8) -> TestResult {
+    if set_offset == inc_offset {
+        return TestResult::discard();
+    }
+
+    let initial = vec![
+        Set { amount: Wrapping(set_amount), offset: set_offset },
+        Increment { amount: Wrapping(inc_amount), offset: inc_offset }];
+    let expected = initial.clone();
+
+    TestResult::from_bool(combine_set_and_increments(initial) == expected)
+}
+
+#[quickcheck]
+fn combine_increment_and_set_different_offsets(set_offset: isize, set_amount: i8,
+                                               inc_offset: isize, inc_amount: i8) -> TestResult {
+    if set_offset == inc_offset {
+        return TestResult::discard();
+    }
+
+    let initial = vec![
+        Increment { amount: Wrapping(inc_amount), offset: inc_offset },
+        Set { amount: Wrapping(set_amount), offset: set_offset }];
+    let expected = initial.clone();
+
+    TestResult::from_bool(combine_set_and_increments(initial) == expected)
+}
+
+#[quickcheck]
 fn should_combine_set_and_set(set_amount_before: i8, set_amount_after: i8) -> bool {
     let initial = vec![
         Set { amount: Wrapping(set_amount_before), offset: 0 },

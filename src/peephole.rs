@@ -256,7 +256,6 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
         if let (&Set { amount: set_amount, offset: set_offset }, &Increment { amount: inc_amount, offset: inc_offset }) = (&prev_instr, &instr) {
-            // TODO: add tests for the != case.
             if inc_offset == set_offset {
                 return Ok(Set { amount: set_amount + inc_amount, offset: set_offset });
             }
