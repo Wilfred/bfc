@@ -262,9 +262,10 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        // TODO: arbitrary offsets here too.
-        if let (&Set { offset: 0, .. }, &Set { amount, offset: 0 }) = (&prev_instr, &instr) {
-            return Ok(Set { amount: amount, offset: 0 });
+        if let (&Set { offset: offset1, .. }, &Set { amount, offset: offset2 }) = (&prev_instr, &instr) {
+            if offset1 == offset2 {
+                return Ok(Set { amount: amount, offset: offset1 });
+            }
         }
         Err((prev_instr, instr))
     }).map_loops(combine_set_and_increments)
