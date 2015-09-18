@@ -115,15 +115,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
             return false;
         }
         true
-    }).map(|instr| {
-        // Combine increments in nested loops too.
-        match instr {
-            Loop(body) => {
-                Loop(combine_increments(body))
-            },
-            i => i
-        }
-    }).collect()
+    }).map_loops(combine_increments)
 }
 
 fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
