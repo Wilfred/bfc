@@ -561,7 +561,7 @@ fn prev_mutate_loop() {
 fn prev_mutate_increment() {
     let instrs = vec![Increment { amount: Wrapping(1), offset: 0}, Read];
     assert_eq!(previous_cell_change(instrs, 1),
-               Some(Increment { amount: Wrapping(1), offset: 0}));
+               Some(0));
 }
 
 #[test]
@@ -571,7 +571,7 @@ fn prev_mutate_ignores_offset_at_index() {
         // The fact that this instruction is at offset 1 should be irrelevant.
         Increment { amount: Wrapping(2), offset: 1}];
     assert_eq!(previous_cell_change(instrs, 1),
-               Some(Increment { amount: Wrapping(1), offset: 0}));
+               Some(0));
 }
 
 #[test]
@@ -584,7 +584,7 @@ fn prev_mutate_multiply_offset_matches() {
         PointerIncrement(-1),
         Read];
     assert_eq!(previous_cell_change(instrs, 2),
-               Some(MultiplyMove(changes)));
+               Some(0));
 }
 
 #[test]
@@ -608,7 +608,7 @@ fn prev_mutate_multiply_ignore_offset() {
 
     let instrs = vec![MultiplyMove(changes.clone()), Read];
     assert_eq!(previous_cell_change(instrs, 1),
-               Some(MultiplyMove(changes)));
+               Some(0));
 }
 
 #[test]
@@ -624,7 +624,7 @@ fn prev_mutate_increment_matching_offset() {
         Increment { amount: Wrapping(10), offset: 1},
         Read];
     assert_eq!(previous_cell_change(instrs, 2),
-               Some(Increment { amount: Wrapping(1), offset: 0}));
+               Some(0));
 }
 
 #[test]
@@ -634,7 +634,7 @@ fn prev_mutate_ignore_write() {
         Write,
         Read];
     assert_eq!(previous_cell_change(instrs, 2),
-               Some(Increment { amount: Wrapping(1), offset: 0}));
+               Some(0));
 }
 
 #[test]
@@ -644,12 +644,12 @@ fn prev_mutate_consider_pointer_increment() {
         PointerIncrement(1),
         Read];
     assert_eq!(previous_cell_change(instrs, 2),
-               Some(Increment { amount: Wrapping(1), offset: 1}));
+               Some(0));
 }
 
 #[test]
 fn prev_mutate_set() {
     let instrs = vec![Set { amount: Wrapping(1), offset: 0}, Read];
     assert_eq!(previous_cell_change(instrs, 1),
-               Some(Set { amount: Wrapping(1), offset: 0}));
+               Some(0));
 }

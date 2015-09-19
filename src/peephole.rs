@@ -49,28 +49,28 @@ trait MapLoopsExt: Iterator<Item=Instruction> {
 
 impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 
-/// Given an index into a vector of instructions, find the previous
-/// instruction that modified the current cell. If we're unsure, or
-/// there isn't one, return None.
+/// Given an index into a vector of instructions, find the index of
+/// the previous instruction that modified the current cell. If we're
+/// unsure, or there isn't one, return None.
 ///
 /// Note this ignores offsets of the instruction at the index. E.g. if
 /// that instruction is Set{amount:100, offset: 1}, we're still
 /// considering previous instructions that modify the current cell,
 /// not the (cell_index + 1)th cell.
-pub fn previous_cell_change(instrs: Vec<Instruction>, index: usize) -> Option<Instruction> {
+pub fn previous_cell_change(instrs: Vec<Instruction>, index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
     for i in (0..index).rev() {
         match instrs[i] {
-            Increment { amount, offset} => {
+            Increment { offset, .. } => {
                 if offset == needed_offset {
-                    return Some(Increment { amount: amount, offset: offset })
+                    return Some(i)
                 }
             }
-            Set { amount, offset} => {
+            Set { offset, .. } => {
                 if offset == needed_offset {
-                    return Some(Set { amount: amount, offset: offset })
+                    return Some(i)
                 }
             }
             PointerIncrement(amount) => {
@@ -83,7 +83,7 @@ pub fn previous_cell_change(instrs: Vec<Instruction>, index: usize) -> Option<In
                 offsets.push(0);
                 
                 if offsets.contains(&needed_offset) {
-                    return Some(MultiplyMove(changes.clone()));
+                    return Some(i);
                 }
             }
             // No cells changed, so just keep working backwards.
