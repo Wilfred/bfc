@@ -251,6 +251,9 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Combine set instructions with other set instructions or
 /// increments.
 pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    // It's sufficient to consider immediately adjacent instructions
+    // as sort_sequence_by_offset ensures that if the offset is the
+    // same, the instruction is adjacent.
     instrs.into_iter().coalesce(|prev_instr, instr| {
         if let (&Increment { offset: inc_offset, .. }, &Set { amount: set_amount, offset: set_offset }) = (&prev_instr, &instr) {
             if inc_offset == set_offset {
@@ -286,6 +289,7 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    // TODO: use previous_cell_change here.
     instrs.into_iter().coalesce(|prev_instr, instr| {
         match (&prev_instr, &instr) {
             (&Loop(_), &Set{ amount: Wrapping(0), offset: 0 }) => Ok(prev_instr),
