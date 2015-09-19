@@ -147,19 +147,45 @@ fn dont_simplify_multiple_decrement_loop() {
 }
 
 #[test]
-fn should_remove_dead_loops() {
+fn remove_repeated_loops() {
+    let initial = vec![
+        Set { amount: Wrapping(1), offset: 0 },
+        Loop(vec![]),
+        Loop(vec![])];
+    let expected = vec![
+        Set { amount: Wrapping(1), offset: 0 },
+        Loop(vec![])];
+    assert_eq!(optimize(initial), expected);
+}
+
+#[test]
+fn remove_dead_loops_after_set() {
     let initial = vec![
         Set { amount: Wrapping(0), offset: 0 },
-        Loop(vec![]),
         Loop(vec![])];
     let expected = vec![Set { amount: Wrapping(0), offset: 0 }];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
 #[test]
-fn should_remove_dead_loops_nested() {
-    let initial = vec![Loop(vec![Set { amount: Wrapping(0), offset: 0 },Loop(vec![])])];
-    let expected = vec![Loop(vec![Set { amount: Wrapping(0), offset: 0 }])];
+fn remove_dead_loops_nested() {
+    let initial = vec![Loop(vec![
+        Set { amount: Wrapping(0), offset: 0 },
+        Loop(vec![])])];
+    let expected = vec![Loop(vec![
+        Set { amount: Wrapping(0), offset: 0 }])];
+    assert_eq!(remove_dead_loops(initial), expected);
+}
+
+#[test]
+fn remove_dead_loops_not_adjacent() {
+    let initial = vec![
+        Set { amount: Wrapping(0), offset: 0 },
+        Set { amount: Wrapping(1), offset: 1 },
+        Loop(vec![])];
+    let expected = vec![
+        Set { amount: Wrapping(0), offset: 0 },
+        Set { amount: Wrapping(1), offset: 1 }];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 

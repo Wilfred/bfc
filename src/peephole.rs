@@ -155,18 +155,28 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Remove any loops where we know the current cell is zero.
 pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    // TODO: search back further if we've normalised increments.
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (&Set { amount: Wrapping(0), offset: 0 }, &Loop(_)) = (&prev_instr, &instr) {
-            return Ok(Set { amount: Wrapping(0), offset: 0 });
+    instrs.clone().into_iter().enumerate().filter(|&(index, ref instr)| {
+        match *instr {
+            Loop(_) => {}
+            // Keep all instructions that aren't loops.
+            _ => { return true; }
         }
-        Err((prev_instr, instr))
+
+        // Find the previous change instruction:
+        if let Some(prev_change_index) = previous_cell_change(&instrs, index) {
+            let prev_instr = &instrs[prev_change_index];
+            // If the previous instruction set to zero, our loop is dead.
+            if prev_instr == &(Set { amount: Wrapping(0), offset: 0 }) {
+                return false;
+            }
+        }
+        true
+    }).map(|(_, instr)| {
+        instr
     }).map_loops(remove_dead_loops)
 }
 
 // TODO: document in README
-// TODO: update other optimisations now that we can't just
-// look at the next/previous instruction.
 pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut sequence = vec![];
     let mut result = vec![];
@@ -281,6 +291,8 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut reduced = remove_redundant_sets_inner(instrs);
 
+    // Remove a set zero at the beginning of the program, since cells
+    // are initialised to zero anyway.
     if let Some(&Set { amount: Wrapping(0), offset: 0 }) = reduced.first() {
         reduced.remove(0);
     }
