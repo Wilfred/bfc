@@ -1,5 +1,5 @@
 use std::hash::Hash;
-use std::collections::HashMap;
+use std::collections::{HashMap,HashSet};
 use std::num::Wrapping;
 
 use itertools::Itertools;
@@ -119,13 +119,25 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        // Remove redundant code before a read.
-        match (prev_instr, instr) {
-            (Increment{ offset: 0, ..}, Read) => Ok(Read),
-            (Set{ offset: 0, .. }, Read) => Ok(Read),
-            tuple => Err(tuple)
+    let mut redundant_instr_positions = HashSet::new();
+
+    for (index, instr) in instrs.iter().enumerate() {
+        match *instr {
+            Read => {
+                // If we modified this cell before the read, just
+                // discard that instruction, because it's redundant.
+                if let Some(prev_index) = previous_cell_change(&instrs, index) {
+                    redundant_instr_positions.insert(prev_index);
+                }
+            }
+            _ => {}
         }
+    }
+
+    instrs.into_iter().enumerate().filter(|&(index, _)| {
+        !redundant_instr_positions.contains(&index)
+    }).map(|(_, instr)| {
+        instr
     }).map_loops(combine_before_read)
 }
 

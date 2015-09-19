@@ -159,6 +159,20 @@ Read
 
 ```
 
+We track the current cell position in straight-line code. If we can
+determine the last instruction to modify the current cell, it doesn't
+need to be immediately previous. For example, `+>-<,`:
+
+```
+                   Combine
+Increment 1          =>   PointerIncrement 1
+PointerIncrement 1        Increment -1
+Increment -1              PointerIncrement -1
+PointerIncrement -1       Read
+Read
+
+```
+
 ### Loop Simplification
 
 `[-]` is a common BF idiom for zeroing cells. We replace that with

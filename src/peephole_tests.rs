@@ -116,6 +116,14 @@ fn should_combine_before_read_nested() {
 }
 
 #[test]
+fn combine_before_read_not_consecutive() {
+    // The increment before the read is dead and can be removed.
+    let initial = parse("+>-<,").unwrap();
+    let expected = parse(">-<,").unwrap();
+    assert_eq!(combine_before_read(initial), expected);
+}
+
+#[test]
 fn simplify_zeroing_loop() {
     let initial = parse("[-]").unwrap();
     let expected = vec![Set { amount: Wrapping(0), offset: 0 }];
