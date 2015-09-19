@@ -118,11 +118,11 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).map_loops(combine_increments)
 }
 
-fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Remove redundant code before a read.
         match (prev_instr, instr) {
-            (Increment{..}, Read) => Ok(Read),
+            (Increment{ offset: 0, ..}, Read) => Ok(Read),
             (Set{ offset: 0, .. }, Read) => Ok(Read),
             tuple => Err(tuple)
         }

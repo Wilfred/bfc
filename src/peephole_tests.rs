@@ -102,6 +102,13 @@ fn should_combine_before_read() {
 }
 
 #[test]
+fn dont_combine_before_read_different_offset() {
+    let initial = vec![
+        Increment { amount: Wrapping(1), offset: 2}, Read];
+    assert_eq!(combine_before_read(initial.clone()), initial);
+}
+
+#[test]
 fn should_combine_before_read_nested() {
     let initial = parse("+[+,]").unwrap();
     let expected = vec![Set { amount: Wrapping(1), offset: 0 }, Loop(vec![Read])];
