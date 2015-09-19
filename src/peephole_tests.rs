@@ -554,13 +554,13 @@ fn prev_mutate_loop() {
     // If we see a loop, we don't know when the current cell was last
     // mutate.
     let instrs = vec![Loop(vec![]), Read];
-    assert_eq!(previous_cell_change(instrs, 1), None);
+    assert_eq!(previous_cell_change(&instrs, 1), None);
 }
 
 #[test]
 fn prev_mutate_increment() {
     let instrs = vec![Increment { amount: Wrapping(1), offset: 0}, Read];
-    assert_eq!(previous_cell_change(instrs, 1),
+    assert_eq!(previous_cell_change(&instrs, 1),
                Some(0));
 }
 
@@ -570,7 +570,7 @@ fn prev_mutate_ignores_offset_at_index() {
         Increment { amount: Wrapping(1), offset: 0},
         // The fact that this instruction is at offset 1 should be irrelevant.
         Increment { amount: Wrapping(2), offset: 1}];
-    assert_eq!(previous_cell_change(instrs, 1),
+    assert_eq!(previous_cell_change(&instrs, 1),
                Some(0));
 }
 
@@ -583,7 +583,7 @@ fn prev_mutate_multiply_offset_matches() {
         MultiplyMove(changes.clone()),
         PointerIncrement(-1),
         Read];
-    assert_eq!(previous_cell_change(instrs, 2),
+    assert_eq!(previous_cell_change(&instrs, 2),
                Some(0));
 }
 
@@ -596,7 +596,7 @@ fn prev_mutate_multiply_offset_doesnt_match() {
         MultiplyMove(changes.clone()),
         PointerIncrement(2),
         Read];
-    assert_eq!(previous_cell_change(instrs, 2), None);
+    assert_eq!(previous_cell_change(&instrs, 2), None);
 }
 
 /// MultiplyMove zeroes the current cell, so it counts as a mutation
@@ -607,14 +607,14 @@ fn prev_mutate_multiply_ignore_offset() {
     changes.insert(1, Wrapping(-1));
 
     let instrs = vec![MultiplyMove(changes.clone()), Read];
-    assert_eq!(previous_cell_change(instrs, 1),
+    assert_eq!(previous_cell_change(&instrs, 1),
                Some(0));
 }
 
 #[test]
 fn prev_mutate_no_predecessors() {
     let instrs = vec![Read];
-    assert_eq!(previous_cell_change(instrs, 0), None);
+    assert_eq!(previous_cell_change(&instrs, 0), None);
 }
 
 #[test]
@@ -623,7 +623,7 @@ fn prev_mutate_increment_matching_offset() {
         Increment { amount: Wrapping(1), offset: 0},
         Increment { amount: Wrapping(10), offset: 1},
         Read];
-    assert_eq!(previous_cell_change(instrs, 2),
+    assert_eq!(previous_cell_change(&instrs, 2),
                Some(0));
 }
 
@@ -633,7 +633,7 @@ fn prev_mutate_ignore_write() {
         Increment { amount: Wrapping(1), offset: 0},
         Write,
         Read];
-    assert_eq!(previous_cell_change(instrs, 2),
+    assert_eq!(previous_cell_change(&instrs, 2),
                Some(0));
 }
 
@@ -643,13 +643,13 @@ fn prev_mutate_consider_pointer_increment() {
         Increment { amount: Wrapping(1), offset: 1},
         PointerIncrement(1),
         Read];
-    assert_eq!(previous_cell_change(instrs, 2),
+    assert_eq!(previous_cell_change(&instrs, 2),
                Some(0));
 }
 
 #[test]
 fn prev_mutate_set() {
     let instrs = vec![Set { amount: Wrapping(1), offset: 0}, Read];
-    assert_eq!(previous_cell_change(instrs, 1),
+    assert_eq!(previous_cell_change(&instrs, 1),
                Some(0));
 }

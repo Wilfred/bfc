@@ -57,7 +57,7 @@ impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 /// that instruction is Set{amount:100, offset: 1}, we're still
 /// considering previous instructions that modify the current cell,
 /// not the (cell_index + 1)th cell.
-pub fn previous_cell_change(instrs: Vec<Instruction>, index: usize) -> Option<usize> {
+pub fn previous_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
