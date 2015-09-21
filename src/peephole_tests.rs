@@ -687,3 +687,20 @@ fn prev_mutate_set() {
     assert_eq!(previous_cell_change(&instrs, 1),
                Some(0));
 }
+
+#[test]
+fn next_mutate_loop() {
+    // If we see a loop, we don't know when the current cell is next
+    // mutated.
+    let instrs = vec![Read, Loop(vec![])];
+    assert_eq!(next_cell_change(&instrs, 0), None);
+}
+
+#[test]
+fn next_mutate_increment() {
+    let instrs = vec![Read,
+                      Increment{ amount: Wrapping(1), offset: -1},
+                      Increment{ amount: Wrapping(1), offset: 0}];
+    assert_eq!(next_cell_change(&instrs, 0), Some(2));
+}
+

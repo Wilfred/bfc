@@ -96,6 +96,18 @@ pub fn previous_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<u
     None
 }
 
+/// Inverse of previous_cell_change.
+pub fn next_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
+    let mut instrs = instrs.clone();
+    instrs.reverse();
+    let max_index = instrs.len() - 1;
+    if let Some(previous_index) = previous_cell_change(&instrs, max_index - index) {
+        Some(max_index - previous_index)
+    } else {
+        None
+    }
+}
+
 /// Combine consecutive increments into a single increment
 /// instruction.
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
