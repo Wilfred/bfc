@@ -74,7 +74,7 @@ unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
 
 unsafe fn add_function(module: &mut Module,
                        fn_name: &str,
-                       args: &mut Vec<LLVMTypeRef>,
+                       args: &mut [LLVMTypeRef],
                        ret_type: LLVMTypeRef) {
     let fn_type =
         LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, LLVM_FALSE);
@@ -101,11 +101,10 @@ unsafe fn add_c_declarations(module: &mut Module) {
     add_function(module, "getchar", &mut vec![], LLVMInt32Type());
 }
 
-// TODO: take slice here rather than Vec.
 unsafe fn add_function_call(module: &mut Module,
                             bb: &mut LLVMBasicBlock,
                             fn_name: &str,
-                            args: &mut Vec<LLVMValueRef>,
+                            args: &mut [LLVMValueRef],
                             name: &str)
                             -> LLVMValueRef {
     let builder = Builder::new();
