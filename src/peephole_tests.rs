@@ -316,14 +316,9 @@ fn is_pure(instrs: &[Instruction]) -> bool {
 }
 
 #[quickcheck]
-fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> TestResult {
+fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> bool {
     let annotated = annotate_known_zero(instrs);
-
-    // TODO: just use a normal boolean rather than TestResult here.
-    match annotated[0] {
-        Set { amount: Wrapping(0), offset: 0 } => TestResult::from_bool(true),
-        _ => TestResult::from_bool(false),
-    }
+    annotated[0] == Set { amount: Wrapping(0), offset: 0 }
 }
 
 #[test]
