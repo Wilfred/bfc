@@ -109,19 +109,6 @@ If increments/decrements cancel out, we remove them entirely.
           Increment -1
 ```
 
-We do the same thing for data increments/decrements:
-
-```
-   Compile                Combine
->>>  =>   DataIncrement 1   =>   DataIncrement 3
-          DataIncrement 1
-          DataIncrement 1
-
-   Compile                 Combine
-><   =>   DataIncrement  1    =>   # nothing!
-          DataIncrement -1
-```
-
 We do the same thing for successive sets:
 
 ```
@@ -238,6 +225,32 @@ We also remove dead code at the end of a program.
         Remove pure code
 Write         =>           Write
 Increment 1
+```
+
+### Reorder with offsets
+
+Given a sequence of instructions without loops or I/O, we can safely
+reorder them to have the same effect (we assume no out-of-bound cell
+access).
+
+This enables us to combine pointer operations:
+
+```
+    Compile                   Reorder
+>+>   =>   PointerIncrement 1   =>    Increment 1 (offset 1)
+           Increment 1                PointerIncrement 2
+           PointerIncrement 1
+```
+
+We also ensure we modify cells in a consistent order, to aid cache
+locality. For example, `>+<+>>+` writes to cell #1, then cell #0, then
+cell #2. We reorder these instructions to obtain:
+
+```
+Increment 1 (offset 0)
+Increment 1 (offset 1)
+Increment 1 (offset 2)
+PointerIncrement 2
 ```
 
 ## Cell Bounds Analysis

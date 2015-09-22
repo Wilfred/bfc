@@ -188,7 +188,13 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }).map_loops(remove_dead_loops)
 }
 
-// TODO: document in README
+/// Reorder flat sequences of instructions so we use offsets and only
+/// have one pointer increment at the end. For example, given "+>+>+<"
+/// we return:
+/// Increment { amount: 1, offset: 0 }
+/// Increment { amount: 1, offset: 1 }
+/// Increment { amount: 2, offset: 2 }
+/// PointerIncrement(1)
 pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut sequence = vec![];
     let mut result = vec![];
