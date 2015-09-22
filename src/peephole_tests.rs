@@ -270,8 +270,11 @@ fn should_combine_increment_and_set(offset: isize) {
 
 #[test]
 fn should_remove_redundant_set() {
-    let initial = vec![Loop(vec![]), Set { amount: Wrapping(0), offset: 0 }];
-    let expected = vec![Loop(vec![])];
+    let initial = vec![Loop(vec![]),
+                      Set{ amount: Wrapping(0), offset: -1},
+                      Set{ amount: Wrapping(0), offset: 0}];
+    let expected = vec![Loop(vec![]),
+                      Set{ amount: Wrapping(0), offset: -1}];
     assert_eq!(remove_redundant_sets(initial), expected);
 }
 
@@ -283,6 +286,15 @@ fn should_remove_redundant_set_multiply() {
     let initial = vec![MultiplyMove(changes.clone()), Set { amount: Wrapping(0), offset: 0 }];
     let expected = vec![MultiplyMove(changes)];
     assert_eq!(remove_redundant_sets(initial), expected);
+}
+
+/// After a loop, if we set to a value other than zero, we shouldn't
+/// remove it.
+#[test]
+fn not_redundant_set_when_nonzero() {
+    let instrs = vec![Loop(vec![]),
+                      Set{ amount: Wrapping(1), offset: 0}];
+    assert_eq!(remove_redundant_sets(instrs.clone()), instrs);
 }
 
 fn is_pure(instrs: &[Instruction]) -> bool {

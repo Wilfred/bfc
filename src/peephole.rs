@@ -313,13 +313,27 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    // TODO: use previous_cell_change here.
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        match (&prev_instr, &instr) {
-            (&Loop(_), &Set{ amount: Wrapping(0), offset: 0 }) => Ok(prev_instr),
-            (&MultiplyMove(_), &Set{ amount: Wrapping(0), offset: 0}) => Ok(prev_instr),
-            _ => Err((prev_instr, instr))
+    let mut redundant_instr_positions = HashSet::new();
+
+    for (index, instr) in instrs.iter().enumerate() {
+        match *instr {
+            Loop(_) | MultiplyMove(_) => {
+                // There's no point setting to zero after a loop, as
+                // the cell is already zero.
+                if let Some(next_index) = next_cell_change(&instrs, index) {
+                    if instrs[next_index] == (Set { amount: Wrapping(0), offset: 0 }) {
+                        redundant_instr_positions.insert(next_index);
+                    }
+                }
+            }
+            _ => {}
         }
+    }
+
+    instrs.into_iter().enumerate().filter(|&(index, _)| {
+        !redundant_instr_positions.contains(&index)
+    }).map(|(_, instr)| {
+        instr
     }).map_loops(remove_redundant_sets_inner)
 }
 
