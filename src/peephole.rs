@@ -1,5 +1,5 @@
-
-use std::collections::HashMap;
+use std::hash::Hash;
+use std::collections::{HashMap,HashSet};
 use std::num::Wrapping;
 
 use itertools::Itertools;
@@ -25,11 +25,12 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Apply all our peephole optimisations once and return the result.
 fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let combined = combine_ptr_increments(combine_increments(instrs));
+    let combined = combine_increments(instrs);
     let annotated = annotate_known_zero(combined);
     let extracted = extract_multiply(annotated);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
-    remove_pure_code(combine_before_read(remove_redundant_sets(simplified)))
+    let removed = remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
+    sort_by_offset(removed)
 }
 
 /// Defines a method on iterators to map a function over all loop bodies.
@@ -48,60 +49,107 @@ trait MapLoopsExt: Iterator<Item=Instruction> {
 
 impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 
+/// Given an index into a vector of instructions, find the index of
+/// the previous instruction that modified the current cell. If we're
+/// unsure, or there isn't one, return None.
+///
+/// Note this ignores offsets of the instruction at the index. E.g. if
+/// that instruction is Set{amount:100, offset: 1}, we're still
+/// considering previous instructions that modify the current cell,
+/// not the (cell_index + 1)th cell.
+pub fn previous_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
+    assert!(index < instrs.len());
+
+    let mut needed_offset = 0;
+    for i in (0..index).rev() {
+        match instrs[i] {
+            Increment { offset, .. } => {
+                if offset == needed_offset {
+                    return Some(i)
+                }
+            }
+            Set { offset, .. } => {
+                if offset == needed_offset {
+                    return Some(i)
+                }
+            }
+            PointerIncrement(amount) => {
+                needed_offset += amount;
+            }
+            MultiplyMove(ref changes) => {
+                // These cells are written to.
+                let mut offsets: Vec<isize> = changes.keys().into_iter().map(|offset| { *offset }).collect();
+                // This cell is zeroed.
+                offsets.push(0);
+                
+                if offsets.contains(&needed_offset) {
+                    return Some(i);
+                }
+            }
+            // No cells changed, so just keep working backwards.
+            Write => {}
+            // These instructions may have modified the cell, so
+            // we return None for "I don't know".
+            Read | Loop(_) => return None,
+        }
+    }
+    None
+}
+
+/// Inverse of previous_cell_change.
+pub fn next_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
+    let mut instrs = instrs.clone();
+    instrs.reverse();
+    let max_index = instrs.len() - 1;
+    if let Some(previous_index) = previous_cell_change(&instrs, max_index - index) {
+        Some(max_index - previous_index)
+    } else {
+        None
+    }
+}
+
 /// Combine consecutive increments into a single increment
 /// instruction.
 pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().coalesce(|prev_instr, instr| {
         // Collapse consecutive increments.
-        if let (&Increment(prev_amount), &Increment(amount)) = (&prev_instr, &instr) {
-            Ok(Increment(amount + prev_amount))
-        } else {
-            Err((prev_instr, instr))
+        if let &Increment { amount: prev_amount, offset: prev_offset } = &prev_instr {
+            if let &Increment { amount, offset } = &instr {
+                if prev_offset == offset {
+                    return Ok(Increment { amount: amount + prev_amount, offset: offset });
+                }
+            }
         }
+        return Err((prev_instr, instr));
     }).filter(|instr| {
         // Remove any increments of 0.
-        instr != &Increment(Wrapping(0))
-    }).map(|instr| {
-        // Combine increments in nested loops too.
-        match instr {
-            Loop(body) => {
-                Loop(combine_increments(body))
-            },
-            i => i
+        if let &Increment{ amount: Wrapping(0), .. } = instr {
+            return false;
         }
-    }).collect()
+        true
+    }).map_loops(combine_increments)
 }
 
-pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        // Collapse consecutive increments.
-        if let (&PointerIncrement(prev_amount), &PointerIncrement(amount)) = (&prev_instr, &instr) {
-            Ok(PointerIncrement(amount + prev_amount))
-        } else {
-            Err((prev_instr, instr))
-        }
-    }).filter(|instr| {
-        // Remove any increments of 0.
-        instr != &PointerIncrement(0)
-    }).map(|instr| {
-        // Combine increments in nested loops too.
-        match instr {
-            Loop(body) => {
-                Loop(combine_ptr_increments(body))
-            },
-            i => i
-        }
-    }).collect()
-}
+pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut redundant_instr_positions = HashSet::new();
 
-fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        // Remove redundant code before a read.
-        match (prev_instr, instr) {
-            (Increment(_), Read) => Ok(Read),
-            (Set(_), Read) => Ok(Read),
-            tuple => Err(tuple)
+    for (index, instr) in instrs.iter().enumerate() {
+        match *instr {
+            Read => {
+                // If we modified this cell before the read, just
+                // discard that instruction, because it's redundant.
+                if let Some(prev_index) = previous_cell_change(&instrs, index) {
+                    redundant_instr_positions.insert(prev_index);
+                }
+            }
+            _ => {}
         }
+    }
+
+    instrs.into_iter().enumerate().filter(|&(index, _)| {
+        !redundant_instr_positions.contains(&index)
+    }).map(|(_, instr)| {
+        instr
     }).map_loops(combine_before_read)
 }
 
@@ -109,8 +157,8 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter().map(|instr| {
         if let &Loop(ref body) = &instr {
             // If the loop is [-]
-            if *body == vec![Increment(Wrapping(-1))] {
-                return Set(Wrapping(0))
+            if *body == vec![Increment { amount: Wrapping(-1), offset: 0 }] {
+                return Set { amount: Wrapping(0), offset: 0 }
             }
         }
         instr
@@ -119,30 +167,140 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Remove any loops where we know the current cell is zero.
 pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (&Set(Wrapping(0)), &Loop(_)) = (&prev_instr, &instr) {
-            return Ok(Set(Wrapping(0)));
+    instrs.clone().into_iter().enumerate().filter(|&(index, ref instr)| {
+        match *instr {
+            Loop(_) => {}
+            // Keep all instructions that aren't loops.
+            _ => { return true; }
         }
-        Err((prev_instr, instr))
+
+        // Find the previous change instruction:
+        if let Some(prev_change_index) = previous_cell_change(&instrs, index) {
+            let prev_instr = &instrs[prev_change_index];
+            // If the previous instruction set to zero, our loop is dead.
+            if prev_instr == &(Set { amount: Wrapping(0), offset: 0 }) {
+                return false;
+            }
+        }
+        true
+    }).map(|(_, instr)| {
+        instr
     }).map_loops(remove_dead_loops)
+}
+
+/// Reorder flat sequences of instructions so we use offsets and only
+/// have one pointer increment at the end. For example, given "+>+>+<"
+/// we return:
+/// Increment { amount: 1, offset: 0 }
+/// Increment { amount: 1, offset: 1 }
+/// Increment { amount: 2, offset: 2 }
+/// PointerIncrement(1)
+pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut sequence = vec![];
+    let mut result = vec![];
+
+    for instr in instrs {
+        match instr {
+            Increment{..} | Set{..} | PointerIncrement(_) => {
+                sequence.push(instr);
+            }
+            _ => {
+                if !sequence.is_empty() {
+                    result.extend(sort_sequence_by_offset(sequence));
+                    sequence = vec![];
+                }
+                if let Loop(body) = instr {
+                    result.push(Loop(sort_by_offset(body)));
+                } else {
+                    result.push(instr);
+                }
+            }
+        }
+    }
+    
+    if !sequence.is_empty() {
+        result.extend(sort_sequence_by_offset(sequence));
+    }
+
+    result
+}
+
+/// Given a HashMap with orderable keys, return the values according to
+/// the key order.
+/// {2: 'foo': 1: 'bar'} => vec!['bar', 'foo']
+fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
+    let mut items: Vec<_> = map.into_iter().collect();
+    items.sort_by(|a, b| a.0.cmp(&b.0));
+    items.into_iter().map(|(_, v)| { v }).collect()
+}
+
+/// Given a BF program, combine sets/increments using offsets so we
+/// have single PointerIncrement at the end.
+pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    let mut instrs_by_offset: HashMap<isize,Vec<Instruction>> = HashMap::new();
+    let mut current_offset = 0;
+
+    for instr in instrs {
+        match instr {
+            Increment { amount, offset } => {
+                let new_offset = offset + current_offset;
+                let same_offset_instrs = instrs_by_offset.entry(new_offset)
+                    .or_insert(vec![]);
+                same_offset_instrs.push(Increment { amount: amount, offset: new_offset});
+            }
+            Set { amount, offset } => {
+                let new_offset = offset + current_offset;
+                let same_offset_instrs = instrs_by_offset.entry(new_offset)
+                    .or_insert(vec![]);
+                same_offset_instrs.push(Set { amount: amount, offset: new_offset});
+            },
+            PointerIncrement(amount) => {
+                current_offset += amount;
+            },
+            // We assume that we were only given a Vec of
+            // Increment/Set/PointerIncrement instructions. It's
+            // the job of this function to create instructions with
+            // offset.
+            _ => unreachable!()
+        }
+    }
+
+    let mut results: Vec<Instruction> = vec![];
+    for same_offset_instrs in ordered_values(instrs_by_offset) {
+        results.extend(same_offset_instrs.into_iter());
+    }
+
+    if current_offset != 0 {
+        results.push(PointerIncrement(current_offset));
+    }
+    results
 }
 
 /// Combine set instructions with other set instructions or
 /// increments.
 pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    // It's sufficient to consider immediately adjacent instructions
+    // as sort_sequence_by_offset ensures that if the offset is the
+    // same, the instruction is adjacent.
     instrs.into_iter().coalesce(|prev_instr, instr| {
-        if let (&Increment(_), &Set(amount)) = (&prev_instr, &instr) {
-            return Ok(Set(amount));
+        if let (&Increment { offset: inc_offset, .. }, &Set { amount: set_amount, offset: set_offset }) = (&prev_instr, &instr) {
+            if inc_offset == set_offset {
+                return Ok(Set { amount: set_amount, offset: set_offset });
+            }
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (&Set(set_amount), &Increment(inc_amount)) = (&prev_instr, &instr) {
-            return Ok(Set(set_amount + inc_amount));
+        if let (&Set { amount: set_amount, offset: set_offset }, &Increment { amount: inc_amount, offset: inc_offset }) = (&prev_instr, &instr) {
+            if inc_offset == set_offset {
+                return Ok(Set { amount: set_amount + inc_amount, offset: set_offset });
+            }
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (&Set(_), &Set(amount)) = (&prev_instr, &instr) {
-            return Ok(Set(amount));
+        if let (&Set { offset: offset1, .. }, &Set { amount, offset: offset2 }) = (&prev_instr, &instr) {
+            if offset1 == offset2 {
+                return Ok(Set { amount: amount, offset: offset1 });
+            }
         }
         Err((prev_instr, instr))
     }).map_loops(combine_set_and_increments)
@@ -151,7 +309,9 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
 pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut reduced = remove_redundant_sets_inner(instrs);
 
-    if let Some(&Set(Wrapping(0))) = reduced.first() {
+    // Remove a set zero at the beginning of the program, since cells
+    // are initialised to zero anyway.
+    if let Some(&Set { amount: Wrapping(0), offset: 0 }) = reduced.first() {
         reduced.remove(0);
     }
 
@@ -159,12 +319,27 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter().coalesce(|prev_instr, instr| {
-        match (&prev_instr, &instr) {
-            (&Loop(_), &Set(Wrapping(0))) => Ok(prev_instr),
-            (&MultiplyMove(_), &Set(Wrapping(0))) => Ok(prev_instr),
-            _ => Err((prev_instr, instr))
+    let mut redundant_instr_positions = HashSet::new();
+
+    for (index, instr) in instrs.iter().enumerate() {
+        match *instr {
+            Loop(_) | MultiplyMove(_) => {
+                // There's no point setting to zero after a loop, as
+                // the cell is already zero.
+                if let Some(next_index) = next_cell_change(&instrs, index) {
+                    if instrs[next_index] == (Set { amount: Wrapping(0), offset: 0 }) {
+                        redundant_instr_positions.insert(next_index);
+                    }
+                }
+            }
+            _ => {}
         }
+    }
+
+    instrs.into_iter().enumerate().filter(|&(index, _)| {
+        !redundant_instr_positions.contains(&index)
+    }).map(|(_, instr)| {
+        instr
     }).map_loops(remove_redundant_sets_inner)
 }
 
@@ -173,7 +348,7 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     // Cells in BF are initialised to zero, so we know the current
     // cell is zero at the start of execution.
-    result.push(Set(Wrapping(0)));
+    result.push(Set { amount: Wrapping(0), offset: 0 });
 
     result.extend(annotate_known_zero_inner(instrs));
     result
@@ -187,7 +362,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
             // After a loop, we know the cell is currently zero.
             Loop(body) => {
                 result.push(Loop(annotate_known_zero_inner(body)));
-                result.push(Set(Wrapping(0)))
+                result.push(Set { amount: Wrapping(0), offset: 0 })
             }
             i => {
                 result.push(i);
@@ -214,12 +389,12 @@ fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 /// Does this loop body represent a multiplication operation?
-/// E.g. "[->>>++]" sets cell #3 to 2*cell #0.
+/// E.g. "[->>>++<<<]" sets cell #3 to 2*cell #0.
 fn is_multiply_loop_body(body: &[Instruction]) -> bool {
     // A multiply loop may only contain increments and pointer increments.
     for body_instr in body {
         match *body_instr {
-            Increment(_) => {}
+            Increment{..} => {}
             PointerIncrement(_) => {}
             _ => return false,
         }
@@ -256,8 +431,8 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
 
     for instr in instrs {
         match *instr {
-            Increment(amount) => {
-                let current_amount = *changes.get(&cell_index).unwrap_or(&Wrapping(0));
+            Increment{ amount, offset } => {
+                let current_amount = *changes.get(&(cell_index + offset)).unwrap_or(&Wrapping(0));
                 changes.insert(cell_index, current_amount + amount);
             }
             PointerIncrement(amount) => {

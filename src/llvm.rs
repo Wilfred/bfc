@@ -253,6 +253,7 @@ unsafe fn add_current_cell_access(module: &mut Module,
 }
 
 unsafe fn compile_increment<'a>(amount: Cell,
+                                offset: isize,
                                 module: &mut Module,
                                 bb: &'a mut LLVMBasicBlock,
                                 cells: LLVMValueRef,
@@ -261,7 +262,25 @@ unsafe fn compile_increment<'a>(amount: Cell,
     let builder = Builder::new();
     builder.position_at_end(bb);
 
-    let (cell_val, cell_val_ptr) = add_current_cell_access(module, bb, cells, cell_index_ptr);
+    let cell_index = LLVMBuildLoad(builder.builder,
+                                   cell_index_ptr,
+                                   module.new_string_ptr("cell_index"));
+
+    let offset_cell_index = LLVMBuildAdd(builder.builder,
+                                         cell_index,
+                                         int32(offset as c_ulonglong),
+                                         module.new_string_ptr("offset_cell_index"));
+
+    let mut indices = vec![offset_cell_index];
+    let current_cell_ptr = LLVMBuildGEP(builder.builder,
+                                        cells,
+                                        indices.as_mut_ptr(),
+                                        indices.len() as c_uint,
+                                        module.new_string_ptr("current_cell_ptr"));
+
+    let cell_val = LLVMBuildLoad(builder.builder,
+                                 current_cell_ptr,
+                                 module.new_string_ptr("cell_value"));
 
     let increment_amount = int8(amount.0 as c_ulonglong);
     let new_cell_val = LLVMBuildAdd(builder.builder,
@@ -269,11 +288,12 @@ unsafe fn compile_increment<'a>(amount: Cell,
                                     increment_amount,
                                     module.new_string_ptr("new_cell_value"));
 
-    LLVMBuildStore(builder.builder, new_cell_val, cell_val_ptr);
+    LLVMBuildStore(builder.builder, new_cell_val, current_cell_ptr);
     bb
 }
 
 unsafe fn compile_set<'a>(amount: Cell,
+                          offset: isize,
                           module: &mut Module,
                           bb: &'a mut LLVMBasicBlock,
                           cells: LLVMValueRef,
@@ -286,7 +306,12 @@ unsafe fn compile_set<'a>(amount: Cell,
                                    cell_index_ptr,
                                    module.new_string_ptr("cell_index"));
 
-    let mut indices = vec![cell_index];
+    let offset_cell_index = LLVMBuildAdd(builder.builder,
+                                         cell_index,
+                                         int32(offset as c_ulonglong),
+                                         module.new_string_ptr("offset_cell_index"));
+
+    let mut indices = vec![offset_cell_index];
     let current_cell_ptr = LLVMBuildGEP(builder.builder,
                                         cells,
                                         indices.as_mut_ptr(),
@@ -474,8 +499,12 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
                             cell_index_ptr: LLVMValueRef)
                             -> &'a mut LLVMBasicBlock {
     match *instr {
-        Increment(amount) => compile_increment(amount, module, bb, cells, cell_index_ptr),
-        Set(amount) => compile_set(amount, module, bb, cells, cell_index_ptr),
+        Increment { amount, offset } => {
+            compile_increment(amount, offset, module, bb, cells, cell_index_ptr)
+        },
+        Set { amount, offset } => {
+            compile_set(amount, offset, module, bb, cells, cell_index_ptr)
+        },
         MultiplyMove(ref changes) => {
             compile_multiply_move(changes, module, bb, cells, cell_index_ptr)
         }
@@ -527,6 +556,7 @@ unsafe fn compile_static_outputs(module: &mut Module, bb: &mut LLVMBasicBlock, o
 }
 
 // TODO: use init_values terminology consistently for names here.
+// TODO: pass in an execution state to make our parameters more explicit.
 pub fn compile_to_ir(module_name: &str,
                      instrs: &[Instruction],
                      cells: &[i8],

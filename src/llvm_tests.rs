@@ -7,7 +7,7 @@ use bfir::Instruction::*;
 
 #[test]
 fn compile_loop() {
-    let result = compile_to_ir("foo", &vec![Loop(vec![Increment(Wrapping(1))])],
+    let result = compile_to_ir("foo", &vec![Loop(vec![Increment { amount: Wrapping(1), offset: 0 }])],
                                &vec![0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
@@ -38,7 +38,8 @@ loop_header:                                      ; preds = %loop_body, %entry
 
 loop_body:                                        ; preds = %loop_header
   %cell_index1 = load i32* %cell_index_ptr
-  %current_cell_ptr2 = getelementptr i8* %cells, i32 %cell_index1
+  %offset_cell_index = add i32 %cell_index1, 0
+  %current_cell_ptr2 = getelementptr i8* %cells, i32 %offset_cell_index
   %cell_value3 = load i8* %current_cell_ptr2
   %new_cell_value = add i8 %cell_value3, 1
   store i8 %new_cell_value, i8* %current_cell_ptr2
@@ -79,7 +80,8 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_set() {
-    let result = compile_to_ir("foo", &vec![Set(Wrapping(1))], &vec![0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 0 }],
+                               &vec![0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -99,7 +101,43 @@ entry:
   %cell_index_ptr = alloca i32
   store i32 0, i32* %cell_index_ptr
   %cell_index = load i32* %cell_index_ptr
-  %current_cell_ptr = getelementptr i8* %cells, i32 %cell_index
+  %offset_cell_index = add i32 %cell_index, 0
+  %current_cell_ptr = getelementptr i8* %cells, i32 %offset_cell_index
+  store i8 1, i8* %current_cell_ptr
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+
+    assert_eq!(result, CString::new(expected).unwrap());
+}
+
+#[test]
+fn compile_set_with_offset() {
+    let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 42 }],
+                               &vec![0; 50], 0, &vec![]);
+    let expected = "; ModuleID = \'foo\'
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+entry:
+  %cells = alloca i8, i32 50
+  %offset_cell_ptr = getelementptr i8* %cells, i32 0
+  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 50, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  %cell_index = load i32* %cell_index_ptr
+  %offset_cell_index = add i32 %cell_index, 42
+  %current_cell_ptr = getelementptr i8* %cells, i32 %offset_cell_index
   store i8 1, i8* %current_cell_ptr
   ret i32 0
 }
@@ -292,7 +330,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment() {
-    let result = compile_to_ir("foo", &vec![Increment(Wrapping(1))], &vec![0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 0 }], &vec![0], 0, &vec![]);
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -312,7 +350,8 @@ entry:
   %cell_index_ptr = alloca i32
   store i32 0, i32* %cell_index_ptr
   %cell_index = load i32* %cell_index_ptr
-  %current_cell_ptr = getelementptr i8* %cells, i32 %cell_index
+  %offset_cell_index = add i32 %cell_index, 0
+  %current_cell_ptr = getelementptr i8* %cells, i32 %offset_cell_index
   %cell_value = load i8* %current_cell_ptr
   %new_cell_value = add i8 %cell_value, 1
   store i8 %new_cell_value, i8* %current_cell_ptr
@@ -322,5 +361,41 @@ entry:
 attributes #0 = { nounwind }
 ";
 
+    assert_eq!(result, CString::new(expected).unwrap());
+}
+
+#[test]
+fn compile_increment_with_offset() {
+    let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 3 }],
+                               &vec![0; 4], 0, &vec![]);
+    let expected = "; ModuleID = \'foo\'
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+entry:
+  %cells = alloca i8, i32 4
+  %offset_cell_ptr = getelementptr i8* %cells, i32 0
+  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 4, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  %cell_index = load i32* %cell_index_ptr
+  %offset_cell_index = add i32 %cell_index, 3
+  %current_cell_ptr = getelementptr i8* %cells, i32 %offset_cell_index
+  %cell_value = load i8* %current_cell_ptr
+  %new_cell_value = add i8 %cell_value, 1
+  store i8 %new_cell_value, i8* %current_cell_ptr
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
     assert_eq!(result, CString::new(expected).unwrap());
 }
