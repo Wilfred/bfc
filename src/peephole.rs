@@ -120,7 +120,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
                 }
             }
         }
-        return Err((prev_instr, instr));
+        Err((prev_instr, instr))
     }).filter(|instr| {
         // Remove any increments of 0.
         if let &Increment{ amount: Wrapping(0), .. } = instr {

@@ -95,7 +95,7 @@ fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
 }
 
 fn compile_file(matches: &Matches) -> Result<(), String> {
-    let ref path = matches.free[0];
+    let path = &matches.free[0];
     let src = try!(convert_io_error(slurp(path)));
 
     let mut instrs = try!(bfir::parse(&src));
