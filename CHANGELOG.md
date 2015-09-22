@@ -1,3 +1,7 @@
+# v1.2.0 (unreleased)
+
+Nothing yet.
+
 # v1.1.0
 
 New optimisation: reorder with offset!
