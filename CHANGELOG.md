@@ -1,4 +1,8 @@
-# (unreleased)
+# v1.1.0
+
+New optimisation: reorder with offset!
+
+Minor bug fixes:
 
 * Improved the output of `--help`
 * `--dump-bf-ir` has been renamed to `--dump-bf`
