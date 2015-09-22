@@ -161,12 +161,11 @@ fn multiply_move_bounds() {
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(3));
     dest_cells.insert(4, Wrapping(1));
-    let instrs = vec![
-        MultiplyMove(dest_cells),
-        // Multiply move should have increased the highest cell
-        // reached, but not the current cell. This instruction
-        // should not affect the output:
-        PointerIncrement(2)];
+    let instrs = vec![MultiplyMove(dest_cells),
+                      // Multiply move should have increased the highest cell
+                      // reached, but not the current cell. This instruction
+                      // should not affect the output:
+                      PointerIncrement(2)];
 
     assert_eq!(highest_cell_index(&instrs), 4);
 }
@@ -177,11 +176,10 @@ fn multiply_move_bounds() {
 fn multiply_move_bounds_are_relative() {
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(5));
-    let instrs = vec![
-        // Move to cell #2.
-        PointerIncrement(2),
-        // Move (with multiply) to cell #3 (#2 offset 1).
-        MultiplyMove(dest_cells)];
+    let instrs = vec![// Move to cell #2.
+                      PointerIncrement(2),
+                      // Move (with multiply) to cell #3 (#2 offset 1).
+                      MultiplyMove(dest_cells)];
 
     assert_eq!(highest_cell_index(&instrs), 3);
 }
@@ -190,9 +188,7 @@ fn multiply_move_bounds_are_relative() {
 fn multiply_move_backwards_bounds() {
     let mut dest_cells = HashMap::new();
     dest_cells.insert(-1, Wrapping(2));
-    let instrs = vec![
-        PointerIncrement(1),
-        MultiplyMove(dest_cells)];
+    let instrs = vec![PointerIncrement(1), MultiplyMove(dest_cells)];
 
     assert_eq!(highest_cell_index(&instrs), 1);
 }

@@ -1,5 +1,5 @@
 use std::hash::Hash;
-use std::collections::{HashMap,HashSet};
+use std::collections::{HashMap, HashSet};
 use std::num::Wrapping;
 
 use itertools::Itertools;

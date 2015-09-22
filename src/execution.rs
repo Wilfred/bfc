@@ -114,8 +114,10 @@ fn execute_inner(instrs: &[Instruction],
                     state.instr_ptr += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_body_state = ExecutionState { instr_ptr: 0, .. state.clone() };
-                    let (state_after, loop_outcome) = execute_inner(body, loop_body_state, steps_left);
+                    let loop_body_state = ExecutionState { instr_ptr: 0, ..state.clone() };
+                    let (state_after, loop_outcome) = execute_inner(body,
+                                                                    loop_body_state,
+                                                                    steps_left);
                     if let &Outcome::Completed(remaining_steps) = &loop_outcome {
                         // We finished executing a loop iteration, so store its side effects.
                         state.cells = state_after.cells;
@@ -147,10 +149,13 @@ fn cant_evaluate_inputs() {
     let instrs = parse(",.").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 0, cells: vec![Wrapping(0)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 0,
+                   cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -158,10 +163,13 @@ fn increment_executed() {
     let instrs = parse("+").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(1)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 1,
+                   cells: vec![Wrapping(1)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -169,50 +177,55 @@ fn multiply_move_executed() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(2));
     changes.insert(3, Wrapping(3));
-    let instrs = vec![
-        // Initial cells: [2, 1, 0, 0]
-        Increment { amount: Wrapping(2), offset: 0 },
-        PointerIncrement(1),
-        Increment { amount: Wrapping(1), offset: 0 },
-        PointerIncrement(-1),
+    let instrs = vec![// Initial cells: [2, 1, 0, 0]
+                      Increment { amount: Wrapping(2), offset: 0 },
+                      PointerIncrement(1),
+                      Increment { amount: Wrapping(1), offset: 0 },
+                      PointerIncrement(-1),
 
-        MultiplyMove(changes)];
+                      MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 5, cells: vec![Wrapping(0), Wrapping(5), Wrapping(0), Wrapping(6)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 5,
+                   cells: vec![Wrapping(0), Wrapping(5), Wrapping(0), Wrapping(6)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
 fn multiply_move_wrapping() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(3));
-    let instrs = vec![
-        Increment { amount: Wrapping(100), offset: 0 },
-        MultiplyMove(changes)];
+    let instrs = vec![Increment { amount: Wrapping(100), offset: 0 }, MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
-    assert_eq!(
-        final_state, ExecutionState {
-            // 100 * 3 mod 256 == 44
-            instr_ptr: 2, cells: vec![Wrapping(0), Wrapping(44)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 2,
+                   // 100 * 3 mod 256 == 44
+                   cells: vec![Wrapping(0), Wrapping(44)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
 fn multiply_move_offset_too_high() {
-    let mut changes: HashMap<isize,Cell> = HashMap::new();
+    let mut changes: HashMap<isize, Cell> = HashMap::new();
     changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
     let instrs = vec![MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 0, cells: vec![Wrapping(0); MAX_CELL_INDEX + 1],
-            cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 0,
+                   cells: vec![Wrapping(0); MAX_CELL_INDEX + 1],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -222,11 +235,13 @@ fn multiply_move_offset_too_low() {
     let instrs = vec![MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 0, cells: vec![Wrapping(0)],
-            cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 0,
+                   cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -234,10 +249,13 @@ fn set_executed() {
     let instrs = vec![Set { amount: Wrapping(2), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(2)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 1,
+                   cells: vec![Wrapping(2)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -245,10 +263,13 @@ fn set_wraps() {
     let instrs = vec![Set { amount: Wrapping(-1), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(-1)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 1,
+                   cells: vec![Wrapping(-1)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -256,10 +277,13 @@ fn decrement_executed() {
     let instrs = parse("-").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(-1)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 1,
+                   cells: vec![Wrapping(-1)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -268,10 +292,13 @@ fn increment_wraps() {
                       Increment { amount: Wrapping(1), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![Wrapping(0)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 2,
+                   cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -279,10 +306,13 @@ fn ptr_increment_executed() {
     let instrs = parse(">").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(0), Wrapping(0)], cell_ptr: 1, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 1,
+                   cells: vec![Wrapping(0), Wrapping(0)],
+                   cell_ptr: 1,
+                   outputs: vec![],
+               });
 }
 
 // TODO: it would be nice to emit a warning in this case, as it's
@@ -292,10 +322,13 @@ fn ptr_out_of_range() {
     let instrs = parse("<").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 0, cells: vec![Wrapping(0)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 0,
+                   cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -303,10 +336,13 @@ fn limit_to_steps_specified() {
     let instrs = parse("++++").unwrap();
     let final_state = execute(&instrs, 2);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![Wrapping(2)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 2,
+                   cells: vec![Wrapping(2)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -314,10 +350,13 @@ fn write_executed() {
     let instrs = parse("+.").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![Wrapping(1)], cell_ptr: 0, outputs: vec![1],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 2,
+                   cells: vec![Wrapping(1)],
+                   cell_ptr: 0,
+                   outputs: vec![1],
+               });
 }
 
 #[test]
@@ -325,10 +364,13 @@ fn loop_executed() {
     let instrs = parse("++[-]").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 3, cells: vec![Wrapping(0)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 3,
+                   cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -338,10 +380,13 @@ fn loop_up_to_step_limit() {
     // the loop body once.
     let final_state = execute(&instrs, 4);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![Wrapping(1)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 2,
+                   cells: vec![Wrapping(1)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -351,10 +396,13 @@ fn loop_with_read_body() {
     let instrs = parse("+[+,]").unwrap();
     let final_state = execute(&instrs, 4);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 1, cells: vec![Wrapping(1)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 1,
+                   cells: vec![Wrapping(1)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[test]
@@ -362,10 +410,13 @@ fn up_to_infinite_loop_executed() {
     let instrs = parse("++[]").unwrap();
     let final_state = execute(&instrs, 20);
 
-    assert_eq!(
-        final_state, ExecutionState {
-            instr_ptr: 2, cells: vec![Wrapping(2)], cell_ptr: 0, outputs: vec![],
-        });
+    assert_eq!(final_state,
+               ExecutionState {
+                   instr_ptr: 2,
+                   cells: vec![Wrapping(2)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
 }
 
 #[quickcheck]

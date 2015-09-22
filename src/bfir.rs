@@ -9,14 +9,20 @@ pub type Cell = Wrapping<i8>;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
-    Increment {amount: Cell, offset: isize},
+    Increment {
+        amount: Cell,
+        offset: isize,
+    },
     PointerIncrement(isize),
     Read,
     Write,
     Loop(Vec<Instruction>),
     // These instruction have no direct equivalent in BF, but we
     // generate them during optimisation.
-    Set { amount: Cell, offset: isize },
+    Set {
+        amount: Cell,
+        offset: isize,
+    },
     MultiplyMove(HashMap<isize, Cell>),
 }
 
@@ -93,8 +99,9 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, String> {
 #[test]
 fn parse_increment() {
     assert_eq!(parse("+").unwrap(), [Increment { amount: Wrapping(1), offset: 0 }]);
-    assert_eq!(parse("++").unwrap(), [Increment { amount: Wrapping(1), offset: 0 },
-                                      Increment { amount: Wrapping(1), offset: 0 }]);
+    assert_eq!(parse("++").unwrap(),
+               [Increment { amount: Wrapping(1), offset: 0 },
+                Increment { amount: Wrapping(1), offset: 0 }]);
 }
 
 #[test]
@@ -138,9 +145,7 @@ fn parse_simple_loop() {
 #[test]
 fn parse_complex_loop() {
     let loop_body = vec![Read, Increment { amount: Wrapping(1), offset: 0 }];
-    let expected = [Write,
-                    Loop(loop_body),
-                    Increment { amount: Wrapping(-1), offset: 0 }];
+    let expected = [Write, Loop(loop_body), Increment { amount: Wrapping(-1), offset: 0 }];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 
