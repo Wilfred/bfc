@@ -85,7 +85,6 @@ unsafe fn add_c_declarations(module: &mut Module) {
     let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
     let void = LLVMVoidType();
 
-    // TODO: we should use memset for Set() commands.
     add_function(module,
                  "llvm.memset.p0i8.i32",
                  &mut vec![byte_pointer, LLVMInt8Type(), LLVMInt32Type(),
