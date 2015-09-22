@@ -134,9 +134,9 @@ Set 2
 We combine sets and increments too:
 
 ```
-  Compile            Known zero:         Combine
-+   =>   Increment 1   =>   Set 0      =>   Set 1
-                              Increment 1
+  Compile            Known zero       Combine
++   =>   Increment 1   =>   Set 0       =>   Set 1
+                            Increment 1
 
 ```
 
