@@ -66,12 +66,12 @@ fn execute_inner(instrs: &[Instruction],
             Increment { amount, offset } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
                 state.cells[target_cell_ptr] = state.cells[target_cell_ptr] + amount;
-                state.instrs_pos[0] += 1;
+                *state.instrs_pos.last_mut().unwrap() += 1;
             }
             Set { amount, offset } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
                 state.cells[target_cell_ptr] = amount;
-                state.instrs_pos[0] += 1;
+                *state.instrs_pos.last_mut().unwrap() += 1;
             }
             PointerIncrement(amount) => {
                 let new_cell_ptr = state.cell_ptr + amount;
@@ -79,7 +79,7 @@ fn execute_inner(instrs: &[Instruction],
                     return (state, Outcome::RuntimeError);
                 } else {
                     state.cell_ptr = new_cell_ptr;
-                    state.instrs_pos[0] += 1;
+                    *state.instrs_pos.last_mut().unwrap() += 1;
                 }
             }
             MultiplyMove(ref changes) => {
@@ -103,12 +103,12 @@ fn execute_inner(instrs: &[Instruction],
                 // Finally, zero the cell we used.
                 state.cells[cell_ptr] = Wrapping(0);
 
-                state.instrs_pos[0] += 1;
+                *state.instrs_pos.last_mut().unwrap() += 1;
             }
             Write => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value.0);
-                state.instrs_pos[0] += 1;
+                *state.instrs_pos.last_mut().unwrap() += 1;
             }
             Read => {
                 return (state, Outcome::ReachedRuntimeValue);
@@ -117,7 +117,7 @@ fn execute_inner(instrs: &[Instruction],
                 if state.cells[state.cell_ptr as usize].0 == 0 {
                     // Step over the loop because the current cell is
                     // zero.
-                    state.instrs_pos[0] += 1;
+                    *state.instrs_pos.last_mut().unwrap() += 1;
                 } else {
                     // Execute the loop body.
                     let loop_body_state = ExecutionState { instrs_pos: vec![0], ..state.clone() };
@@ -429,6 +429,7 @@ fn up_to_infinite_loop_executed() {
 fn quickcheck_instr_ptr_in_bounds() {
     fn instr_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
         let state = execute(&instrs, 100);
+        // TODO: verify all indexes are in bounds.
         state.instrs_pos[0] <= instrs.len()
     }
     quickcheck(instr_ptr_in_bounds as fn(Vec<Instruction>) -> bool);
