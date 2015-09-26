@@ -1,6 +1,3 @@
-#![feature(plugin)]
-#![plugin(quickcheck_macros)]
-
 #![warn(trivial_numeric_casts)]
 
 // option_unwrap_used is specific to clippy. However, we don't want to

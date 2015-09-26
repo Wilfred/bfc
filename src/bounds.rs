@@ -1,5 +1,7 @@
 #![warn(trivial_numeric_casts)]
 
+use quickcheck::quickcheck;
+
 #[cfg(test)]
 use std::collections::HashMap;
 #[cfg(test)]
@@ -228,8 +230,11 @@ fn loop_with_no_net_movement() {
     assert_eq!(highest_cell_index(&instrs), 2);
 }
 
-#[quickcheck]
-fn highest_cell_index_in_bounds(instrs: Vec<Instruction>) -> bool {
-    let index = highest_cell_index(&instrs);
-    index <= MAX_CELL_INDEX
+#[test]
+fn quickcheck_highest_cell_index_in_bounds() {
+    fn highest_cell_index_in_bounds(instrs: Vec<Instruction>) -> bool {
+        let index = highest_cell_index(&instrs);
+        index <= MAX_CELL_INDEX
+    }
+    quickcheck(highest_cell_index_in_bounds as fn(Vec<Instruction>) -> bool);
 }

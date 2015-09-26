@@ -1,8 +1,12 @@
 #![warn(trivial_numeric_casts)]
 
+extern crate quickcheck;
+
 #[cfg(test)]
 use std::collections::HashMap;
 use std::num::Wrapping;
+
+use quickcheck::quickcheck;
 
 #[cfg(test)]
 use bfir::parse;
@@ -419,16 +423,22 @@ fn up_to_infinite_loop_executed() {
                });
 }
 
-#[quickcheck]
-fn instr_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
-    let state = execute(&instrs, 100);
-    state.instr_ptr <= instrs.len()
+#[test]
+fn quickcheck_instr_ptr_in_bounds() {
+    fn instr_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
+        let state = execute(&instrs, 100);
+        state.instr_ptr <= instrs.len()
+    }
+    quickcheck(instr_ptr_in_bounds as fn(Vec<Instruction>) -> bool);
 }
 
-#[quickcheck]
-fn cell_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
-    let state = execute(&instrs, 100);
-    (state.cell_ptr >= 0) && (state.cell_ptr <= state.cells.len() as isize)
+#[test]
+fn quickcheck_cell_ptr_in_bounds() {
+    fn cell_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
+        let state = execute(&instrs, 100);
+        (state.cell_ptr >= 0) && (state.cell_ptr <= state.cells.len() as isize)
+    }
+    quickcheck(cell_ptr_in_bounds as fn(Vec<Instruction>) -> bool);
 }
 
 #[test]

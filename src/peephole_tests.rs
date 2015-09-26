@@ -1,6 +1,7 @@
-
 use std::collections::HashMap;
 use std::num::Wrapping;
+
+use quickcheck::quickcheck;
 
 use bfir::Instruction;
 use bfir::Instruction::*;
@@ -73,10 +74,13 @@ fn combine_increments_remove_redundant() {
     assert_eq!(combine_increments(initial), vec![]);
 }
 
-#[quickcheck]
-fn combine_increments_remove_zero_any_offset(offset: isize) -> bool {
-    let initial = vec![Increment { amount: Wrapping(0), offset: offset }];
-    combine_increments(initial) == vec![]
+#[test]
+fn quickcheck_combine_increments_remove_zero_any_offset() {
+    fn combine_increments_remove_zero_any_offset(offset: isize) -> bool {
+        let initial = vec![Increment { amount: Wrapping(0), offset: offset }];
+        combine_increments(initial) == vec![]
+    }
+    quickcheck(combine_increments_remove_zero_any_offset as fn(isize) -> bool);
 }
 
 #[test]
@@ -180,67 +184,84 @@ fn remove_dead_loops_not_adjacent() {
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
-#[quickcheck]
-fn should_combine_set_and_increment(offset: isize, set_amount: i8, increment_amount: i8) -> bool {
-    let set_amount = Wrapping(set_amount);
-    let increment_amount = Wrapping(increment_amount);
+#[test]
+fn quickcheck_should_combine_set_and_increment() {
+    fn should_combine_set_and_increment(offset: isize, set_amount: i8, increment_amount: i8) -> bool {
+        let set_amount = Wrapping(set_amount);
+        let increment_amount = Wrapping(increment_amount);
 
-    let initial = vec![
-        Set { amount: set_amount, offset: offset },
-        Increment { amount: increment_amount, offset: offset }];
-    let expected = vec![Set{ amount: set_amount + increment_amount, offset: offset }];
-    combine_set_and_increments(initial) == expected
-}
-
-#[quickcheck]
-fn combine_set_and_increment_different_offsets(set_offset: isize, set_amount: i8,
-                                               inc_offset: isize, inc_amount: i8) -> TestResult {
-    if set_offset == inc_offset {
-        return TestResult::discard();
+        let initial = vec![
+            Set { amount: set_amount, offset: offset },
+            Increment { amount: increment_amount, offset: offset }];
+        let expected = vec![Set{ amount: set_amount + increment_amount, offset: offset }];
+        combine_set_and_increments(initial) == expected
     }
-
-    let initial = vec![Set { amount: Wrapping(set_amount), offset: set_offset },
-                       Increment { amount: Wrapping(inc_amount), offset: inc_offset }];
-    let expected = initial.clone();
-
-    TestResult::from_bool(combine_set_and_increments(initial) == expected)
+    quickcheck(should_combine_set_and_increment as fn(isize, i8, i8) -> bool);
 }
 
-#[quickcheck]
-fn combine_increment_and_set_different_offsets(set_offset: isize, set_amount: i8,
-                                               inc_offset: isize, inc_amount: i8) -> TestResult {
-    if set_offset == inc_offset {
-        return TestResult::discard();
+// TODO: rename our quickcheck property functions to something shorter.
+#[test]
+fn quickcheck_combine_set_and_increment_different_offsets() {
+    fn combine_set_and_increment_different_offsets(set_offset: isize, set_amount: i8,
+                                                   inc_offset: isize, inc_amount: i8) ->
+        TestResult {
+            if set_offset == inc_offset {
+                return TestResult::discard();
+            }
+
+            let initial = vec![Set { amount: Wrapping(set_amount), offset: set_offset },
+                               Increment { amount: Wrapping(inc_amount), offset: inc_offset }];
+            let expected = initial.clone();
+
+            TestResult::from_bool(combine_set_and_increments(initial) == expected)
+        }
+    quickcheck(combine_set_and_increment_different_offsets as fn(isize, i8, isize, i8) -> TestResult);
+}
+
+#[test]
+fn quickcheck_combine_increment_and_set_different_offsets() {
+    fn combine_increment_and_set_different_offsets(set_offset: isize, set_amount: i8,
+                                                   inc_offset: isize, inc_amount: i8) -> TestResult {
+            if set_offset == inc_offset {
+                return TestResult::discard();
+            }
+
+            let initial = vec![
+                Increment { amount: Wrapping(inc_amount), offset: inc_offset },
+                Set { amount: Wrapping(set_amount), offset: set_offset }];
+            let expected = initial.clone();
+
+            TestResult::from_bool(combine_set_and_increments(initial) == expected)
     }
-
-    let initial = vec![
-        Increment { amount: Wrapping(inc_amount), offset: inc_offset },
-        Set { amount: Wrapping(set_amount), offset: set_offset }];
-    let expected = initial.clone();
-
-    TestResult::from_bool(combine_set_and_increments(initial) == expected)
+    quickcheck(combine_increment_and_set_different_offsets as fn(isize, i8, isize, i8) -> TestResult);
 }
 
-#[quickcheck]
-fn combine_set_and_set(offset: isize, set_amount_before: i8, set_amount_after: i8) -> bool {
-    let initial = vec![Set { amount: Wrapping(set_amount_before), offset: offset },
-                       Set { amount: Wrapping(set_amount_after), offset: offset }];
-    let expected = vec![Set { amount: Wrapping(set_amount_after), offset: offset }];
-    combine_set_and_increments(initial) == expected
-}
-
-#[quickcheck]
-fn combine_set_and_set_different_offsets(offset1: isize, amount1: i8, offset2: isize, amount2: i8) -> TestResult {
-    if offset1 == offset2 {
-        return TestResult::discard();
+#[test]
+fn quickcheck_combine_set_and_set() {
+    fn combine_set_and_set(offset: isize, set_amount_before: i8, set_amount_after: i8) -> bool {
+        let initial = vec![Set { amount: Wrapping(set_amount_before), offset: offset },
+                           Set { amount: Wrapping(set_amount_after), offset: offset }];
+        let expected = vec![Set { amount: Wrapping(set_amount_after), offset: offset }];
+        combine_set_and_increments(initial) == expected
     }
+    quickcheck(combine_set_and_set as fn(isize, i8, i8) -> bool);
+}
 
-    let initial = vec![
-        Set { amount: Wrapping(amount1), offset: offset1 },
-        Set { amount: Wrapping(amount2), offset: offset2 }];
-    let expected = initial.clone();
+#[test]
+fn quickcheck_combine_set_and_set_different_offsets() {
+    fn combine_set_and_set_different_offsets(offset1: isize, amount1: i8, offset2: isize, amount2: i8) -> TestResult {
+        if offset1 == offset2 {
+            return TestResult::discard();
+        }
 
-    TestResult::from_bool(combine_set_and_increments(initial) == expected)
+        let initial = vec![
+            Set { amount: Wrapping(amount1), offset: offset1 },
+            Set { amount: Wrapping(amount2), offset: offset2 }];
+        let expected = initial.clone();
+
+        TestResult::from_bool(combine_set_and_increments(initial) == expected)
+    }
+    quickcheck(combine_set_and_set_different_offsets as fn(isize, i8, isize, i8) -> TestResult);
 }
 
 #[test]
@@ -251,12 +272,15 @@ fn should_combine_set_and_set_nested() {
     assert_eq!(combine_set_and_increments(initial), expected);
 }
 
-#[quickcheck]
-fn should_combine_increment_and_set(offset: isize) {
-    let initial = vec![Increment { amount: Wrapping(2), offset: offset },
-                       Set { amount: Wrapping(3), offset: offset }];
-    let expected = vec![Set { amount: Wrapping(3), offset: offset }];
-    assert_eq!(combine_set_and_increments(initial), expected);
+#[test]
+fn quickcheck_should_combine_increment_and_set() {
+    fn should_combine_increment_and_set(offset: isize) -> bool {
+        let initial = vec![Increment { amount: Wrapping(2), offset: offset },
+                           Set { amount: Wrapping(3), offset: offset }];
+        let expected = vec![Set { amount: Wrapping(3), offset: offset }];
+        combine_set_and_increments(initial) == expected
+    }
+    quickcheck(should_combine_increment_and_set as fn(isize) -> bool);
 }
 
 #[test]
@@ -304,10 +328,13 @@ fn is_pure(instrs: &[Instruction]) -> bool {
     true
 }
 
-#[quickcheck]
-fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> bool {
-    let annotated = annotate_known_zero(instrs);
-    annotated[0] == Set { amount: Wrapping(0), offset: 0 }
+#[test]
+fn quickcheck_should_annotate_known_zero_at_start() {
+    fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> bool {
+        let annotated = annotate_known_zero(instrs);
+        annotated[0] == Set { amount: Wrapping(0), offset: 0 }
+    }
+    quickcheck(should_annotate_known_zero_at_start as fn(Vec<Instruction>) -> bool);
 }
 
 #[test]
@@ -356,21 +383,27 @@ fn should_remove_pure_code() {
     assert_eq!(optimize(initial), expected);
 }
 
-#[quickcheck]
-fn should_remove_dead_pure_code(instrs: Vec<Instruction>) -> TestResult {
-    if !is_pure(&instrs) {
-        return TestResult::discard();
+#[test]
+fn quickcheck_should_remove_dead_pure_code() {
+    fn should_remove_dead_pure_code(instrs: Vec<Instruction>) -> TestResult {
+        if !is_pure(&instrs) {
+            return TestResult::discard();
+        }
+        TestResult::from_bool(optimize(instrs) == vec![])
     }
-    TestResult::from_bool(optimize(instrs) == vec![])
+    quickcheck(should_remove_dead_pure_code as fn(Vec<Instruction>) -> TestResult);
 }
 
-#[quickcheck]
-fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
-    // Once we've optimized once, running again shouldn't reduce the
-    // instructions further. If it does, we're probably running our
-    // optimisations in the wrong order.
-    let minimal = optimize(instrs.clone());
-    optimize(minimal.clone()) == minimal
+#[test]
+fn quickcheck_optimize_should_be_idempotent() {
+    fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
+        // Once we've optimized once, running again shouldn't reduce the
+        // instructions further. If it does, we're probably running our
+        // optimisations in the wrong order.
+        let minimal = optimize(instrs.clone());
+        optimize(minimal.clone()) == minimal
+    }
+    quickcheck(optimize_should_be_idempotent as fn(Vec<Instruction>) -> bool);
 }
 
 #[test]
@@ -402,12 +435,15 @@ fn count_instrs(instrs: &[Instruction]) -> u64 {
     count
 }
 
-#[quickcheck]
-fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
-    // The result of optimize() should never increase the number of
-    // instructions.
-    let result = optimize(instrs.clone());
-    count_instrs(&result) <= count_instrs(&instrs)
+#[test]
+fn quickcheck_optimize_should_decrease_size() {
+    fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
+        // The result of optimize() should never increase the number of
+        // instructions.
+        let result = optimize(instrs.clone());
+        count_instrs(&result) <= count_instrs(&instrs)
+    }
+    quickcheck(optimize_should_decrease_size as fn(Vec<Instruction>) -> bool);
 }
 
 #[test]
@@ -528,34 +564,40 @@ fn sort_by_offset_read() {
     assert_eq!(sort_by_offset(instrs), expected);
 }
 
-#[quickcheck]
-fn sort_by_offset_set(amount1: i8, amount2: i8) -> bool {
-    let instrs = vec![Set { amount: Wrapping(amount1), offset: 0 },
-                      PointerIncrement(-1),
-                      Set { amount: Wrapping(amount2), offset: 0 }];
+#[test]
+fn quickcheck_sort_by_offset_set() {
+    fn sort_by_offset_set(amount1: i8, amount2: i8) -> bool {
+        let instrs = vec![Set { amount: Wrapping(amount1), offset: 0 },
+                          PointerIncrement(-1),
+                          Set { amount: Wrapping(amount2), offset: 0 }];
 
-    let expected = vec![Set { amount: Wrapping(amount2), offset: -1 },
-                        Set { amount: Wrapping(amount1), offset: 0 },
-                        PointerIncrement(-1)];
-    sort_by_offset(instrs) == expected
+        let expected = vec![Set { amount: Wrapping(amount2), offset: -1 },
+                            Set { amount: Wrapping(amount1), offset: 0 },
+                            PointerIncrement(-1)];
+        sort_by_offset(instrs) == expected
+    }
+    quickcheck(sort_by_offset_set as fn(i8, i8) -> bool);
 }
 
-#[quickcheck]
-fn sort_by_offset_pointer_increments(amount1: isize, amount2: isize) -> TestResult {
-    // Although in principle our optimisations would work outside
-    // MAX_CELL_INDEX, we restrict the range to avoid overflow.
-    if amount1 < -30000 || amount1 > 30000 || amount2 < -30000 || amount2 > 30000 {
-        return TestResult::discard();
-    }
-    // We should discard the pointer increment if the two cancel out,
-    // but we don't test that here.
-    if amount1 + amount2 == 0 {
-        return TestResult::discard();
-    }
+#[test]
+fn quickcheck_sort_by_offset_pointer_increments() {
+    fn sort_by_offset_pointer_increments(amount1: isize, amount2: isize) -> TestResult {
+        // Although in principle our optimisations would work outside
+        // MAX_CELL_INDEX, we restrict the range to avoid overflow.
+        if amount1 < -30000 || amount1 > 30000 || amount2 < -30000 || amount2 > 30000 {
+            return TestResult::discard();
+        }
+        // We should discard the pointer increment if the two cancel out,
+        // but we don't test that here.
+        if amount1 + amount2 == 0 {
+            return TestResult::discard();
+        }
 
-    let instrs = vec![PointerIncrement(amount1), PointerIncrement(amount2)];
-    let expected = vec![PointerIncrement(amount1 + amount2)];
-    TestResult::from_bool(sort_by_offset(instrs) == expected)
+        let instrs = vec![PointerIncrement(amount1), PointerIncrement(amount2)];
+        let expected = vec![PointerIncrement(amount1 + amount2)];
+        TestResult::from_bool(sort_by_offset(instrs) == expected)
+    }
+    quickcheck(sort_by_offset_pointer_increments as fn(isize, isize) -> TestResult);
 }
 
 /// Ensure that we combine after sorting, since sorting creates new
