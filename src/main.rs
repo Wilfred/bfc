@@ -106,14 +106,14 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         execution::execute(&instrs, execution::MAX_STEPS)
     } else {
         execution::ExecutionState {
-            instr_ptr: 0,
+            instrs_pos: vec![0],
             cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) + 1],
             cell_ptr: 0,
             outputs: vec![],
         }
     };
 
-    let remaining_instrs = &instrs[state.instr_ptr..];
+    let remaining_instrs = &instrs[state.instrs_pos[0]..];
 
     if matches.opt_present("dump-ir") {
         if remaining_instrs.is_empty() {
