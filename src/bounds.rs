@@ -1,7 +1,7 @@
 #![warn(trivial_numeric_casts)]
 
+#[cfg(test)]
 use quickcheck::quickcheck;
-
 #[cfg(test)]
 use std::collections::HashMap;
 #[cfg(test)]

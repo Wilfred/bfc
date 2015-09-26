@@ -1,11 +1,10 @@
 #![warn(trivial_numeric_casts)]
 
-extern crate quickcheck;
-
 #[cfg(test)]
 use std::collections::HashMap;
 use std::num::Wrapping;
 
+#[cfg(test)]
 use quickcheck::quickcheck;
 
 #[cfg(test)]
