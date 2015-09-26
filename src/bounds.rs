@@ -77,7 +77,8 @@ fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
     let mut max_index = SaturatingInt::Number(0);
 
     for (instr_highest_offset, instr_net_movement) in instrs.iter().map(movement) {
-        max_index = max(net_movement, max(net_movement + instr_highest_offset, max_index));
+        max_index = max(net_movement,
+                        max(net_movement + instr_highest_offset, max_index));
         net_movement = net_movement + instr_net_movement;
     }
     (max_index, net_movement)
@@ -88,9 +89,11 @@ fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
 fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
     match *instr {
         PointerIncrement(amount) => if amount < 0 {
-            (SaturatingInt::Number(0), SaturatingInt::Number(amount as i64))
+            (SaturatingInt::Number(0),
+             SaturatingInt::Number(amount as i64))
         } else {
-            (SaturatingInt::Number(amount as i64), SaturatingInt::Number(amount as i64))
+            (SaturatingInt::Number(amount as i64),
+             SaturatingInt::Number(amount as i64))
         },
         MultiplyMove(ref changes) => {
             let mut highest_affected = 0;
@@ -99,7 +102,8 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
                     highest_affected = *cell;
                 }
             }
-            (SaturatingInt::Number(highest_affected as i64), SaturatingInt::Number(0))
+            (SaturatingInt::Number(highest_affected as i64),
+             SaturatingInt::Number(0))
         }
         Loop(ref body) => {
             let (max_in_body, net_in_body) = overall_movement(body);

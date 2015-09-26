@@ -98,7 +98,8 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, String> {
 
 #[test]
 fn parse_increment() {
-    assert_eq!(parse("+").unwrap(), [Increment { amount: Wrapping(1), offset: 0 }]);
+    assert_eq!(parse("+").unwrap(),
+               [Increment { amount: Wrapping(1), offset: 0 }]);
     assert_eq!(parse("++").unwrap(),
                [Increment { amount: Wrapping(1), offset: 0 },
                 Increment { amount: Wrapping(1), offset: 0 }]);
@@ -106,7 +107,8 @@ fn parse_increment() {
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("-").unwrap(), [Increment { amount: Wrapping(-1), offset: 0 }]);
+    assert_eq!(parse("-").unwrap(),
+               [Increment { amount: Wrapping(-1), offset: 0 }]);
 }
 
 #[test]
