@@ -124,16 +124,21 @@ fn execute_inner(instrs: &[Instruction],
                     let (state_after, loop_outcome) = execute_inner(body,
                                                                     loop_body_state,
                                                                     steps_left);
-                    if let &Outcome::Completed(remaining_steps) = &loop_outcome {
-                        // We finished executing a loop iteration, so store its side effects.
-                        state.cells = state_after.cells;
-                        state.outputs = state_after.outputs;
-                        state.cell_ptr = state_after.cell_ptr;
-                        // We've run several steps during the loop body, so update for that too.
-                        steps_left = remaining_steps;
-                    } else {
-                        // We couldn't evaluate the loop body.
-                        return (state, loop_outcome);
+                    match loop_outcome {
+                        Outcome::Completed(remaining_steps) => {
+                            // We finished executing a loop iteration, so store its side effects.
+                            state.cells = state_after.cells;
+                            state.outputs = state_after.outputs;
+                            state.cell_ptr = state_after.cell_ptr;
+                            // We've run several steps during the loop body, so update for that too.
+                            steps_left = remaining_steps;
+                        }
+                        Outcome::ReachedRuntimeValue |
+                        Outcome::RuntimeError |
+                        Outcome::OutOfSteps => {
+                            // We couldn't evaluate the loop body.
+                            return (state, loop_outcome);
+                        }
                     }
                 }
             }
