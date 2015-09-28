@@ -9,9 +9,12 @@ use libc::types::os::arch::c95::c_uint;
 use std::ffi::{CString, CStr};
 
 use std::collections::HashMap;
+use std::num::Wrapping;
 
 use bfir::{Instruction, Cell};
 use bfir::Instruction::*;
+
+use execution::ExecutionState;
 
 const LLVM_FALSE: LLVMBool = 0;
 const LLVM_TRUE: LLVMBool = 1;
@@ -134,7 +137,7 @@ fn run_length_encode<T>(cells: &[T]) -> Vec<(T, usize)>
     }).collect()
 }
 
-unsafe fn add_cells_init(init_values: &[i8],
+unsafe fn add_cells_init(init_values: &[Wrapping<i8>],
                          module: &mut Module,
                          bb: &mut LLVMBasicBlock)
                          -> LLVMValueRef {
@@ -153,7 +156,7 @@ unsafe fn add_cells_init(init_values: &[i8],
 
     let mut offset = 0;
     for (cell_val, cell_count) in run_length_encode(init_values) {
-        let llvm_cell_val = int8(cell_val as c_ulonglong);
+        let llvm_cell_val = int8(cell_val.0 as c_ulonglong);
         let llvm_cell_count = int32(cell_count as c_ulonglong);
 
         // TODO: factor out a build_gep function.
@@ -197,7 +200,7 @@ unsafe fn add_main_fn(module: &mut Module) -> LLVMValueRef {
 // TODO: name our pointers cell_base and
 // cell_offset_ptr.
 /// Initialise the value that contains the current cell index.
-unsafe fn add_cell_index_init(init_value: i32,
+unsafe fn add_cell_index_init(init_value: isize,
                               bb: *mut LLVMBasicBlock,
                               module: &mut Module)
                               -> LLVMValueRef {
@@ -554,12 +557,9 @@ unsafe fn compile_static_outputs(module: &mut Module, bb: &mut LLVMBasicBlock, o
 }
 
 // TODO: use init_values terminology consistently for names here.
-// TODO: pass in an execution state to make our parameters more explicit.
 pub fn compile_to_ir(module_name: &str,
                      instrs: &[Instruction],
-                     cells: &[i8],
-                     cell_ptr: i32,
-                     static_outputs: &[i8])
+                     initial_state: &ExecutionState)
                      -> CString {
     let llvm_ir_owned;
     unsafe {
@@ -568,15 +568,15 @@ pub fn compile_to_ir(module_name: &str,
         let main_fn = add_main_fn(&mut module);
         let mut bb = LLVMGetLastBasicBlock(main_fn);
 
-        if static_outputs.len() > 0 {
-            compile_static_outputs(&mut module, &mut *bb, static_outputs);
+        if initial_state.outputs.len() > 0 {
+            compile_static_outputs(&mut module, &mut *bb, &initial_state.outputs);
         }
 
         if instrs.len() > 0 {
             // TODO: decide on a consistent order between module and bb as
             // parameters.
-            let llvm_cells = add_cells_init(cells, &mut module, &mut *bb);
-            let llvm_cell_index = add_cell_index_init(cell_ptr, bb, &mut module);
+            let llvm_cells = add_cells_init(&initial_state.cells, &mut module, &mut *bb);
+            let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, bb, &mut module);
 
             for instr in instrs {
                 bb = compile_instr(instr, &mut module, &mut *bb, main_fn,

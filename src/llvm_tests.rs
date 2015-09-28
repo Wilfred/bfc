@@ -4,11 +4,19 @@ use std::num::Wrapping;
 
 use llvm::compile_to_ir;
 use bfir::Instruction::*;
+use execution::ExecutionState;
 
 #[test]
 fn compile_loop() {
-    let result = compile_to_ir("foo", &vec![Loop(vec![Increment { amount: Wrapping(1), offset: 0 }])],
-                               &vec![0], 0, &vec![]);
+    let result = compile_to_ir(
+        "foo",
+        &vec![Loop(vec![Increment { amount: Wrapping(1), offset: 0 }])],
+        &ExecutionState {
+            instr_ptr: 0,
+            cells: vec![Wrapping(0)],
+            cell_ptr: 0,
+            outputs: vec![]
+        });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -56,7 +64,13 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_empty_program() {
-    let result = compile_to_ir("foo", &vec![], &vec![0; 10], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![],
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0)],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -81,7 +95,12 @@ attributes #0 = { nounwind }
 #[test]
 fn compile_set() {
     let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 0 }],
-                               &vec![0], 0, &vec![]);
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0)],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -116,7 +135,12 @@ attributes #0 = { nounwind }
 #[test]
 fn compile_set_with_offset() {
     let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 42 }],
-                               &vec![0; 50], 0, &vec![]);
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0); 50],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -150,7 +174,13 @@ attributes #0 = { nounwind }
 
 #[test]
 fn respect_initial_cell_ptr() {
-    let result = compile_to_ir("foo", &vec![PointerIncrement(1)], &vec![0; 10], 8, &vec![]);
+    let result = compile_to_ir("foo", &vec![PointerIncrement(1)],
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0); 10],
+                                   cell_ptr: 8,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -186,7 +216,13 @@ fn compile_multiply_move() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(2));
     changes.insert(2, Wrapping(3));
-    let result = compile_to_ir("foo", &vec![MultiplyMove(changes)], &vec![0, 0, 0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![MultiplyMove(changes)],
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0); 3],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -232,7 +268,18 @@ attributes #0 = { nounwind }
 
 #[test]
 fn set_initial_cell_values() {
-    let result = compile_to_ir("foo", &vec![PointerIncrement(1)], &vec![1, 1, 2, 0, 0, 0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![PointerIncrement(1)],
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(1),
+                                               Wrapping(1),
+                                               Wrapping(2),
+                                               Wrapping(0),
+                                               Wrapping(0),
+                                               Wrapping(0)],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -269,7 +316,13 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_static_outputs() {
-    let result = compile_to_ir("foo", &vec![], &vec![], 0, &vec![5, 10]);
+    let result = compile_to_ir("foo", &vec![],
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![],
+                                   cell_ptr: 0,
+                                   outputs: vec![5, 10]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 @known_outputs = constant [2 x i8] c\"\\05\\0A\"
@@ -297,7 +350,13 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_ptr_increment() {
-    let result = compile_to_ir("foo", &vec![PointerIncrement(1)], &vec![0, 0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![PointerIncrement(1)],
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0); 2],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -330,7 +389,13 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment() {
-    let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 0 }], &vec![0], 0, &vec![]);
+    let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 0 }],
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0)],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind
@@ -367,7 +432,12 @@ attributes #0 = { nounwind }
 #[test]
 fn compile_increment_with_offset() {
     let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 3 }],
-                               &vec![0; 4], 0, &vec![]);
+                               &ExecutionState {
+                                   instr_ptr: 0,
+                                   cells: vec![Wrapping(0); 4],
+                                   cell_ptr: 0,
+                                   outputs: vec![]
+                               });
     let expected = "; ModuleID = \'foo\'
 
 ; Function Attrs: nounwind

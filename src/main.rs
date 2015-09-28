@@ -112,8 +112,6 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
             outputs: vec![],
         }
     };
-    let initial_cells: Vec<i8> = state.cells.iter()
-        .map(|x: &Wrapping<i8>| x.0).collect();
 
     let remaining_instrs = &instrs[state.instr_ptr..];
 
@@ -128,9 +126,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         return Ok(());
     }
 
-    let llvm_ir_raw = llvm::compile_to_ir(
-        path, &remaining_instrs.to_vec(), &initial_cells, state.cell_ptr as i32,
-        &state.outputs);
+    let llvm_ir_raw = llvm::compile_to_ir(path, remaining_instrs, &state);
 
     if matches.opt_present("dump-llvm") {
         let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
