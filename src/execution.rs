@@ -439,6 +439,19 @@ fn partially_execute_complete_toplevel_loop() {
 }
 
 #[test]
+fn partially_execute_up_to_step_limit() {
+    let instrs = parse("+[++++]").unwrap();
+    let final_state = execute(&instrs, 3);
+
+    assert_eq!(final_state,
+               ExecutionState {
+                   instrs_pos: vec![1, 2],
+                   cells: vec![Wrapping(3)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
 #[test]
 fn loop_up_to_step_limit() {
     let instrs = parse("++[-]").unwrap();
