@@ -18,7 +18,15 @@ use bounds::MAX_CELL_INDEX;
 
 use bounds::highest_cell_index;
 
-// Represents a position within a program.
+// Represents a position within a program. The first index represents
+// our position at the top level. If the vector is longer, we're
+// mid-way through a loop and each additional index is for a nested
+// loop.
+//
+// For example, given the program +[-]+
+// [0] means we haven't executed anything.
+// [2] means we've reached the end.
+// [1, 0] means we're in the loop, before the -
 pub type InstrPosition = Vec<usize>;
 
 #[derive(Debug,Clone,PartialEq,Eq)]
