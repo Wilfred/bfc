@@ -150,7 +150,9 @@ fn execute_inner(instrs: &[Instruction],
                             state.cells = state_after.cells;
                             state.outputs = state_after.outputs;
                             state.cell_ptr = state_after.cell_ptr;
-                            // We've run several steps during the loop body, so update for that too.
+                            // We've run several steps during the loop
+                            // body, so ensure steps_left reflects
+                            // that.
                             steps_left = remaining_steps;
                         }
                         Outcome::ReachedRuntimeValue |
