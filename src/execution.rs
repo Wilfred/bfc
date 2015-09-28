@@ -412,6 +412,23 @@ fn partially_execute_up_to_runtime_value() {
                });
 }
 
+/// Ensure that we have the correct InstrPosition when we finish
+/// executing a top-level loop.
+#[test]
+fn partially_execute_complete_toplevel_loop() {
+    let instrs = parse("+[-],").unwrap();
+    let final_state = execute(&instrs, 10);
+
+    assert_eq!(final_state,
+               ExecutionState {
+                   instrs_pos: vec![2],
+                   cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
+#[test]
 #[test]
 fn loop_up_to_step_limit() {
     let instrs = parse("++[-]").unwrap();
