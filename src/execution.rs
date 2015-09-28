@@ -29,6 +29,16 @@ pub struct ExecutionState {
     pub outputs: Vec<i8>,
 }
 
+impl ExecutionState {
+    fn last_pos(&self) -> usize {
+        *self.instrs_pos.last().unwrap()
+    }
+
+    fn last_pos_mut(&mut self) -> &mut usize {
+        self.instrs_pos.last_mut().unwrap()
+    }
+}
+
 #[derive(Debug,PartialEq,Eq)]
 enum Outcome {
     // Return the number of steps remaining at completion.
@@ -60,18 +70,18 @@ fn execute_inner(instrs: &[Instruction],
     let mut steps_left = steps;
     let mut state = state;
 
-    while state.instrs_pos[0] < instrs.len() && steps_left > 0 {
+    while state.last_pos() < instrs.len() && steps_left > 0 {
         let cell_ptr = state.cell_ptr as usize;
-        match instrs[state.instrs_pos[0]] {
+        match instrs[state.last_pos()] {
             Increment { amount, offset } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
                 state.cells[target_cell_ptr] = state.cells[target_cell_ptr] + amount;
-                *state.instrs_pos.last_mut().unwrap() += 1;
+                *state.last_pos_mut() += 1;
             }
             Set { amount, offset } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
                 state.cells[target_cell_ptr] = amount;
-                *state.instrs_pos.last_mut().unwrap() += 1;
+                *state.last_pos_mut() += 1;
             }
             PointerIncrement(amount) => {
                 let new_cell_ptr = state.cell_ptr + amount;
@@ -79,7 +89,7 @@ fn execute_inner(instrs: &[Instruction],
                     return (state, Outcome::RuntimeError);
                 } else {
                     state.cell_ptr = new_cell_ptr;
-                    *state.instrs_pos.last_mut().unwrap() += 1;
+                    *state.last_pos_mut() += 1;
                 }
             }
             MultiplyMove(ref changes) => {
@@ -103,12 +113,12 @@ fn execute_inner(instrs: &[Instruction],
                 // Finally, zero the cell we used.
                 state.cells[cell_ptr] = Wrapping(0);
 
-                *state.instrs_pos.last_mut().unwrap() += 1;
+                *state.last_pos_mut() += 1;
             }
             Write => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value.0);
-                *state.instrs_pos.last_mut().unwrap() += 1;
+                *state.last_pos_mut() += 1;
             }
             Read => {
                 return (state, Outcome::ReachedRuntimeValue);
@@ -117,10 +127,12 @@ fn execute_inner(instrs: &[Instruction],
                 if state.cells[state.cell_ptr as usize].0 == 0 {
                     // Step over the loop because the current cell is
                     // zero.
-                    *state.instrs_pos.last_mut().unwrap() += 1;
+                    *state.last_pos_mut() += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_body_state = ExecutionState { instrs_pos: vec![0], ..state.clone() };
+                    let mut instrs_pos = state.instrs_pos.clone();
+                    instrs_pos.push(0);
+                    let loop_body_state = ExecutionState { instrs_pos: instrs_pos, ..state.clone() };
                     let (state_after, loop_outcome) = execute_inner(body,
                                                                     loop_body_state,
                                                                     steps_left);
@@ -136,8 +148,8 @@ fn execute_inner(instrs: &[Instruction],
                         Outcome::ReachedRuntimeValue |
                         Outcome::RuntimeError |
                         Outcome::OutOfSteps => {
-                            // We couldn't evaluate the loop body.
-                            return (state, loop_outcome);
+                            // We couldn't evaluate all of the loop body.
+                            return (state_after, loop_outcome);
                         }
                     }
                 }
@@ -379,6 +391,22 @@ fn loop_executed() {
                ExecutionState {
                    instrs_pos: vec![3],
                    cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
+// If we can't execute all of a loop body, we should still return a
+// position within the loop.
+#[test]
+fn partially_execute_up_to_runtime_value() {
+    let instrs = parse("+[[,]]").unwrap();
+    let final_state = execute(&instrs, 10);
+
+    assert_eq!(final_state,
+               ExecutionState {
+                   instrs_pos: vec![1, 0, 0],
+                   cells: vec![Wrapping(1)],
                    cell_ptr: 0,
                    outputs: vec![],
                });
