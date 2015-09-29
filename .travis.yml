@@ -14,7 +14,9 @@ install:
  - sudo sh -c "echo 'deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main' >> /etc/apt/sources.list"
  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
  - sudo apt-get update
- - sudo apt-get install -y --force-yes libllvm3.6
+ - sudo apt-get install -y --force-yes libllvm3.6 llvm-3.6 llvm-3.6-dev llvm-3.6-runtime
+ - llvm-config || true
+ - llvm-config --version
 
 notifications:
   email: false
