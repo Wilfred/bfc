@@ -5,9 +5,13 @@ rust:
   - nightly
 
 install:
+# based on instructions at http://llvm.org/apt/
  - sudo sh -c "echo 'deb http://archive.ubuntu.com/ubuntu/ precise-proposed restricted main multiverse universe' >> /etc/apt/sources.list"
- - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main' >> /etc/apt/sources.list"
- - sudo sh -c "echo 'deb-src http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main' >> /etc/apt/sources.list"
+ - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise main' >> /etc/apt/sources.list"
+ - sudo sh -c "echo 'deb-src http://llvm.org/apt/precise/ llvm-toolchain-precise main' >> /etc/apt/sources.list"
+ - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.6 main' >> /etc/apt/sources.list"
+ - sudo sh -c "echo 'deb-src http://llvm.org/apt/precise/ llvm-toolchain-precise-3.6 main' >> /etc/apt/sources.list"
+ - sudo sh -c "echo 'deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main' >> /etc/apt/sources.list"
  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
  - sudo apt-get update
  - sudo apt-get install libllvm3.6
