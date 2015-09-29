@@ -4,9 +4,10 @@ rust: beta
 install:
  - sudo sh -c "echo 'deb http://archive.ubuntu.com/ubuntu/ precise-proposed restricted main multiverse universe' >> /etc/apt/sources.list"
  - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main' >> /etc/apt/sources.list"
+ - sudo sh -c "echo 'deb-src http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main' >> /etc/apt/sources.list"
  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
  - sudo apt-get update
- - sudo apt-get install llvm-3.5 llvm-3.5-dev libllvm3.5
+ - sudo apt-get install libllvm3.6
 
 notifications:
   email: false
