@@ -113,20 +113,14 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         }
     };
 
-    let remaining_instrs = &instrs[state.instrs_pos[0]..];
-
     if matches.opt_present("dump-ir") {
-        if remaining_instrs.is_empty() {
-            println!("(optimized out)");
-        }
-
-        for instr in remaining_instrs {
+        for instr in instrs {
             println!("{}", instr);
         }
         return Ok(());
     }
 
-    let llvm_ir_raw = llvm::compile_to_ir(path, remaining_instrs, &state);
+    let llvm_ir_raw = llvm::compile_to_ir(path, &instrs, &state);
 
     if matches.opt_present("dump-llvm") {
         let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
