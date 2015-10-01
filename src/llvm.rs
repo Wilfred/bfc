@@ -491,7 +491,6 @@ unsafe fn compile_loop<'a>(module: &mut Module,
     &mut *loop_after
 }
 
-// TODO: just take * instead of & to save all the casting.
 unsafe fn compile_instr<'a>(instr: &Instruction,
                             module: &mut Module,
                             bb: &'a mut LLVMBasicBlock,
