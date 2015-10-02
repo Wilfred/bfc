@@ -64,6 +64,8 @@ impl Drop for Builder {
     }
 }
 
+struct CompileContext;
+
 /// Convert this integer to LLVM's representation of a constant
 /// integer.
 unsafe fn int8(val: c_ulonglong) -> LLVMValueRef {
@@ -576,6 +578,8 @@ pub fn compile_to_ir(module_name: &str,
             // parameters.
             let llvm_cells = add_cells_init(&initial_state.cells, &mut module, &mut *bb);
             let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, bb, &mut module);
+
+            let ctx = CompileContext;
 
             for instr in instrs {
                 bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
