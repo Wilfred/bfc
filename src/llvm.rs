@@ -66,7 +66,8 @@ impl Drop for Builder {
 
 #[derive(Clone)]
 struct CompileContext {
-    cells: LLVMValueRef
+    cells: LLVMValueRef,
+    cell_index_ptr: LLVMValueRef
 }
 
 /// Convert this integer to LLVM's representation of a constant
@@ -262,14 +263,13 @@ unsafe fn compile_increment<'a>(amount: Cell,
                                 offset: isize,
                                 module: &mut Module,
                                 bb: &'a mut LLVMBasicBlock,
-                                cell_index_ptr: LLVMValueRef,
                                 ctx: CompileContext)
                                 -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
     let cell_index = LLVMBuildLoad(builder.builder,
-                                   cell_index_ptr,
+                                   ctx.cell_index_ptr,
                                    module.new_string_ptr("cell_index"));
 
     let offset_cell_index = LLVMBuildAdd(builder.builder,
@@ -302,14 +302,13 @@ unsafe fn compile_set<'a>(amount: Cell,
                           offset: isize,
                           module: &mut Module,
                           bb: &'a mut LLVMBasicBlock,
-                          cell_index_ptr: LLVMValueRef,
                           ctx: CompileContext)
                           -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
     let cell_index = LLVMBuildLoad(builder.builder,
-                                   cell_index_ptr,
+                                   ctx.cell_index_ptr,
                                    module.new_string_ptr("cell_index"));
 
     let offset_cell_index = LLVMBuildAdd(builder.builder,
@@ -331,14 +330,13 @@ unsafe fn compile_set<'a>(amount: Cell,
 unsafe fn compile_multiply_move<'a>(changes: &HashMap<isize, Cell>,
                                     module: &mut Module,
                                     bb: &'a mut LLVMBasicBlock,
-                                    cell_index_ptr: LLVMValueRef,
                                     ctx: CompileContext)
                                     -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
     // First, get the current cell value.
-    let (cell_val, cell_val_ptr) = add_current_cell_access(module, bb, ctx.cells, cell_index_ptr);
+    let (cell_val, cell_val_ptr) = add_current_cell_access(module, bb, ctx.cells, ctx.cell_index_ptr);
 
     // Zero the current cell.
     LLVMBuildStore(builder.builder, int8(0), cell_val_ptr);
@@ -381,13 +379,13 @@ unsafe fn compile_multiply_move<'a>(changes: &HashMap<isize, Cell>,
 unsafe fn compile_ptr_increment<'a>(amount: isize,
                                     module: &mut Module,
                                     bb: &'a mut LLVMBasicBlock,
-                                    cell_index_ptr: LLVMValueRef)
+                                    ctx: CompileContext)
                                     -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
     let cell_index = LLVMBuildLoad(builder.builder,
-                                   cell_index_ptr,
+                                   ctx.cell_index_ptr,
                                    module.new_string_ptr("cell_index"));
 
     let new_cell_index = LLVMBuildAdd(builder.builder,
@@ -395,20 +393,19 @@ unsafe fn compile_ptr_increment<'a>(amount: isize,
                                       int32(amount as c_ulonglong),
                                       module.new_string_ptr("new_cell_index"));
 
-    LLVMBuildStore(builder.builder, new_cell_index, cell_index_ptr);
+    LLVMBuildStore(builder.builder, new_cell_index, ctx.cell_index_ptr);
     bb
 }
 
 unsafe fn compile_read<'a>(module: &mut Module,
                            bb: &'a mut LLVMBasicBlock,
-                           cell_index_ptr: LLVMValueRef,
                            ctx: CompileContext)
                            -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
     let cell_index = LLVMBuildLoad(builder.builder,
-                                   cell_index_ptr,
+                                   ctx.cell_index_ptr,
                                    module.new_string_ptr("cell_index"));
 
     let mut indices = vec![cell_index];
@@ -431,13 +428,12 @@ unsafe fn compile_read<'a>(module: &mut Module,
 
 unsafe fn compile_write<'a>(module: &mut Module,
                             bb: &'a mut LLVMBasicBlock,
-                            cell_index_ptr: LLVMValueRef,
                             ctx: CompileContext)
                             -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
-    let cell_val = add_current_cell_access(module, bb, ctx.cells, cell_index_ptr).0;
+    let cell_val = add_current_cell_access(module, bb, ctx.cells, ctx.cell_index_ptr).0;
     let cell_val_as_char = LLVMBuildSExt(builder.builder,
                                          cell_val,
                                          LLVMInt32Type(),
@@ -452,7 +448,6 @@ unsafe fn compile_loop<'a>(module: &mut Module,
                            bb: &'a mut LLVMBasicBlock,
                            loop_body: &[Instruction],
                            main_fn: LLVMValueRef,
-                           cell_index_ptr: LLVMValueRef,
                            ctx: CompileContext)
                            -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -472,7 +467,7 @@ unsafe fn compile_loop<'a>(module: &mut Module,
     //   br %cell_value_is_zero, %loop_after, %loop_body
     builder.position_at_end(loop_header_bb);
 
-    let cell_val = add_current_cell_access(module, &mut *loop_header_bb, ctx.cells, cell_index_ptr).0;
+    let cell_val = add_current_cell_access(module, &mut *loop_header_bb, ctx.cells, ctx.cell_index_ptr).0;
 
     let zero = int8(0);
     let cell_val_is_zero = LLVMBuildICmp(builder.builder,
@@ -485,7 +480,7 @@ unsafe fn compile_loop<'a>(module: &mut Module,
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
         loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb, main_fn,
-                                     cell_index_ptr, ctx.clone());
+                                     ctx.clone());
     }
 
     // When the loop is finished, jump back to the beginning of the
@@ -500,25 +495,24 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
                             module: &mut Module,
                             bb: &'a mut LLVMBasicBlock,
                             main_fn: LLVMValueRef,
-                            cell_index_ptr: LLVMValueRef,
                             ctx: CompileContext)
                             -> &'a mut LLVMBasicBlock {
     match *instr {
         Increment { amount, offset } => {
-            compile_increment(amount, offset, module, bb, cell_index_ptr, ctx)
+            compile_increment(amount, offset, module, bb, ctx)
         },
         Set { amount, offset } => {
-            compile_set(amount, offset, module, bb, cell_index_ptr, ctx)
+            compile_set(amount, offset, module, bb, ctx)
         },
         MultiplyMove(ref changes) => {
-            compile_multiply_move(changes, module, bb, cell_index_ptr, ctx)
+            compile_multiply_move(changes, module, bb, ctx)
         }
-        PointerIncrement(amount) => compile_ptr_increment(amount, module, bb, cell_index_ptr),
-        Read => compile_read(module, bb, cell_index_ptr, ctx),
-        Write => compile_write(module, bb, cell_index_ptr, ctx),
+        PointerIncrement(amount) => compile_ptr_increment(amount, module, bb, ctx),
+        Read => compile_read(module, bb, ctx),
+        Write => compile_write(module, bb, ctx),
         Loop(ref body) => {
             // TODO: we should pass arguments in a consistent order.
-            compile_loop(module, bb, body, main_fn, cell_index_ptr, ctx)
+            compile_loop(module, bb, body, main_fn, ctx)
         }
     }
 }
@@ -583,12 +577,13 @@ pub fn compile_to_ir(module_name: &str,
             let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, bb, &mut module);
 
             let ctx = CompileContext {
-                cells: llvm_cells
+                cells: llvm_cells,
+                cell_index_ptr: llvm_cell_index
             };
 
             for instr in instrs {
                 bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
-                                   llvm_cell_index, ctx.clone());
+                                   ctx.clone());
             }
         }
 
