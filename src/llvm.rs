@@ -64,7 +64,10 @@ impl Drop for Builder {
     }
 }
 
-struct CompileContext;
+#[derive(Clone)]
+struct CompileContext {
+    cells: LLVMValueRef
+}
 
 /// Convert this integer to LLVM's representation of a constant
 /// integer.
@@ -579,7 +582,9 @@ pub fn compile_to_ir(module_name: &str,
             let llvm_cells = add_cells_init(&initial_state.cells, &mut module, &mut *bb);
             let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, bb, &mut module);
 
-            let ctx = CompileContext;
+            let ctx = CompileContext {
+                cells: llvm_cells
+            };
 
             for instr in instrs {
                 bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
