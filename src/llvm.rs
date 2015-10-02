@@ -453,7 +453,8 @@ unsafe fn compile_loop<'a>(module: &mut Module,
                            loop_body: &[Instruction],
                            main_fn: LLVMValueRef,
                            cells: LLVMValueRef,
-                           cell_index_ptr: LLVMValueRef)
+                           cell_index_ptr: LLVMValueRef,
+                           ctx: CompileContext)
                            -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
 
@@ -485,7 +486,7 @@ unsafe fn compile_loop<'a>(module: &mut Module,
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
         loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb, main_fn, cells,
-                                     cell_index_ptr);
+                                     cell_index_ptr, ctx.clone());
     }
 
     // When the loop is finished, jump back to the beginning of the
@@ -501,7 +502,8 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
                             bb: &'a mut LLVMBasicBlock,
                             main_fn: LLVMValueRef,
                             cells: LLVMValueRef,
-                            cell_index_ptr: LLVMValueRef)
+                            cell_index_ptr: LLVMValueRef,
+                            ctx: CompileContext)
                             -> &'a mut LLVMBasicBlock {
     match *instr {
         Increment { amount, offset } => {
@@ -518,7 +520,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
         Write => compile_write(module, bb, cells, cell_index_ptr),
         Loop(ref body) => {
             // TODO: we should pass arguments in a consistent order.
-            compile_loop(module, bb, body, main_fn, cells, cell_index_ptr)
+            compile_loop(module, bb, body, main_fn, cells, cell_index_ptr, ctx)
         }
     }
 }
@@ -588,7 +590,7 @@ pub fn compile_to_ir(module_name: &str,
 
             for instr in instrs {
                 bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
-                                   llvm_cells, llvm_cell_index);
+                                   llvm_cells, llvm_cell_index, ctx.clone());
             }
         }
 
