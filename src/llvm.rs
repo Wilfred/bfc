@@ -262,8 +262,8 @@ unsafe fn compile_increment<'a>(amount: Cell,
                                 offset: isize,
                                 module: &mut Module,
                                 bb: &'a mut LLVMBasicBlock,
-                                cells: LLVMValueRef,
-                                cell_index_ptr: LLVMValueRef)
+                                cell_index_ptr: LLVMValueRef,
+                                ctx: CompileContext)
                                 -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
@@ -279,7 +279,7 @@ unsafe fn compile_increment<'a>(amount: Cell,
 
     let mut indices = vec![offset_cell_index];
     let current_cell_ptr = LLVMBuildGEP(builder.builder,
-                                        cells,
+                                        ctx.cells,
                                         indices.as_mut_ptr(),
                                         indices.len() as c_uint,
                                         module.new_string_ptr("current_cell_ptr"));
@@ -302,8 +302,8 @@ unsafe fn compile_set<'a>(amount: Cell,
                           offset: isize,
                           module: &mut Module,
                           bb: &'a mut LLVMBasicBlock,
-                          cells: LLVMValueRef,
-                          cell_index_ptr: LLVMValueRef)
+                          cell_index_ptr: LLVMValueRef,
+                          ctx: CompileContext)
                           -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
@@ -319,7 +319,7 @@ unsafe fn compile_set<'a>(amount: Cell,
 
     let mut indices = vec![offset_cell_index];
     let current_cell_ptr = LLVMBuildGEP(builder.builder,
-                                        cells,
+                                        ctx.cells,
                                         indices.as_mut_ptr(),
                                         indices.len() as c_uint,
                                         module.new_string_ptr("current_cell_ptr"));
@@ -331,14 +331,14 @@ unsafe fn compile_set<'a>(amount: Cell,
 unsafe fn compile_multiply_move<'a>(changes: &HashMap<isize, Cell>,
                                     module: &mut Module,
                                     bb: &'a mut LLVMBasicBlock,
-                                    cells: LLVMValueRef,
-                                    cell_index_ptr: LLVMValueRef)
+                                    cell_index_ptr: LLVMValueRef,
+                                    ctx: CompileContext)
                                     -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
     // First, get the current cell value.
-    let (cell_val, cell_val_ptr) = add_current_cell_access(module, bb, cells, cell_index_ptr);
+    let (cell_val, cell_val_ptr) = add_current_cell_access(module, bb, ctx.cells, cell_index_ptr);
 
     // Zero the current cell.
     LLVMBuildStore(builder.builder, int8(0), cell_val_ptr);
@@ -401,8 +401,8 @@ unsafe fn compile_ptr_increment<'a>(amount: isize,
 
 unsafe fn compile_read<'a>(module: &mut Module,
                            bb: &'a mut LLVMBasicBlock,
-                           cells: LLVMValueRef,
-                           cell_index_ptr: LLVMValueRef)
+                           cell_index_ptr: LLVMValueRef,
+                           ctx: CompileContext)
                            -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
@@ -413,7 +413,7 @@ unsafe fn compile_read<'a>(module: &mut Module,
 
     let mut indices = vec![cell_index];
     let current_cell_ptr = LLVMBuildGEP(builder.builder,
-                                        cells,
+                                        ctx.cells,
                                         indices.as_mut_ptr(),
                                         indices.len() as u32,
                                         module.new_string_ptr("current_cell_ptr"));
@@ -431,13 +431,13 @@ unsafe fn compile_read<'a>(module: &mut Module,
 
 unsafe fn compile_write<'a>(module: &mut Module,
                             bb: &'a mut LLVMBasicBlock,
-                            cells: LLVMValueRef,
-                            cell_index_ptr: LLVMValueRef)
+                            cell_index_ptr: LLVMValueRef,
+                            ctx: CompileContext)
                             -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
-    let cell_val = add_current_cell_access(module, bb, cells, cell_index_ptr).0;
+    let cell_val = add_current_cell_access(module, bb, ctx.cells, cell_index_ptr).0;
     let cell_val_as_char = LLVMBuildSExt(builder.builder,
                                          cell_val,
                                          LLVMInt32Type(),
@@ -452,7 +452,6 @@ unsafe fn compile_loop<'a>(module: &mut Module,
                            bb: &'a mut LLVMBasicBlock,
                            loop_body: &[Instruction],
                            main_fn: LLVMValueRef,
-                           cells: LLVMValueRef,
                            cell_index_ptr: LLVMValueRef,
                            ctx: CompileContext)
                            -> &'a mut LLVMBasicBlock {
@@ -473,7 +472,7 @@ unsafe fn compile_loop<'a>(module: &mut Module,
     //   br %cell_value_is_zero, %loop_after, %loop_body
     builder.position_at_end(loop_header_bb);
 
-    let cell_val = add_current_cell_access(module, &mut *loop_header_bb, cells, cell_index_ptr).0;
+    let cell_val = add_current_cell_access(module, &mut *loop_header_bb, ctx.cells, cell_index_ptr).0;
 
     let zero = int8(0);
     let cell_val_is_zero = LLVMBuildICmp(builder.builder,
@@ -485,7 +484,7 @@ unsafe fn compile_loop<'a>(module: &mut Module,
 
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
-        loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb, main_fn, cells,
+        loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb, main_fn,
                                      cell_index_ptr, ctx.clone());
     }
 
@@ -501,26 +500,25 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
                             module: &mut Module,
                             bb: &'a mut LLVMBasicBlock,
                             main_fn: LLVMValueRef,
-                            cells: LLVMValueRef,
                             cell_index_ptr: LLVMValueRef,
                             ctx: CompileContext)
                             -> &'a mut LLVMBasicBlock {
     match *instr {
         Increment { amount, offset } => {
-            compile_increment(amount, offset, module, bb, cells, cell_index_ptr)
+            compile_increment(amount, offset, module, bb, cell_index_ptr, ctx)
         },
         Set { amount, offset } => {
-            compile_set(amount, offset, module, bb, cells, cell_index_ptr)
+            compile_set(amount, offset, module, bb, cell_index_ptr, ctx)
         },
         MultiplyMove(ref changes) => {
-            compile_multiply_move(changes, module, bb, cells, cell_index_ptr)
+            compile_multiply_move(changes, module, bb, cell_index_ptr, ctx)
         }
         PointerIncrement(amount) => compile_ptr_increment(amount, module, bb, cell_index_ptr),
-        Read => compile_read(module, bb, cells, cell_index_ptr),
-        Write => compile_write(module, bb, cells, cell_index_ptr),
+        Read => compile_read(module, bb, cell_index_ptr, ctx),
+        Write => compile_write(module, bb, cell_index_ptr, ctx),
         Loop(ref body) => {
             // TODO: we should pass arguments in a consistent order.
-            compile_loop(module, bb, body, main_fn, cells, cell_index_ptr, ctx)
+            compile_loop(module, bb, body, main_fn, cell_index_ptr, ctx)
         }
     }
 }
@@ -590,7 +588,7 @@ pub fn compile_to_ir(module_name: &str,
 
             for instr in instrs {
                 bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
-                                   llvm_cells, llvm_cell_index, ctx.clone());
+                                   llvm_cell_index, ctx.clone());
             }
         }
 
