@@ -50,7 +50,7 @@ impl Builder {
         Builder { builder: LLVMCreateBuilder() }
     }
 
-    unsafe fn position_at_end(&self, bb: *mut LLVMBasicBlock) {
+    unsafe fn position_at_end(&self, bb: LLVMBasicBlockRef) {
         LLVMPositionBuilderAtEnd(self.builder, bb);
     }
 }
@@ -112,7 +112,7 @@ unsafe fn add_c_declarations(module: &mut Module) {
 }
 
 unsafe fn add_function_call(module: &mut Module,
-                            bb: &mut LLVMBasicBlock,
+                            bb: LLVMBasicBlockRef,
                             fn_name: &str,
                             args: &mut [LLVMValueRef],
                             name: &str)
@@ -146,7 +146,7 @@ fn run_length_encode<T>(cells: &[T]) -> Vec<(T, usize)>
 
 unsafe fn add_cells_init(init_values: &[Wrapping<i8>],
                          module: &mut Module,
-                         bb: &mut LLVMBasicBlock)
+                         bb: LLVMBasicBlockRef)
                          -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
@@ -243,7 +243,7 @@ unsafe fn add_main_cleanup(bb: *mut LLVMBasicBlock) {
 /// Add LLVM IR instructions for accessing the current cell, and
 /// return a reference to the current cell, and to a current cell pointer.
 unsafe fn add_current_cell_access(module: &mut Module,
-                                  bb: &mut LLVMBasicBlock,
+                                  bb: LLVMBasicBlockRef,
                                   cells: LLVMValueRef,
                                   cell_index_ptr: LLVMValueRef)
                                   -> (LLVMValueRef, LLVMValueRef) {
@@ -267,12 +267,12 @@ unsafe fn add_current_cell_access(module: &mut Module,
     (current_cell, current_cell_ptr)
 }
 
-unsafe fn compile_increment<'a>(amount: Cell,
+unsafe fn compile_increment(amount: Cell,
                                 offset: isize,
                                 module: &mut Module,
-                                bb: &'a mut LLVMBasicBlock,
+                                bb: LLVMBasicBlockRef,
                                 ctx: CompileContext)
-                                -> &'a mut LLVMBasicBlock {
+                                -> LLVMBasicBlockRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -306,12 +306,12 @@ unsafe fn compile_increment<'a>(amount: Cell,
     bb
 }
 
-unsafe fn compile_set<'a>(amount: Cell,
+unsafe fn compile_set(amount: Cell,
                           offset: isize,
                           module: &mut Module,
-                          bb: &'a mut LLVMBasicBlock,
+                          bb: LLVMBasicBlockRef,
                           ctx: CompileContext)
-                          -> &'a mut LLVMBasicBlock {
+                          -> LLVMBasicBlockRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -335,11 +335,11 @@ unsafe fn compile_set<'a>(amount: Cell,
     bb
 }
 
-unsafe fn compile_multiply_move<'a>(changes: &HashMap<isize, Cell>,
-                                    module: &mut Module,
-                                    bb: &'a mut LLVMBasicBlock,
-                                    ctx: CompileContext)
-                                    -> &'a mut LLVMBasicBlock {
+unsafe fn compile_multiply_move(changes: &HashMap<isize, Cell>,
+                                module: &mut Module,
+                                bb: LLVMBasicBlockRef,
+                                ctx: CompileContext)
+                                -> LLVMBasicBlockRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -384,11 +384,11 @@ unsafe fn compile_multiply_move<'a>(changes: &HashMap<isize, Cell>,
     bb
 }
 
-unsafe fn compile_ptr_increment<'a>(amount: isize,
-                                    module: &mut Module,
-                                    bb: &'a mut LLVMBasicBlock,
-                                    ctx: CompileContext)
-                                    -> &'a mut LLVMBasicBlock {
+unsafe fn compile_ptr_increment(amount: isize,
+                                module: &mut Module,
+                                bb: LLVMBasicBlockRef,
+                                ctx: CompileContext)
+                                -> LLVMBasicBlockRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -405,10 +405,10 @@ unsafe fn compile_ptr_increment<'a>(amount: isize,
     bb
 }
 
-unsafe fn compile_read<'a>(module: &mut Module,
-                           bb: &'a mut LLVMBasicBlock,
-                           ctx: CompileContext)
-                           -> &'a mut LLVMBasicBlock {
+unsafe fn compile_read(module: &mut Module,
+                       bb: LLVMBasicBlockRef,
+                       ctx: CompileContext)
+                       -> LLVMBasicBlockRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -434,10 +434,10 @@ unsafe fn compile_read<'a>(module: &mut Module,
     bb
 }
 
-unsafe fn compile_write<'a>(module: &mut Module,
-                            bb: &'a mut LLVMBasicBlock,
-                            ctx: CompileContext)
-                            -> &'a mut LLVMBasicBlock {
+unsafe fn compile_write(module: &mut Module,
+                        bb: LLVMBasicBlockRef,
+                        ctx: CompileContext)
+                        -> LLVMBasicBlockRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -452,11 +452,11 @@ unsafe fn compile_write<'a>(module: &mut Module,
     bb
 }
 
-unsafe fn compile_loop<'a>(loop_body: &[Instruction],
-                           module: &mut Module,
-                           bb: &'a mut LLVMBasicBlock,
-                           ctx: CompileContext)
-                           -> &'a mut LLVMBasicBlock {
+unsafe fn compile_loop(loop_body: &[Instruction],
+                       module: &mut Module,
+                       bb: LLVMBasicBlockRef,
+                       ctx: CompileContext)
+                       -> LLVMBasicBlockRef {
     let builder = Builder::new();
 
     // First, we branch into the loop header from the previous basic
@@ -500,11 +500,11 @@ unsafe fn compile_loop<'a>(loop_body: &[Instruction],
 
 /// Append LLVM IR instructions to bb acording to the BF instruction
 /// passed in.
-unsafe fn compile_instr<'a>(instr: &Instruction,
-                            module: &mut Module,
-                            bb: &'a mut LLVMBasicBlock,
-                            ctx: CompileContext)
-                            -> &'a mut LLVMBasicBlock {
+unsafe fn compile_instr(instr: &Instruction,
+                        module: &mut Module,
+                        bb: LLVMBasicBlockRef,
+                        ctx: CompileContext)
+                        -> LLVMBasicBlockRef {
     match *instr {
         Increment { amount, offset } => {
             compile_increment(amount, offset, module, bb, ctx)
@@ -524,7 +524,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
     }
 }
 
-unsafe fn compile_static_outputs(module: &mut Module, bb: &mut LLVMBasicBlock, outputs: &[i8]) {
+unsafe fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, outputs: &[i8]) {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -574,13 +574,13 @@ pub fn compile_to_ir(module_name: &str,
         let mut bb = add_initial_bbs(&mut module, main_fn);
 
         if initial_state.outputs.len() > 0 {
-            compile_static_outputs(&mut module, &mut *bb, &initial_state.outputs);
+            compile_static_outputs(&mut module, bb, &initial_state.outputs);
         }
 
         if instrs.len() > 0 {
             // TODO: decide on a consistent order between module and bb as
             // parameters.
-            let llvm_cells = add_cells_init(&initial_state.cells, &mut module, &mut *bb);
+            let llvm_cells = add_cells_init(&initial_state.cells, &mut module, bb);
             let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, bb, &mut module);
 
             let ctx = CompileContext {
@@ -590,7 +590,7 @@ pub fn compile_to_ir(module_name: &str,
             };
 
             for instr in instrs {
-                bb = compile_instr(instr, &mut module, &mut *bb,
+                bb = compile_instr(instr, &mut module, bb,
                                    ctx.clone());
             }
         }
