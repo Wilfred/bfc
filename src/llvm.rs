@@ -67,7 +67,8 @@ impl Drop for Builder {
 #[derive(Clone)]
 struct CompileContext {
     cells: LLVMValueRef,
-    cell_index_ptr: LLVMValueRef
+    cell_index_ptr: LLVMValueRef,
+    main_fn: LLVMValueRef
 }
 
 /// Convert this integer to LLVM's representation of a constant
@@ -447,19 +448,18 @@ unsafe fn compile_write<'a>(module: &mut Module,
 unsafe fn compile_loop<'a>(module: &mut Module,
                            bb: &'a mut LLVMBasicBlock,
                            loop_body: &[Instruction],
-                           main_fn: LLVMValueRef,
                            ctx: CompileContext)
                            -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
 
     // First, we branch into the loop header from the previous basic
     // block.
-    let loop_header_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("loop_header"));
+    let loop_header_bb = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("loop_header"));
     builder.position_at_end(bb);
     LLVMBuildBr(builder.builder, loop_header_bb);
 
-    let mut loop_body_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("loop_body"));
-    let loop_after = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("loop_after"));
+    let mut loop_body_bb = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("loop_body"));
+    let loop_after = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("loop_after"));
 
     // loop_header:
     //   %cell_value = ...
@@ -479,7 +479,7 @@ unsafe fn compile_loop<'a>(module: &mut Module,
 
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
-        loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb, main_fn,
+        loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb,
                                      ctx.clone());
     }
 
@@ -494,7 +494,6 @@ unsafe fn compile_loop<'a>(module: &mut Module,
 unsafe fn compile_instr<'a>(instr: &Instruction,
                             module: &mut Module,
                             bb: &'a mut LLVMBasicBlock,
-                            main_fn: LLVMValueRef,
                             ctx: CompileContext)
                             -> &'a mut LLVMBasicBlock {
     match *instr {
@@ -512,7 +511,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
         Write => compile_write(module, bb, ctx),
         Loop(ref body) => {
             // TODO: we should pass arguments in a consistent order.
-            compile_loop(module, bb, body, main_fn, ctx)
+            compile_loop(module, bb, body, ctx)
         }
     }
 }
@@ -578,11 +577,12 @@ pub fn compile_to_ir(module_name: &str,
 
             let ctx = CompileContext {
                 cells: llvm_cells,
-                cell_index_ptr: llvm_cell_index
+                cell_index_ptr: llvm_cell_index,
+                main_fn: main_fn
             };
 
             for instr in instrs {
-                bb = compile_instr(instr, &mut module, &mut *bb, main_fn,
+                bb = compile_instr(instr, &mut module, &mut *bb,
                                    ctx.clone());
             }
         }
