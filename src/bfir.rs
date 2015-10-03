@@ -65,8 +65,14 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, String> {
 
     for (index, c) in source.chars().enumerate() {
         match c {
-            '+' => instructions.push(Increment { amount: Wrapping(1), offset: 0 }),
-            '-' => instructions.push(Increment { amount: Wrapping(-1), offset: 0 }),
+            '+' => instructions.push(Increment {
+                amount: Wrapping(1),
+                offset: 0,
+            }),
+            '-' => instructions.push(Increment {
+                amount: Wrapping(-1),
+                offset: 0,
+            }),
             '>' => instructions.push(PointerIncrement(1)),
             '<' => instructions.push(PointerIncrement(-1)),
             ',' => instructions.push(Read),
@@ -99,16 +105,28 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, String> {
 #[test]
 fn parse_increment() {
     assert_eq!(parse("+").unwrap(),
-               [Increment { amount: Wrapping(1), offset: 0 }]);
+               [Increment {
+                   amount: Wrapping(1),
+                   offset: 0,
+               }]);
     assert_eq!(parse("++").unwrap(),
-               [Increment { amount: Wrapping(1), offset: 0 },
-                Increment { amount: Wrapping(1), offset: 0 }]);
+               [Increment {
+                   amount: Wrapping(1),
+                   offset: 0,
+               },
+                Increment {
+                   amount: Wrapping(1),
+                   offset: 0,
+               }]);
 }
 
 #[test]
 fn parse_decrement() {
     assert_eq!(parse("-").unwrap(),
-               [Increment { amount: Wrapping(-1), offset: 0 }]);
+               [Increment {
+                   amount: Wrapping(-1),
+                   offset: 0,
+               }]);
 }
 
 #[test]
@@ -139,15 +157,27 @@ fn parse_empty_loop() {
 
 #[test]
 fn parse_simple_loop() {
-    let loop_body = vec![Increment { amount: Wrapping(1), offset: 0 }];
+    let loop_body = vec![Increment {
+        amount: Wrapping(1),
+        offset: 0,
+    }];
     let expected = [Loop(loop_body)];
     assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
 fn parse_complex_loop() {
-    let loop_body = vec![Read, Increment { amount: Wrapping(1), offset: 0 }];
-    let expected = [Write, Loop(loop_body), Increment { amount: Wrapping(-1), offset: 0 }];
+    let loop_body = vec![Read,
+                         Increment {
+        amount: Wrapping(1),
+        offset: 0,
+    }];
+    let expected = [Write,
+                    Loop(loop_body),
+                    Increment {
+        amount: Wrapping(-1),
+        offset: 0,
+    }];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 

@@ -66,7 +66,12 @@ pub const MAX_STEPS: u64 = 10000000;
 /// the code we reached.
 pub fn execute(instrs: &[Instruction], steps: u64) -> ExecutionState {
     let cells = vec![Wrapping(0); highest_cell_index(instrs) + 1];
-    let state = ExecutionState { instrs_pos: vec![0], cells: cells, cell_ptr: 0, outputs: vec![] };
+    let state = ExecutionState {
+        instrs_pos: vec![0],
+        cells: cells,
+        cell_ptr: 0,
+        outputs: vec![],
+    };
     let (final_state, _) = execute_inner(instrs, state, steps);
     final_state
 }
@@ -140,7 +145,10 @@ fn execute_inner(instrs: &[Instruction],
                     // Execute the loop body.
                     let mut instrs_pos = state.instrs_pos.clone();
                     instrs_pos.push(0);
-                    let loop_body_state = ExecutionState { instrs_pos: instrs_pos, ..state.clone() };
+                    let loop_body_state = ExecutionState {
+                        instrs_pos: instrs_pos,
+                        ..state.clone()
+                    };
                     let (state_after, loop_outcome) = execute_inner(body,
                                                                     loop_body_state,
                                                                     steps_left);
@@ -279,7 +287,10 @@ fn multiply_move_offset_too_low() {
 
 #[test]
 fn set_executed() {
-    let instrs = vec![Set { amount: Wrapping(2), offset: 0 }];
+    let instrs = vec![Set {
+        amount: Wrapping(2),
+        offset: 0,
+    }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,

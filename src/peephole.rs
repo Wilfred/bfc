@@ -117,7 +117,10 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
               if let &Increment { amount: prev_amount, offset: prev_offset } = &prev_instr {
                   if let &Increment { amount, offset } = &instr {
                       if prev_offset == offset {
-                          return Ok(Increment { amount: amount + prev_amount, offset: offset });
+                          return Ok(Increment {
+                              amount: amount + prev_amount,
+                              offset: offset,
+                          });
                       }
                   }
               }
