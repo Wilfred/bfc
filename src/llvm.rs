@@ -198,10 +198,16 @@ unsafe fn create_module(module_name: &str) -> Module {
 unsafe fn add_main_fn(module: &mut Module) -> LLVMValueRef {
     let mut main_args = vec![];
     let main_type = LLVMFunctionType(LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
-    let main_fn = LLVMAddFunction(module.module, module.new_string_ptr("main"), main_type);
+    LLVMAddFunction(module.module, module.new_string_ptr("main"), main_type)
+}
 
-    LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
-    main_fn
+/// Set up the initial basic blocks for appending instructions.
+unsafe fn add_initial_bbs(module: &mut Module, main_fn: LLVMValueRef) -> LLVMBasicBlockRef {
+    // This basic block is empty, but we will add a branch during
+    // compilation according to InstrPosition.
+    let entry_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
+
+    entry_bb
 }
 
 // TODO: name our pointers cell_base and
@@ -561,9 +567,9 @@ pub fn compile_to_ir(module_name: &str,
     let llvm_ir_owned;
     unsafe {
         let mut module = create_module(module_name);
-
         let main_fn = add_main_fn(&mut module);
-        let mut bb = LLVMGetLastBasicBlock(main_fn);
+
+        let mut bb = add_initial_bbs(&mut module, main_fn);
 
         if initial_state.outputs.len() > 0 {
             compile_static_outputs(&mut module, &mut *bb, &initial_state.outputs);
