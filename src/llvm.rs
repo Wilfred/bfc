@@ -498,6 +498,8 @@ unsafe fn compile_loop<'a>(loop_body: &[Instruction],
     &mut *loop_after
 }
 
+/// Append LLVM IR instructions to bb acording to the BF instruction
+/// passed in.
 unsafe fn compile_instr<'a>(instr: &Instruction,
                             module: &mut Module,
                             bb: &'a mut LLVMBasicBlock,
