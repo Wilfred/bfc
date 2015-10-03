@@ -206,6 +206,7 @@ unsafe fn add_main_fn(module: &mut Module) -> LLVMValueRef {
 
 // TODO: name our pointers cell_base and
 // cell_offset_ptr.
+// TODO: use LLVMBasicBlockRef instead of rust pointers.
 /// Initialise the value that contains the current cell index.
 unsafe fn add_cell_index_init(init_value: isize,
                               bb: *mut LLVMBasicBlock,
