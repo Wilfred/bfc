@@ -445,9 +445,9 @@ unsafe fn compile_write<'a>(module: &mut Module,
     bb
 }
 
-unsafe fn compile_loop<'a>(module: &mut Module,
+unsafe fn compile_loop<'a>(loop_body: &[Instruction],
+                           module: &mut Module,
                            bb: &'a mut LLVMBasicBlock,
-                           loop_body: &[Instruction],
                            ctx: CompileContext)
                            -> &'a mut LLVMBasicBlock {
     let builder = Builder::new();
@@ -510,8 +510,7 @@ unsafe fn compile_instr<'a>(instr: &Instruction,
         Read => compile_read(module, bb, ctx),
         Write => compile_write(module, bb, ctx),
         Loop(ref body) => {
-            // TODO: we should pass arguments in a consistent order.
-            compile_loop(module, bb, body, ctx)
+            compile_loop(body, module, bb, ctx)
         }
     }
 }
