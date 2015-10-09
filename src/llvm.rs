@@ -36,6 +36,21 @@ impl Module {
         self.strings.push(cstring);
         ptr
     }
+
+    unsafe fn to_cstring(&self) -> CString {
+        // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
+        // as borrowed.
+        let llvm_ir_ptr = LLVMPrintModuleToString(self.module);
+        let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
+
+        // Make an owned copy of the string in our memory space.
+        let module_string = CString::new(llvm_ir.to_bytes().clone()).unwrap();
+
+        // Cleanup borrowed string.
+        LLVMDisposeMessage(llvm_ir_ptr);
+
+        module_string
+    }
 }
 
 /// Wraps LLVM's builder class to provide a nicer API and ensure we
@@ -597,17 +612,10 @@ pub fn compile_to_ir(module_name: &str,
 
         add_main_cleanup(bb);
 
-        // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
-        // as borrowed.
-        let llvm_ir_ptr = LLVMPrintModuleToString(module.module);
-        let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
-
-        // Make an owned copy of the string in our memory space.
-        llvm_ir_owned = CString::new(llvm_ir.to_bytes().clone()).unwrap();
+        llvm_ir_owned = module.to_cstring();
 
         // Cleanup module and borrowed string.
         LLVMDisposeModule(module.module);
-        LLVMDisposeMessage(llvm_ir_ptr);
     }
 
     llvm_ir_owned
