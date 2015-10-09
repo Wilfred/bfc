@@ -1,7 +1,7 @@
 
 use itertools::Itertools;
 use llvm_sys::core::*;
-use llvm_sys::{LLVMModule, LLVMBasicBlock, LLVMIntPredicate, LLVMBuilder};
+use llvm_sys::{LLVMModule, LLVMIntPredicate, LLVMBuilder};
 use llvm_sys::prelude::*;
 
 use libc::types::os::arch::c99::c_ulonglong;
@@ -236,10 +236,9 @@ unsafe fn add_initial_bbs(module: &mut Module, main_fn: LLVMValueRef) -> LLVMBas
 
 // TODO: name our pointers cell_base and
 // cell_offset_ptr.
-// TODO: use LLVMBasicBlockRef instead of rust pointers.
 /// Initialise the value that contains the current cell index.
 unsafe fn add_cell_index_init(init_value: isize,
-                              bb: *mut LLVMBasicBlock,
+                              bb: LLVMBasicBlockRef,
                               module: &mut Module)
                               -> LLVMValueRef {
     let builder = Builder::new();
@@ -256,7 +255,7 @@ unsafe fn add_cell_index_init(init_value: isize,
 }
 
 /// Add prologue to main function.
-unsafe fn add_main_cleanup(bb: *mut LLVMBasicBlock) {
+unsafe fn add_main_cleanup(bb: LLVMBasicBlockRef) {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
