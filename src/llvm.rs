@@ -53,6 +53,15 @@ impl Module {
     }
 }
 
+impl Drop for Module {
+    fn drop(&mut self) {
+        // Rust requires that drop() is a safe function.
+        unsafe {
+            LLVMDisposeModule(self.module);
+        }
+    }
+}
+
 /// Wraps LLVM's builder class to provide a nicer API and ensure we
 /// always dispose correctly.
 struct Builder {
@@ -581,7 +590,6 @@ pub fn compile_to_ir(module_name: &str,
                      instrs: &[Instruction],
                      initial_state: &ExecutionState)
                      -> CString {
-    let llvm_ir_owned;
     unsafe {
         let mut module = create_module(module_name);
         let main_fn = add_main_fn(&mut module);
@@ -612,11 +620,6 @@ pub fn compile_to_ir(module_name: &str,
 
         add_main_cleanup(bb);
 
-        llvm_ir_owned = module.to_cstring();
-
-        // Cleanup module and borrowed string.
-        LLVMDisposeModule(module.module);
+        module.to_cstring()
     }
-
-    llvm_ir_owned
 }
