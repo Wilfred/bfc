@@ -523,7 +523,7 @@ fn quickcheck_instr_ptr_in_bounds() {
 fn quickcheck_cell_ptr_in_bounds() {
     fn cell_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
         let state = execute(&instrs, 100);
-        (state.cell_ptr >= 0) && (state.cell_ptr <= state.cells.len() as isize)
+        (state.cell_ptr >= 0) && (state.cell_ptr < state.cells.len() as isize)
     }
     quickcheck(cell_ptr_in_bounds as fn(Vec<Instruction>) -> bool);
 }
