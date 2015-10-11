@@ -8,11 +8,13 @@ use execution::ExecutionState;
 
 #[test]
 fn compile_loop() {
+    let instrs = vec![Loop(vec![Increment { amount: Wrapping(1), offset: 0 }])];
+    
     let result = compile_to_ir(
         "foo",
-        &vec![Loop(vec![Increment { amount: Wrapping(1), offset: 0 }])],
+        &instrs,
         &ExecutionState {
-            instr_ptr: 0,
+            start_instr: Some(&instrs[0]),
             cells: vec![Wrapping(0)],
             cell_ptr: 0,
             outputs: vec![]
@@ -66,7 +68,7 @@ attributes #0 = { nounwind }
 fn compile_empty_program() {
     let result = compile_to_ir("foo", &vec![],
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: None,
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
@@ -94,9 +96,10 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_set() {
-    let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 0 }],
+    let instrs = vec![Set { amount: Wrapping(1), offset: 0 }];
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
@@ -134,9 +137,10 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_set_with_offset() {
-    let result = compile_to_ir("foo", &vec![Set { amount: Wrapping(1), offset: 42 }],
+    let instrs = vec![Set { amount: Wrapping(1), offset: 42 }];
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 50],
                                    cell_ptr: 0,
                                    outputs: vec![]
@@ -174,9 +178,10 @@ attributes #0 = { nounwind }
 
 #[test]
 fn respect_initial_cell_ptr() {
-    let result = compile_to_ir("foo", &vec![PointerIncrement(1)],
+    let instrs = vec![PointerIncrement(1)];
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 10],
                                    cell_ptr: 8,
                                    outputs: vec![]
@@ -216,9 +221,11 @@ fn compile_multiply_move() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(2));
     changes.insert(2, Wrapping(3));
-    let result = compile_to_ir("foo", &vec![MultiplyMove(changes)],
+    let instrs = vec![MultiplyMove(changes)];
+    
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 3],
                                    cell_ptr: 0,
                                    outputs: vec![]
@@ -268,9 +275,10 @@ attributes #0 = { nounwind }
 
 #[test]
 fn set_initial_cell_values() {
-    let result = compile_to_ir("foo", &vec![PointerIncrement(1)],
+    let instrs = vec![PointerIncrement(1)];
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(1),
                                                Wrapping(1),
                                                Wrapping(2),
@@ -318,7 +326,7 @@ attributes #0 = { nounwind }
 fn compile_static_outputs() {
     let result = compile_to_ir("foo", &vec![],
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: None,
                                    cells: vec![],
                                    cell_ptr: 0,
                                    outputs: vec![5, 10]
@@ -350,9 +358,10 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_ptr_increment() {
-    let result = compile_to_ir("foo", &vec![PointerIncrement(1)],
+    let instrs = vec![PointerIncrement(1)];
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 2],
                                    cell_ptr: 0,
                                    outputs: vec![]
@@ -389,9 +398,10 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment() {
-    let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 0 }],
+    let instrs = vec![Increment { amount: Wrapping(1), offset: 0 }];
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
@@ -431,9 +441,10 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment_with_offset() {
-    let result = compile_to_ir("foo", &vec![Increment { amount: Wrapping(1), offset: 3 }],
+    let instrs = vec![Increment { amount: Wrapping(1), offset: 3 }];
+    let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
-                                   instr_ptr: 0,
+                                   start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 4],
                                    cell_ptr: 0,
                                    outputs: vec![]

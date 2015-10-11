@@ -16,6 +16,8 @@ extern crate rand;
 extern crate tempfile;
 extern crate getopts;
 
+#[macro_use] extern crate matches;
+
 use std::env;
 use std::fs::File;
 use std::io::Write;
@@ -106,7 +108,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         execution::execute(&instrs, execution::MAX_STEPS)
     } else {
         execution::ExecutionState {
-            instrs_pos: vec![0],
+            start_instr: Some(&instrs[0]),
             cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) + 1],
             cell_ptr: 0,
             outputs: vec![],
@@ -114,7 +116,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     };
 
     if matches.opt_present("dump-ir") {
-        for instr in instrs {
+        for instr in instrs.iter() {
             println!("{}", instr);
         }
         return Ok(());

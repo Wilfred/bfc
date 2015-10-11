@@ -226,12 +226,15 @@ unsafe fn add_main_fn(module: &mut Module) -> LLVMValueRef {
 }
 
 /// Set up the initial basic blocks for appending instructions.
-unsafe fn add_initial_bbs(module: &mut Module, main_fn: LLVMValueRef) -> LLVMBasicBlockRef {
+unsafe fn add_initial_bbs(module: &mut Module, main_fn: LLVMValueRef) -> (LLVMBasicBlockRef, LLVMBasicBlockRef) {
     // This basic block is empty, but we will add a branch during
     // compilation according to InstrPosition.
-    let entry_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("entry"));
+    let init_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("init"));
 
-    entry_bb
+    // We'll begin by appending instructions here.
+    let beginning_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("beginning"));
+
+    (init_bb, beginning_bb)
 }
 
 // TODO: name our pointers cell_base and
@@ -475,8 +478,13 @@ unsafe fn compile_write(module: &mut Module,
     bb
 }
 
+fn ptr_equal<T>(a: *const T, b: *const T) -> bool {
+    a == b
+}
 unsafe fn compile_loop(loop_body: &[Instruction],
+                       start_instr: &Instruction,
                        module: &mut Module,
+                       main_fn: LLVMValueRef,
                        bb: LLVMBasicBlockRef,
                        ctx: CompileContext)
                        -> LLVMBasicBlockRef {
@@ -509,7 +517,13 @@ unsafe fn compile_loop(loop_body: &[Instruction],
 
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
-        loop_body_bb = compile_instr(instr, module, &mut *loop_body_bb,
+        if ptr_equal(instr, start_instr) {
+            // println!("in body: {:?}", instr);
+            // This is the point we want to start execution from.
+            loop_body_bb = set_entry_point_after(module, main_fn, loop_body_bb);
+        }
+        
+        loop_body_bb = compile_instr(instr, start_instr, module, main_fn, loop_body_bb,
                                      ctx.clone());
     }
 
@@ -524,7 +538,9 @@ unsafe fn compile_loop(loop_body: &[Instruction],
 /// Append LLVM IR instructions to bb acording to the BF instruction
 /// passed in.
 unsafe fn compile_instr(instr: &Instruction,
+                        start_instr: &Instruction,
                         module: &mut Module,
+                        main_fn: LLVMValueRef,
                         bb: LLVMBasicBlockRef,
                         ctx: CompileContext)
                         -> LLVMBasicBlockRef {
@@ -542,7 +558,7 @@ unsafe fn compile_instr(instr: &Instruction,
         Read => compile_read(module, bb, ctx),
         Write => compile_write(module, bb, ctx),
         Loop(ref body) => {
-            compile_loop(body, module, bb, ctx)
+            compile_loop(body, start_instr, module, main_fn, bb, ctx)
         }
     }
 }
@@ -584,6 +600,23 @@ unsafe fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, out
                       "");
 }
 
+/// Ensure that execution starts after the basic block we pass in.
+unsafe fn set_entry_point_after(module: &mut Module, main_fn: LLVMValueRef, bb: LLVMBasicBlockRef) -> LLVMBasicBlockRef {
+    let after_init_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("after_init"));
+
+    // From the current bb, we want to continue execution in after_init.
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+    LLVMBuildBr(builder.builder, bb);
+
+    // We also want to start execution in after_init.
+    let init_bb = LLVMGetFirstBasicBlock(main_fn);
+    builder.position_at_end(init_bb);
+    LLVMBuildBr(builder.builder, after_init_bb);
+
+    after_init_bb
+}
+
 // TODO: use init_values terminology consistently for names here.
 pub fn compile_to_ir(module_name: &str,
                      instrs: &[Instruction],
@@ -593,27 +626,49 @@ pub fn compile_to_ir(module_name: &str,
         let mut module = create_module(module_name);
         let main_fn = add_main_fn(&mut module);
 
-        let mut bb = add_initial_bbs(&mut module, main_fn);
+        let (init_bb, mut bb) = add_initial_bbs(&mut module, main_fn);
 
         if initial_state.outputs.len() > 0 {
-            compile_static_outputs(&mut module, bb, &initial_state.outputs);
+            compile_static_outputs(&mut module, init_bb, &initial_state.outputs);
         }
 
-        if instrs.len() > 0 {
-            // TODO: decide on a consistent order between module and bb as
-            // parameters.
-            let llvm_cells = add_cells_init(&initial_state.cells, &mut module, bb);
-            let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, bb, &mut module);
+        // If there's no start instruction, then we executed all
+        // instructions at compile time and we don't need to do anything here.
+        match initial_state.start_instr {
+            Some(start_instr) => {
+                // TODO: decide on a consistent order between module and bb as
+                // parameters.
+                let llvm_cells = add_cells_init(&initial_state.cells, &mut module, init_bb);
+                let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, init_bb, &mut module);
 
-            let ctx = CompileContext {
-                cells: llvm_cells,
-                cell_index_ptr: llvm_cell_index,
-                main_fn: main_fn
-            };
+                let ctx = CompileContext {
+                    cells: llvm_cells,
+                    cell_index_ptr: llvm_cell_index,
+                    main_fn: main_fn
+                };
 
-            for instr in instrs {
-                bb = compile_instr(instr, &mut module, bb,
-                                   ctx.clone());
+                for instr in instrs {
+                    if ptr_equal(instr, start_instr) {
+                        // This is the point we want to start execution from.
+                        // println!("in top level: {:?}", instr);
+                        bb = set_entry_point_after(&mut module, main_fn, bb);
+                    }
+
+                    bb = compile_instr(instr,
+                                       start_instr,
+                                       &mut module,
+                                       main_fn,
+                                       bb,
+                                       ctx.clone());
+                }
+                
+            }
+            None => {
+                // We won't have called set_entry_point_after, so set
+                // the entry point.
+                let builder = Builder::new();
+                builder.position_at_end(init_bb);
+                LLVMBuildBr(builder.builder, bb);
             }
         }
 
