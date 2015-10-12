@@ -636,7 +636,7 @@ pub fn compile_to_ir(module_name: &str,
         // instructions at compile time and we don't need to do anything here.
         match initial_state.start_instr {
             Some(start_instr) => {
-                // TODO: decide on a consistent order between module and bb as
+                // TODO: decide on a consistent order between module and init_bb as
                 // parameters.
                 let llvm_cells = add_cells_init(&initial_state.cells, &mut module, init_bb);
                 let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr, init_bb, &mut module);
