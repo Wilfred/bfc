@@ -607,7 +607,7 @@ unsafe fn set_entry_point_after(module: &mut Module, main_fn: LLVMValueRef, bb: 
     // From the current bb, we want to continue execution in after_init.
     let builder = Builder::new();
     builder.position_at_end(bb);
-    LLVMBuildBr(builder.builder, bb);
+    LLVMBuildBr(builder.builder, after_init_bb);
 
     // We also want to start execution in after_init.
     let init_bb = LLVMGetFirstBasicBlock(main_fn);
