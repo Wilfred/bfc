@@ -16,6 +16,8 @@ extern crate rand;
 extern crate tempfile;
 extern crate getopts;
 
+#[macro_use] extern crate matches;
+
 use std::env;
 use std::fs::File;
 use std::io::Write;
@@ -106,33 +108,27 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         execution::execute(&instrs, execution::MAX_STEPS)
     } else {
         execution::ExecutionState {
-            instr_ptr: 0,
+            start_instr: Some(&instrs[0]),
             cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) + 1],
             cell_ptr: 0,
             outputs: vec![],
         }
     };
 
-    let remaining_instrs = &instrs[state.instr_ptr..];
-
     if matches.opt_present("dump-ir") {
-        if remaining_instrs.is_empty() {
-            println!("(optimized out)");
-        }
-
-        for instr in remaining_instrs {
+        for instr in instrs.iter() {
             println!("{}", instr);
         }
         return Ok(());
     }
 
-    let llvm_ir_raw = llvm::compile_to_ir(path, remaining_instrs, &state);
+    let llvm_ir_raw = llvm::compile_to_ir(path, &instrs, &state);
 
     if matches.opt_present("dump-llvm") {
         let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
         println!("{}", llvm_ir);
         return Ok(());
-    }                        
+    }
 
     // Write the LLVM IR to a temporary file.
     let mut llvm_ir_file = try!(convert_io_error(NamedTempFile::new()));
@@ -141,11 +137,14 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     // Compile the LLVM IR to a temporary object file.
     let object_file = try!(convert_io_error(NamedTempFile::new()));
 
-    let llvm_opt_arg = format!("-O{}", matches.opt_str("llvm-opt").unwrap_or(String::from("3")));
+    let llvm_opt_arg = format!("-O{}",
+                               matches.opt_str("llvm-opt").unwrap_or(String::from("3")));
 
-    let llc_args = [&llvm_opt_arg[..], "-filetype=obj",
+    let llc_args = [&llvm_opt_arg[..],
+                    "-filetype=obj",
                     llvm_ir_file.path().to_str().expect("path not valid utf-8"),
-                    "-o", object_file.path().to_str().expect("path not valid utf-8")];
+                    "-o",
+                    object_file.path().to_str().expect("path not valid utf-8")];
     try!(shell_command("llc", &llc_args[..]));
 
     // TODO: do path munging in executable_name().
@@ -154,7 +153,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
 
     // Link the object file.
     let clang_args = [object_file.path().to_str().expect("path not valid utf-8"),
-                      "-o", &output_name[..]];
+                      "-o",
+                      &output_name[..]];
     try!(shell_command("clang", &clang_args[..]));
 
     // Strip the executable.
@@ -175,7 +175,10 @@ fn main() {
     opts.optflag("", "dump-ir", "print BF IR generated");
 
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
-    opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
+    opts.optopt("",
+                "llvm-opt",
+                "LLVM optimization level (0 to 3)",
+                "LEVEL");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => {

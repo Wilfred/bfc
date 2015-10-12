@@ -16,19 +16,31 @@ impl Arbitrary for Instruction {
         let i = g.next_u32();
         match i % 13 {
             // TODO: use arbitrary offsets.
-            0 => Increment { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 },
+            0 => Increment {
+                amount: Wrapping(Arbitrary::arbitrary(g)),
+                offset: 0,
+            },
             1 => PointerIncrement(Arbitrary::arbitrary(g)),
             // TODO: use arbitrary offsets.
-            2 => Set { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 },
+            2 => Set {
+                amount: Wrapping(Arbitrary::arbitrary(g)),
+                offset: 0,
+            },
             3 => Read,
             4 => Write,
             // TODO: we should be able to generate arbitrary nested
             // instructions, instead of this limited range. See
             // https://github.com/BurntSushi/quickcheck/issues/23
             5 => Loop(vec![]),
-            6 => Loop(vec![Increment { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 }]),
+            6 => Loop(vec![Increment {
+                amount: Wrapping(Arbitrary::arbitrary(g)),
+                offset: 0,
+            }]),
             7 => Loop(vec![PointerIncrement(Arbitrary::arbitrary(g))]),
-            8 => Loop(vec![Set { amount: Wrapping(Arbitrary::arbitrary(g)), offset: 0 }]),
+            8 => Loop(vec![Set {
+                amount: Wrapping(Arbitrary::arbitrary(g)),
+                offset: 0,
+            }]),
             9 => Loop(vec![Read]),
             10 => Loop(vec![Read]),
             11 => {
@@ -463,9 +475,7 @@ fn should_extract_multiply_nested() {
 
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(1));
-    let expected = vec![
-        Loop(vec![
-            MultiplyMove(dest_cells)])];
+    let expected = vec![Loop(vec![MultiplyMove(dest_cells)])];
 
     assert_eq!(extract_multiply(instrs), expected);
 }
@@ -639,12 +649,8 @@ fn prev_mutate_multiply_offset_matches() {
     let mut changes = HashMap::new();
     changes.insert(-1, Wrapping(-1));
 
-    let instrs = vec![
-        MultiplyMove(changes.clone()),
-        PointerIncrement(-1),
-        Read];
-    assert_eq!(previous_cell_change(&instrs, 2),
-               Some(0));
+    let instrs = vec![MultiplyMove(changes.clone()), PointerIncrement(-1), Read];
+    assert_eq!(previous_cell_change(&instrs, 2), Some(0));
 }
 
 #[test]
