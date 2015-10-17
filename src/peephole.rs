@@ -53,10 +53,10 @@ impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 /// the previous instruction that modified the current cell. If we're
 /// unsure, or there isn't one, return None.
 ///
-/// Note this ignores offsets of the instruction at the index. E.g. if
-/// that instruction is Set{amount:100, offset: 1}, we're still
-/// considering previous instructions that modify the current cell,
-/// not the (cell_index + 1)th cell.
+/// Note this totally ignores the instruction at the index given, even
+/// if it has an offset. E.g. if the instruction is
+/// Set {amount:100, offset: 1}, we're still considering previous instructions that
+/// modify the current cell, not the (cell_index + 1)th cell.
 pub fn previous_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
