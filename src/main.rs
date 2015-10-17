@@ -104,6 +104,13 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         instrs = peephole::optimize(instrs);
     }
 
+    if matches.opt_present("dump-ir") {
+        for instr in instrs.iter() {
+            println!("{}", instr);
+        }
+        return Ok(());
+    }
+
     let state = if opt_level == "2" {
         execution::execute(&instrs, execution::MAX_STEPS)
     } else {
@@ -114,13 +121,6 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
             outputs: vec![],
         }
     };
-
-    if matches.opt_present("dump-ir") {
-        for instr in instrs.iter() {
-            println!("{}", instr);
-        }
-        return Ok(());
-    }
 
     let llvm_ir_raw = llvm::compile_to_ir(path, &instrs, &state);
 
