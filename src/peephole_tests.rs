@@ -732,3 +732,15 @@ fn next_mutate_increment() {
                       Increment { amount: Wrapping(1), offset: 0 }];
     assert_eq!(next_cell_change(&instrs, 0), Some(2));
 }
+
+#[test]
+fn next_mutate_consider_pointer_increment() {
+    let instrs = vec![
+        Read,
+        PointerIncrement(1),
+        Increment { amount: Wrapping(1), offset: 1},
+        Increment { amount: Wrapping(1), offset: -1}];
+    
+    assert_eq!(next_cell_change(&instrs, 0),
+               Some(3));
+}

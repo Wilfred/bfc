@@ -97,15 +97,51 @@ pub fn previous_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<u
 }
 
 /// Inverse of previous_cell_change.
+///
+/// This is very similar to previous_cell_change and previous
+/// implementations called previous_cell_change on the reversed
+/// vector. This proved extremely hard to reason about. Instead, we
+/// have copied the body of previous_cell_change and highlighted the
+/// differences.
 pub fn next_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
-    let mut instrs = instrs.clone();
-    instrs.reverse();
-    let max_index = instrs.len() - 1;
-    if let Some(previous_index) = previous_cell_change(&instrs, max_index - index) {
-        Some(max_index - previous_index)
-    } else {
-        None
+    assert!(index < instrs.len());
+
+    let mut needed_offset = 0;
+    // Unlike previous_cell_change, we iterate forward.
+    for i in (index + 1)..instrs.len() {
+        match instrs[i] {
+            Increment { offset, .. } => {
+                if offset == needed_offset {
+                    return Some(i)
+                }
+            }
+            Set { offset, .. } => {
+                if offset == needed_offset {
+                    return Some(i)
+                }
+            }
+            PointerIncrement(amount) => {
+                // Unlike previous_cell_change we must subtract the desired amount.
+                needed_offset -= amount;
+            }
+            MultiplyMove(ref changes) => {
+                // These cells are written to.
+                let mut offsets: Vec<isize> = changes.keys().into_iter().map(|offset| { *offset }).collect();
+                // This cell is zeroed.
+                offsets.push(0);
+
+                if offsets.contains(&needed_offset) {
+                    return Some(i);
+                }
+            }
+            // No cells changed, so just keep working backwards.
+            Write => {}
+            // These instructions may have modified the cell, so
+            // we return None for "I don't know".
+            Read | Loop(_) => return None,
+        }
     }
+    None
 }
 
 /// Combine consecutive increments into a single increment
