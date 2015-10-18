@@ -1,6 +1,9 @@
 # v1.3.0 (unreleased)
 
-No changes yet.
+Compatibility:
+
+* bfc now provides up to 100,000 cells. This has been increased to
+  support awib, which requires at least 65,535 cells available.
 
 # v1.2.0
 

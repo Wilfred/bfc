@@ -65,7 +65,7 @@ on 64-bit environments.
 bfc considers cells to be single bytes, and arithmetic wraps
 around. As a result, `-` sets cell #0 to 255.
 
-bfc provides 30,000 cells. Accessing cells outside of this range is
+bfc provides 100,000 cells. Accessing cells outside of this range is
 explicitly undefined, and will probably segfault your program. This is
 not guaranteed: your program may terminate normally (e.g. `<-` will be
 optimised away rather than crashing).
@@ -255,7 +255,7 @@ PointerIncrement 2
 
 ## Cell Bounds Analysis
 
-BF programs can use up to 30,000 cells, all of which must be
+BF programs can use up to 100,000 cells, all of which must be
 zero-initialised. However, most programs don't use the whole range.
 
 bfc uses static analysis to work out how many cells a BF program may
@@ -275,7 +275,7 @@ than necessary.
 ```
 
 ```
-[>] may use any number of cells, so we must assume 30,000
+[>] may use any number of cells, so we must assume 100,000
 ```
 
 ## Speculative Execution
