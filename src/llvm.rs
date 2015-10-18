@@ -214,6 +214,13 @@ unsafe fn create_module(module_name: &str) -> Module {
     let llvm_module = LLVMModuleCreateWithName(
         c_module_name.to_bytes_with_nul().as_ptr() as *const _);
     let mut module = Module { module: llvm_module, strings: vec![c_module_name] };
+
+    // These are necessary for maximum LLVM performance, see
+    // http://llvm.org/docs/Frontend/PerformanceTips.html
+    LLVMSetTarget(llvm_module, module.new_string_ptr("i686-pc-linux-gnu"));
+    // Blindly copied from a clang dump of a C test program on my machine.
+    LLVMSetDataLayout(llvm_module, module.new_string_ptr("e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"));
+    
     add_c_declarations(&mut module);
 
     module

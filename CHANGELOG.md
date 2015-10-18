@@ -1,5 +1,11 @@
 # v1.3.0 (unreleased)
 
+Performance:
+
+* We now specify the data layout and target to LLVM, as recommended
+  by the LLVM team. In principle this is faster, but we've seen no
+  measurable performance boost.
+
 Compatibility:
 
 * bfc now provides up to 100,000 cells. This has been increased to

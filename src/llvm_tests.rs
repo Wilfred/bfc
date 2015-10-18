@@ -20,6 +20,8 @@ fn compile_loop() {
             outputs: vec![]
         });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -80,6 +82,8 @@ fn compile_empty_program() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -114,6 +118,8 @@ fn compile_set() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -161,6 +167,8 @@ fn compile_set_with_offset() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -208,6 +216,8 @@ fn respect_initial_cell_ptr() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -258,6 +268,8 @@ fn compile_multiply_move() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -320,6 +332,8 @@ fn set_initial_cell_values() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -369,6 +383,8 @@ fn compile_static_outputs() {
                                    outputs: vec![5, 10]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 @known_outputs = constant [2 x i8] c\"\\05\\0A\"
 
@@ -407,6 +423,8 @@ fn compile_ptr_increment() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -453,6 +471,8 @@ fn compile_increment() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -502,6 +522,8 @@ fn compile_increment_with_offset() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
@@ -551,6 +573,8 @@ fn compile_start_instr_midway() {
                                    outputs: vec![]
                                });
     let expected = "; ModuleID = \'foo\'
+target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
+target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
