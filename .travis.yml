@@ -18,15 +18,8 @@ install:
  - sudo apt-get install -y --force-yes libllvm3.7 llvm-3.7 llvm-3.7-dev llvm-3.7-runtime
  - sudo apt-get install libedit-dev
 
- - llvm-config --version
- - dpkg -S `which llvm-config` || true
-
-# based on http://askubuntu.com/a/309787
- - sudo ln -s /usr/bin/llvm-config-3.7 /usr/local/bin/llvm-config
- - which llvm-config
- - hash -r
- - llvm-config --version
-
+# llvm-config is old by default, see http://askubuntu.com/a/309787
+# TODO: there must be a nicer approach
  - sudo rm -f /usr/local/clang-3.4/bin/llvm-config
  - hash -r
  - llvm-config --version
