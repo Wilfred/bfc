@@ -8,6 +8,9 @@ time exeuction.
 
 Performance improvement: `--dump-bf` is now much faster.
 
+Bug fix: In some cases, reorder with offset led to miscompilation
+(only seen in mandelbrot.bf).
+
 # v1.1.0
 
 New optimisation: reorder with offset!
