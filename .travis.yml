@@ -16,6 +16,7 @@ install:
  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
  - sudo apt-get update
  - sudo apt-get install -y --force-yes libllvm3.7 llvm-3.7 llvm-3.7-dev llvm-3.7-runtime
+ - sudo apt-get install libedit-dev
 
  - llvm-config --version
  - dpkg -S `which llvm-config` || true
