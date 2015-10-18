@@ -1,6 +1,6 @@
 # v1.2.0 (unreleased)
 
-Nothing yet.
+Performance improvement: `--dump-bf` is now much faster.
 
 # v1.1.0
 
