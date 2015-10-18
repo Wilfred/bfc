@@ -21,7 +21,12 @@ Bug fixes:
 
 Optimisations:
 
-* New optimisation: reorder with offset!
+* New optimisation: reorder with offset. See the readme for more
+  details.
+* Remove redundant sets, dead loop removal and combine before read are
+  now smarter. Previously they required adjacent instructions, but
+  they now find the next relevant instruction when there are
+  irrelevant intermediate instructions.
 * LLVM optimisation level can now be set with `--llvm-opt`.
 
 Bug fixes:
