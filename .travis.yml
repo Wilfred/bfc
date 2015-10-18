@@ -24,9 +24,6 @@ install:
  - sudo ln -s /usr/bin/llvm-config-3.7 /usr/local/bin/llvm-config
  - llvm-config --version
 
-notifications:
-  email: false
-
 matrix:
   allow_failures:
     - rust: nightly
