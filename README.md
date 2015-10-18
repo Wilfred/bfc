@@ -14,7 +14,7 @@ BF source -> BF IR -> LLVM IR -> x86_32 Binary
 GPLv2 or later license. Sample programs are largely written by other
 authors and are under other licenses.
 
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
 
 - [An optimising compiler for BF](#an-optimising-compiler-for-bf)
@@ -27,6 +27,7 @@ authors and are under other licenses.
         - [Combining Instructions](#combining-instructions)
         - [Loop Simplification](#loop-simplification)
         - [Dead Code Elimination](#dead-code-elimination)
+        - [Reorder with offsets](#reorder-with-offsets)
     - [Cell Bounds Analysis](#cell-bounds-analysis)
     - [Speculative Execution](#speculative-execution)
     - [Other projects optimising BF](#other-projects-optimising-bf)
