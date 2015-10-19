@@ -200,7 +200,8 @@ Loops following another loop (one BF technique for comments is
 
 Loops where the cell has previously been set to zero:
 
-```     Compile               Simplify                 DCE
+```
+        Compile               Simplify                 DCE
 [-]>+<[]  =>   Loop              =>    Set 0            =>  Set 0
                  Increment -1          DataIncrement 1      DataIncrement 1
                DataIncrement 1         Increment 1          Increment 1
