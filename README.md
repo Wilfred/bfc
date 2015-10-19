@@ -298,10 +298,11 @@ result, `>,` will have `>` executed (setting the initial cell pointer
 to 1) and `,` will be in the compiled output.
 
 bfc will either execute loops entirely, or place them in the compiled
-output. For example, consider `+[-]+[+,]`. We can execute `[-]`
+output. For example, consider `+[-]+[+,]`. We can execute `+[-]+`
 entirely, but we cannot execute all of `[+,]` at compile time. The
-compiled output does not jump into a loop halfway, instead we execute
-`+[-]+` at compile time and all of `[+,]` is in the compiled output.
+compiled output contains the whole loop, but we start execution at the
+`,` (continuing execution from where compile time execution had to
+stop).
 
 If bfc manages to execute the entire program, it won't bother
 allocating memory for cells:
