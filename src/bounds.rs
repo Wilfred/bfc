@@ -97,6 +97,14 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
             (SaturatingInt::Number(amount as i64),
              SaturatingInt::Number(amount as i64))
         },
+        Increment { amount: _, offset } => {
+            (SaturatingInt::Number(offset as i64),
+             SaturatingInt::Number(0))
+        },
+        Set { amount: _, offset } => {
+            (SaturatingInt::Number(offset as i64),
+             SaturatingInt::Number(0))
+        }
         MultiplyMove(ref changes) => {
             let mut highest_affected = 0;
             for cell in changes.keys() {
@@ -131,7 +139,7 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
                 }
             }
         }
-        _ => (SaturatingInt::Number(0), SaturatingInt::Number(0)),
+        Read | Write => (SaturatingInt::Number(0), SaturatingInt::Number(0)),
     }
 }
 
@@ -238,3 +246,17 @@ fn quickcheck_highest_cell_index_in_bounds() {
     }
     quickcheck(highest_cell_index_in_bounds as fn(Vec<Instruction>) -> bool);
 }
+
+#[test]
+fn increment_offset_bounds() {
+    let instrs = [Increment { amount: Wrapping(2), offset: 5}];
+    assert_eq!(highest_cell_index(&instrs), 5);
+}
+
+#[test]
+fn set_offset_bounds() {
+    let instrs = [Set { amount: Wrapping(2), offset: 10},
+                  Set { amount: Wrapping(2), offset: 11}];
+    assert_eq!(highest_cell_index(&instrs), 11);
+}
+

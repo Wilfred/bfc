@@ -11,6 +11,10 @@ Compatibility:
 * bfc now provides up to 100,000 cells. This has been increased to
   support awib, which requires at least 65,535 cells available.
 
+Bug fixes:
+
+* Fixed a compiler crash due to bounds analysis ignoring offsets.
+
 # v1.2.0
 
 Optimisations:
