@@ -1,4 +1,4 @@
-[A fizbuzz implementation in BF.
+[A fizbuzz implementation in BF. WIP, not yet complete.
 
 Readability has been favoured over concision here. Wherever possible,
 each block of code resets the data pointer to #0. Using an editor with
