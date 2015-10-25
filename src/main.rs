@@ -76,21 +76,28 @@ fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
     }
 }
 
+/// Execute the CLI command specified. Return Err if the command isn't
+/// on $PATH, or if the command returned a non-zero exit code.
 fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
     let mut c = Command::new(command);
     for arg in args {
         c.arg(arg);
     }
 
-    let result = try!(convert_io_error(c.output()));
-    if result.status.success() {
-        let stdout = String::from_utf8_lossy(&result.stdout);
-        Ok((*stdout).to_owned())
-    } else {
-        let stderr = String::from_utf8_lossy(&result.stderr);
-        Err((*stderr).to_owned())
+    match c.output() {
+        Ok(result) => {
+            if result.status.success() {
+                let stdout = String::from_utf8_lossy(&result.stdout);
+                Ok((*stdout).to_owned())
+            } else {
+                let stderr = String::from_utf8_lossy(&result.stderr);
+                Err((*stderr).to_owned())
+            }
+        }
+        Err(_) => {
+            Err(format!("Could not execute '{}'. Is it on $PATH?", command))
+        }
     }
-
 }
 
 fn compile_file(matches: &Matches) -> Result<(), String> {

@@ -14,6 +14,8 @@ Compatibility:
 Bug fixes:
 
 * Fixed a compiler crash due to bounds analysis ignoring offsets.
+* Show a more helpful error if `llc`, `clang` or `strip` are not
+  available.
 
 # v1.2.0
 
