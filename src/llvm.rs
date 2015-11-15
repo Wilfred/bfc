@@ -106,6 +106,10 @@ unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
     LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
 }
 
+unsafe fn byte_pointer() -> LLVMTypeRef {
+    LLVMPointerType(LLVMInt8Type(), 0)
+}
+
 unsafe fn add_function(module: &mut Module,
                        fn_name: &str,
                        args: &mut [LLVMTypeRef],
@@ -116,18 +120,17 @@ unsafe fn add_function(module: &mut Module,
 }
 
 unsafe fn add_c_declarations(module: &mut Module) {
-    let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
     let void = LLVMVoidType();
 
     add_function(module,
                  "llvm.memset.p0i8.i32",
-                 &mut vec![byte_pointer, LLVMInt8Type(), LLVMInt32Type(),
+                 &mut vec![byte_pointer(), LLVMInt8Type(), LLVMInt32Type(),
                   LLVMInt32Type(), LLVMInt1Type()],
                  void);
 
     add_function(module,
                  "write",
-                 &mut vec![LLVMInt32Type(), byte_pointer, LLVMInt32Type()],
+                 &mut vec![LLVMInt32Type(), byte_pointer(), LLVMInt32Type()],
                  LLVMInt32Type());
 
     add_function(module, "putchar", &mut vec![LLVMInt32Type()], LLVMInt32Type());
@@ -593,11 +596,9 @@ unsafe fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, out
     let stdout_fd = int32(1);
     let llvm_num_outputs = int32(outputs.len() as c_ulonglong);
 
-    // TODO: worth factoring out this type too.
-    let byte_pointer = LLVMPointerType(LLVMInt8Type(), 0);
     let known_outputs_ptr = LLVMBuildPointerCast(builder.builder,
                                                  known_outputs,
-                                                 byte_pointer,
+                                                 byte_pointer(),
                                                  module.new_string_ptr("known_outputs_ptr"));
 
     add_function_call(module,
