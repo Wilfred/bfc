@@ -159,7 +159,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let output_name = executable_name(bf_name.to_str().unwrap());
 
     // Link the object file.
-    let clang_args = [object_file.path().to_str().expect("path not valid utf-8"),
+    let clang_args = [&llvm_opt_arg[..],
+                      object_file.path().to_str().expect("path not valid utf-8"),
                       "-o",
                       &output_name[..]];
     try!(shell_command("clang", &clang_args[..]));
