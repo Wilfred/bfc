@@ -189,7 +189,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
 /// We can't evaluate outputs of runtime values at compile time.
 #[test]
 fn cant_evaluate_inputs() {
-    let instrs = parse(",.").unwrap();
+    let instrs = parse("", ",.").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -203,7 +203,7 @@ fn cant_evaluate_inputs() {
 
 #[test]
 fn increment_executed() {
-    let instrs = parse("+").unwrap();
+    let instrs = parse("", "+").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -321,7 +321,7 @@ fn set_wraps() {
 
 #[test]
 fn decrement_executed() {
-    let instrs = parse("-").unwrap();
+    let instrs = parse("", "-").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -350,7 +350,7 @@ fn increment_wraps() {
 
 #[test]
 fn ptr_increment_executed() {
-    let instrs = parse(">").unwrap();
+    let instrs = parse("", ">").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -366,7 +366,7 @@ fn ptr_increment_executed() {
 // clearly a user error.
 #[test]
 fn ptr_out_of_range() {
-    let instrs = parse("<").unwrap();
+    let instrs = parse("", "<").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -380,7 +380,7 @@ fn ptr_out_of_range() {
 
 #[test]
 fn limit_to_steps_specified() {
-    let instrs = parse("++++").unwrap();
+    let instrs = parse("", "++++").unwrap();
     let final_state = execute(&instrs, 2);
 
     assert_eq!(final_state,
@@ -394,7 +394,7 @@ fn limit_to_steps_specified() {
 
 #[test]
 fn write_executed() {
-    let instrs = parse("+.").unwrap();
+    let instrs = parse("", "+.").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -408,7 +408,7 @@ fn write_executed() {
 
 #[test]
 fn loop_executed() {
-    let instrs = parse("++[-]").unwrap();
+    let instrs = parse("", "++[-]").unwrap();
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -424,7 +424,7 @@ fn loop_executed() {
 // position within the loop.
 #[test]
 fn partially_execute_up_to_runtime_value() {
-    let instrs = parse("+[[,]]").unwrap();
+    let instrs = parse("", "+[[,]]").unwrap();
     let final_state = execute(&instrs, 10);
 
     // Get the inner read instruction
@@ -454,7 +454,7 @@ fn partially_execute_up_to_runtime_value() {
 /// executing a top-level loop.
 #[test]
 fn partially_execute_complete_toplevel_loop() {
-    let instrs = parse("+[-],").unwrap();
+    let instrs = parse("", "+[-],").unwrap();
     let final_state = execute(&instrs, 10);
 
     assert_eq!(final_state,
@@ -468,7 +468,7 @@ fn partially_execute_complete_toplevel_loop() {
 
 #[test]
 fn partially_execute_up_to_step_limit() {
-    let instrs = parse("+[++++]").unwrap();
+    let instrs = parse("", "+[++++]").unwrap();
     let final_state = execute(&instrs, 3);
 
     let start_instr = match instrs[1] {
@@ -489,7 +489,7 @@ fn partially_execute_up_to_step_limit() {
 
 #[test]
 fn loop_up_to_step_limit() {
-    let instrs = parse("++[-]").unwrap();
+    let instrs = parse("", "++[-]").unwrap();
     // Assuming we take one step to enter the loop, we will execute
     // the loop body once.
     let final_state = execute(&instrs, 4);
@@ -507,7 +507,7 @@ fn loop_up_to_step_limit() {
 fn loop_with_read_body() {
     // We can't execute the whole loop, so our start instruction
     // should be the read.
-    let instrs = parse("+[+,]").unwrap();
+    let instrs = parse("", "+[+,]").unwrap();
     let final_state = execute(&instrs, 4);
 
     // Get the inner read instruction
@@ -530,7 +530,7 @@ fn loop_with_read_body() {
 
 #[test]
 fn up_to_infinite_loop_executed() {
-    let instrs = parse("++[]").unwrap();
+    let instrs = parse("", "++[]").unwrap();
     let final_state = execute(&instrs, 20);
 
     assert_eq!(final_state,
@@ -544,7 +544,7 @@ fn up_to_infinite_loop_executed() {
 
 #[test]
 fn up_to_nonempty_infinite_loop() {
-    let instrs = parse("+[+]").unwrap();
+    let instrs = parse("", "+[+]").unwrap();
     let final_state = execute(&instrs, 20);
 
     assert_eq!(final_state,
@@ -570,6 +570,6 @@ fn arithmetic_error_nested_loops() {
     // Regression test, based on a snippet from
     // mandlebrot.bf. Previously, if the first element in a loop was
     // another loop, we had arithmetic overflow.
-    let instrs = parse("+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
+    let instrs = parse("", "+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
     execute(&instrs, MAX_STEPS);
 }

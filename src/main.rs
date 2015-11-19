@@ -33,6 +33,7 @@ mod llvm;
 mod peephole;
 mod bounds;
 mod execution;
+mod diagnostics;
 
 #[cfg(test)]
 mod peephole_tests;
@@ -102,10 +103,19 @@ fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
 
 fn compile_file(matches: &Matches) -> Result<(), String> {
     let path = &matches.free[0];
+    // TODO: make this return an Info too, so compile_file can return
+    // an Info.
     let src = try!(convert_io_error(slurp(path)));
 
-    let mut instrs = try!(bfir::parse(&src));
-
+    let mut instrs = match bfir::parse(path, &src) {
+        Ok(instrs) => {
+            instrs
+        }
+        Err(info) => {
+            return Err(format!("{}", info));
+        }
+    };
+    
     let opt_level = matches.opt_str("opt").unwrap_or(String::from("2"));
     if opt_level != "0" {
         instrs = peephole::optimize(instrs);
