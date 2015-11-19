@@ -185,6 +185,8 @@ fn parse_complex_loop() {
 fn parse_unbalanced_loop() {
     assert!(parse("[").is_err());
     assert!(parse("]").is_err());
+    assert!(parse("][").is_err());
+    assert!(parse("[][").is_err());
 }
 
 #[test]
