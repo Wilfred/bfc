@@ -220,14 +220,14 @@ fn multiply_move_executed() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(2));
     changes.insert(3, Wrapping(3));
-    // TODO: we don't need to create a vector, execute can take a slice.
-    let instrs = vec![// Initial cells: [2, 1, 0, 0]
-                      Increment { amount: Wrapping(2), offset: 0 },
-                      PointerIncrement(1),
-                      Increment { amount: Wrapping(1), offset: 0 },
-                      PointerIncrement(-1),
 
-                      MultiplyMove(changes)];
+    let instrs = [// Initial cells: [2, 1, 0, 0]
+        Increment { amount: Wrapping(2), offset: 0 },
+        PointerIncrement(1),
+        Increment { amount: Wrapping(1), offset: 0 },
+        PointerIncrement(-1),
+
+        MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -243,7 +243,7 @@ fn multiply_move_executed() {
 fn multiply_move_wrapping() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(3));
-    let instrs = vec![Increment { amount: Wrapping(100), offset: 0 }, MultiplyMove(changes)];
+    let instrs = [Increment { amount: Wrapping(100), offset: 0 }, MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -260,7 +260,7 @@ fn multiply_move_wrapping() {
 fn multiply_move_offset_too_high() {
     let mut changes: HashMap<isize, Cell> = HashMap::new();
     changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
-    let instrs = vec![MultiplyMove(changes)];
+    let instrs = [MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -276,7 +276,7 @@ fn multiply_move_offset_too_high() {
 fn multiply_move_offset_too_low() {
     let mut changes = HashMap::new();
     changes.insert(-1, Wrapping(1));
-    let instrs = vec![MultiplyMove(changes)];
+    let instrs = [MultiplyMove(changes)];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -290,7 +290,7 @@ fn multiply_move_offset_too_low() {
 
 #[test]
 fn set_executed() {
-    let instrs = vec![Set {
+    let instrs = [Set {
         amount: Wrapping(2),
         offset: 0,
     }];
@@ -307,7 +307,7 @@ fn set_executed() {
 
 #[test]
 fn set_wraps() {
-    let instrs = vec![Set { amount: Wrapping(-1), offset: 0 }];
+    let instrs = [Set { amount: Wrapping(-1), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -335,8 +335,8 @@ fn decrement_executed() {
 
 #[test]
 fn increment_wraps() {
-    let instrs = vec![Increment { amount: Wrapping(-1), offset: 0 },
-                      Increment { amount: Wrapping(1), offset: 0 }];
+    let instrs = [Increment { amount: Wrapping(-1), offset: 0 },
+                  Increment { amount: Wrapping(1), offset: 0 }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
