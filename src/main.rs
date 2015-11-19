@@ -15,6 +15,7 @@ extern crate quickcheck;
 extern crate rand;
 extern crate tempfile;
 extern crate getopts;
+extern crate ansi_term;
 
 #[macro_use] extern crate matches;
 
