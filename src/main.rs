@@ -28,6 +28,7 @@ use std::path::Path;
 use std::process::Command;
 use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
+use diagnostics::{Info,Level};
 
 mod bfir;
 mod llvm;
@@ -42,12 +43,33 @@ mod peephole_tests;
 mod llvm_tests;
 
 /// Read the contents of the file at path, and return a string of its
-/// contents.
-fn slurp(path: &str) -> Result<String, std::io::Error> {
-    let mut file = try!(File::open(path));
+/// contents. Return a diagnostic if we can't open or read the file.
+fn slurp(path: &str) -> Result<String, Info> {
+    let mut file = match File::open(path) {
+        Ok(file) => file,
+        Err(message) => {
+            return Err(Info {
+                level: Level::Error,
+                filename: path.to_owned(),
+                message: format!("{}", message)
+            })
+        }
+    };
+
     let mut contents = String::new();
-    try!(file.read_to_string(&mut contents));
-    Ok(contents)
+
+    match file.read_to_string(&mut contents) {
+        Ok(_) => {
+            Ok(contents)
+        }
+        Err(message) => {
+            Err(Info {
+                level: Level::Error,
+                filename: path.to_owned(),
+                message: format!("{}", message)
+            })
+        }
+    }
 }
 
 /// Convert "foo.bf" to "foo".
@@ -104,9 +126,13 @@ fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
 
 fn compile_file(matches: &Matches) -> Result<(), String> {
     let path = &matches.free[0];
-    // TODO: make this return an Info too, so compile_file can return
-    // an Info.
-    let src = try!(convert_io_error(slurp(path)));
+
+    let src = match slurp(path) {
+        Ok(src) => src,
+        Err(info) => {
+            return Err(format!("{}", info));
+        }
+    };
 
     let mut instrs = match bfir::parse(path, &src) {
         Ok(instrs) => {

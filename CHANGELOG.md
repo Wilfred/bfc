@@ -17,6 +17,10 @@ Bug fixes:
 * Show a more helpful error if `llc`, `clang` or `strip` are not
   available.
 
+Usability:
+
+* bfc now reports errors with colour-coded diagnostics and filenames.
+
 # v1.2.0
 
 Optimisations:
