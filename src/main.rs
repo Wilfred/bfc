@@ -53,6 +53,7 @@ fn slurp(path: &str) -> Result<String, Info> {
                 filename: path.to_owned(),
                 message: format!("{}", message),
                 position: None,
+                source: None,
             })
         }
     };
@@ -69,6 +70,7 @@ fn slurp(path: &str) -> Result<String, Info> {
                 filename: path.to_owned(),
                 message: format!("{}", message),
                 position: None,
+                source: None,
             })
         }
     }
