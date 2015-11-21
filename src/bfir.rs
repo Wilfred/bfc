@@ -107,7 +107,7 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
         return Err(Info {
             level: Level::Error,
             filename: filename.to_owned(),
-            message: "This ] has no matching [".to_owned(),
+            message: "This [ has no matching ]".to_owned(),
             position: Some((pos, pos)),
             source: Some(source.to_owned())
         })
