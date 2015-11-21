@@ -636,7 +636,7 @@ pub fn compile_to_ir(module_name: &str,
 
         let (init_bb, mut bb) = add_initial_bbs(&mut module, main_fn);
 
-        if initial_state.outputs.len() > 0 {
+        if !initial_state.outputs.is_empty() {
             compile_static_outputs(&mut module, init_bb, &initial_state.outputs);
         }
 

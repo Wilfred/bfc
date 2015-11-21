@@ -153,7 +153,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     }
 
     if matches.opt_present("dump-ir") {
-        for instr in instrs.iter() {
+        for instr in &instrs {
             println!("{}", instr);
         }
         return Ok(());

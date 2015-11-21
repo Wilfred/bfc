@@ -68,23 +68,20 @@ impl fmt::Display for Info {
 
         let mut context_line = "".to_owned();
         let mut caret_line = "".to_owned();
-        match (offsets, &self.source) {
-            (Some((line_idx, column_idx, width)), &Some(ref source)) => {
-                // The faulty line of code.
-                let line = source.split('\n').nth(line_idx).unwrap();
-                context_line = "\n".to_owned() + &line;
+        if let (Some((line_idx, column_idx, width)), &Some(ref source)) = (offsets, &self.source) {
+            // The faulty line of code.
+            let line = source.split('\n').nth(line_idx).unwrap();
+            context_line = "\n".to_owned() + &line;
 
-                // Highlight the faulty characters on that line.
-                caret_line = caret_line + "\n";
-                for _ in 0..column_idx {
-                    caret_line = caret_line + " ";
-                }
-                caret_line = caret_line + "^";
-                for _ in 0..(width - 1) {
-                    caret_line = caret_line + "~";
-                }
+            // Highlight the faulty characters on that line.
+            caret_line = caret_line + "\n";
+            for _ in 0..column_idx {
+                caret_line = caret_line + " ";
             }
-            _ => {}
+            caret_line = caret_line + "^";
+            for _ in 0..(width - 1) {
+                caret_line = caret_line + "~";
+            }
         }
 
         let bold = Style::new().bold();

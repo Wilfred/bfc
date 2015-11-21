@@ -57,7 +57,7 @@ impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
 /// if it has an offset. E.g. if the instruction is
 /// Set {amount:100, offset: 1}, we're still considering previous instructions that
 /// modify the current cell, not the (cell_index + 1)th cell.
-pub fn previous_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
+pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
@@ -103,7 +103,7 @@ pub fn previous_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<u
 /// vector. This proved extremely hard to reason about. Instead, we
 /// have copied the body of previous_cell_change and highlighted the
 /// differences.
-pub fn next_cell_change(instrs: &Vec<Instruction>, index: usize) -> Option<usize> {
+pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
@@ -176,15 +176,12 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut redundant_instr_positions = HashSet::new();
 
     for (index, instr) in instrs.iter().enumerate() {
-        match *instr {
-            Read => {
-                // If we modified this cell before the read, just
-                // discard that instruction, because it's redundant.
-                if let Some(prev_index) = previous_cell_change(&instrs, index) {
-                    redundant_instr_positions.insert(prev_index);
-                }
+        if let Read = *instr {
+            // If we modified this cell before the read, just
+            // discard that instruction, because it's redundant.
+            if let Some(prev_index) = previous_cell_change(&instrs, index) {
+                redundant_instr_positions.insert(prev_index);
             }
-            _ => {}
         }
     }
 
