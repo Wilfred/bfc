@@ -77,6 +77,8 @@ optimised away rather than crashing).
 
 bfc requires brackets to be balanced, so `+[]]` is rejected.
 
+Finally, bfc assumes input files are valid UTF-8.
+
 ## Test programs
 
 There are a few test programs in this repo, but
