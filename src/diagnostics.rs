@@ -55,15 +55,15 @@ impl fmt::Display for Info {
         match self.level {
             Warning => {
                 color = Purple;
-                info_line = format!("{} {}", info_line, color.paint("warning").to_string());
+                info_line = format!("{} {}", info_line, color.paint("warning:").to_string());
             }
             Error => {
                 color = Red;
-                info_line = format!("{} {}", info_line, color.paint("error").to_string());
+                info_line = format!("{} {}", info_line, color.paint("error:").to_string());
             }
         }
 
-        info_line = format!("{}: {}", info_line, self.message);
+        info_line = format!("{} {}", info_line, self.message);
 
         let bold = Style::new().bold();
         try!(write!(f, "{}", bold.paint(info_line).to_string()));
