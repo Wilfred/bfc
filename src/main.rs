@@ -51,7 +51,8 @@ fn slurp(path: &str) -> Result<String, Info> {
             return Err(Info {
                 level: Level::Error,
                 filename: path.to_owned(),
-                message: format!("{}", message)
+                message: format!("{}", message),
+                position: None,
             })
         }
     };
@@ -66,7 +67,8 @@ fn slurp(path: &str) -> Result<String, Info> {
             Err(Info {
                 level: Level::Error,
                 filename: path.to_owned(),
-                message: format!("{}", message)
+                message: format!("{}", message),
+                position: None,
             })
         }
     }

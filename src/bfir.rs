@@ -92,7 +92,8 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
                     return Err(Info {
                         level: Level::Error,
                         filename: filename.to_owned(),
-                        message: format!("This ] has no matching [ (index {})", index).to_owned()
+                        message: "This ] has no matching [".to_owned(),
+                        position: Some((index, index))
                     })
                 }
             }
@@ -101,11 +102,12 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
     }
 
     if !stack.is_empty() {
-        // TODO: show line number
+        let pos = stack.last().unwrap().1;
         return Err(Info {
             level: Level::Error,
             filename: filename.to_owned(),
-            message: format!("This ] has no matching [ (index {})", stack.last().unwrap().1).to_owned()
+            message: "This ] has no matching [".to_owned(),
+            position: Some((pos, pos))
         })
     }
 
