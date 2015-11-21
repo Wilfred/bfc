@@ -38,36 +38,53 @@ fn position(s: &str, i: usize) -> (usize, usize) {
 
 impl fmt::Display for Info {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(write!(f, "{}: ", self.filename));
-        
+        let mut info_line = self.filename.to_owned();
+
+        // Find line and column offsets, if we have an index.
+        let offsets = match (self.position, &self.source) {
+            (Some((from, to)), &Some(ref source)) => {
+                let (line_idx, column_idx) = position(source, from);
+
+                info_line = format!("{}:{}:{}", info_line, line_idx + 1, column_idx + 1);
+                Some((line_idx, column_idx, to - from))
+            }
+            _ => None
+        };
+
+        let color;
         match self.level {
             Warning => {
-                try!(write!(f, "{} ", Purple.paint("warning:").to_string()));
+                color = Purple;
+                info_line = format!("{} {}", info_line, color.paint("warning").to_string());
             }
             Error => {
-                try!(write!(f, "{} ", Red.paint("error:").to_string()));
+                color = Red;
+                info_line = format!("{} {}", info_line, color.paint("error").to_string());
             }
         }
 
+        info_line = format!("{}: {}", info_line, self.message);
+
         let bold = Style::new().bold();
-        try!(write!(f, "{}", bold.paint(self.message.clone()).to_string()));
+        try!(write!(f, "{}", bold.paint(info_line).to_string()));
 
-        match (self.position, &self.source) {
-            (Some((from,to)), &Some(ref source)) => {
-                let (line_idx, column_idx) = position(source, from);
-
+        match (offsets, &self.source) {
+            (Some((line_idx, column_idx, width)), &Some(ref source)) => {
                 // Print the offending line.
                 let line = source.split('\n').nth(line_idx).unwrap();
                 try!(write!(f, "\n{}\n", line));
 
                 // Highlight the bad characters on that line.
+                let mut caret_line = "".to_owned();
                 for _ in 0..column_idx {
-                    try!(write!(f, " "));
+                    caret_line = caret_line + " ";
                 }
-                try!(write!(f, "^"));
-                for _ in 0..(to - from) {
-                    try!(write!(f, "~"));
+                caret_line = caret_line + "^";
+                for _ in 0..width {
+                    caret_line = caret_line + "~";
                 }
+
+                try!(write!(f, "{}", color.bold().paint(caret_line).to_string()));
             }
             _ => {}
         }
