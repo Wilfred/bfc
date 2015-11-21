@@ -1,6 +1,7 @@
 use std::fmt;
 use ansi_term::Colour::{Red,Purple};
 use ansi_term::Style;
+use ansi_term::ANSIStrings;
 use self::Level::*;
 
 #[derive(Debug)]
@@ -38,44 +39,42 @@ fn position(s: &str, i: usize) -> (usize, usize) {
 
 impl fmt::Display for Info {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let mut info_line = self.filename.to_owned();
+        let mut file_text = self.filename.to_owned();
 
         // Find line and column offsets, if we have an index.
         let offsets = match (self.position, &self.source) {
             (Some((from, to)), &Some(ref source)) => {
                 let (line_idx, column_idx) = position(source, from);
 
-                info_line = format!("{}:{}:{}", info_line, line_idx + 1, column_idx + 1);
+                file_text = file_text + &format!(":{}:{}", line_idx + 1, column_idx + 1);
                 Some((line_idx, column_idx, to - from))
             }
             _ => None
         };
 
+        let level_text;
         let color;
         match self.level {
             Warning => {
                 color = Purple;
-                info_line = format!("{} {}", info_line, color.paint("warning:").to_string());
+                level_text = " warning: ";
             }
             Error => {
                 color = Red;
-                info_line = format!("{} {}", info_line, color.paint("error:").to_string());
+                level_text = " error: ";
             }
         }
 
-        info_line = format!("{} {}", info_line, self.message);
-
-        let bold = Style::new().bold();
-        try!(write!(f, "{}", bold.paint(info_line).to_string()));
-
+        let mut context_line = "".to_owned();
+        let mut caret_line = "".to_owned();
         match (offsets, &self.source) {
             (Some((line_idx, column_idx, width)), &Some(ref source)) => {
-                // Print the offending line.
+                // The faulty line of code.
                 let line = source.split('\n').nth(line_idx).unwrap();
-                try!(write!(f, "\n{}\n", line));
+                context_line = "\n".to_owned() + &line;
 
-                // Highlight the bad characters on that line.
-                let mut caret_line = "".to_owned();
+                // Highlight the faulty characters on that line.
+                caret_line = caret_line + "\n";
                 for _ in 0..column_idx {
                     caret_line = caret_line + " ";
                 }
@@ -83,12 +82,17 @@ impl fmt::Display for Info {
                 for _ in 0..width {
                     caret_line = caret_line + "~";
                 }
-
-                try!(write!(f, "{}", color.bold().paint(caret_line).to_string()));
             }
             _ => {}
         }
 
-        Ok(())
+        let bold = Style::new().bold();
+        let default = Style::default();
+        let strings = [bold.paint(file_text),
+                       color.bold().paint(level_text),
+                       bold.paint(self.message.clone()),
+                       default.paint(context_line),
+                       color.bold().paint(caret_line)];
+        write!(f, "{}", ANSIStrings(&strings))
     }
 }
