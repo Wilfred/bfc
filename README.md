@@ -34,6 +34,9 @@ authors and are under other licenses.
         - [Reorder with offsets](#reorder-with-offsets)
     - [Cell Bounds Analysis](#cell-bounds-analysis)
     - [Speculative Execution](#speculative-execution)
+        - [Infinite Loops](#infinite-loops)
+        - [Runtime Values](#runtime-values)
+        - [Loop Execution](#loop-execution)
     - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
@@ -290,28 +293,8 @@ than necessary.
 
 bfc executes as much as it can at compile time. For some programs
 (such as hello_world.bf) this optimises away the entire program to
-just writing to stdout.
-
-For example, `+.` is compiled to simply `putchar(1);` without needing
-any cell storage at all.
-
-bfc sets a maximum number of execution steps, avoiding infinite loops
-hanging the compiler. As a result `+[]` will have `+` executed (so our
-initial cell value is `1` and `[]` will be in the compiled output.
-
-If a program reads from stdin, speculation execution stops. As a
-result, `>,` will have `>` executed (setting the initial cell pointer
-to 1) and `,` will be in the compiled output.
-
-bfc will either execute loops entirely, or place them in the compiled
-output. For example, consider `+[-]+[+,]`. We can execute `+[-]+`
-entirely, but we cannot execute all of `[+,]` at compile time. The
-compiled output contains the whole loop, but we start execution at the
-`,` (continuing execution from where compile time execution had to
-stop).
-
-If bfc manages to execute the entire program, it won't bother
-allocating memory for cells:
+just writing to stdout. bfc doesn't even need to allocate memory for
+cells in this situation.
 
 ```
 $ cargo run -- sample_programs/hello_world.bf --dump-llvm
@@ -325,6 +308,31 @@ entry:
   ret i32 0
 }
 ```
+
+### Infinite Loops
+
+bfc sets a maximum number of execution steps, avoiding infinite loops
+hanging the compiler. As a result `+[]` will have `+` executed (so our
+initial cell value is `1` and `[]` will be in the compiled output.
+
+### Runtime Values
+
+If a program reads from stdin, speculation execution stops. As a
+result, `>,` will have `>` executed (setting the initial cell pointer
+to 1) and `,` will be in the compiled output.
+
+### Loop Execution
+
+If loops can be entirely executed at compile time, they will be
+removed from the resulting binary. Partially executed loops will be
+included in the output, but runtime execution can begin at an
+arbitrary position in the loop.
+
+For example, consider `+[-]+[+,]`. We can execute `+[-]+`
+entirely, but `[+,]` depends on runtme values. The
+compiled output contains `[+,]`, but we start execution at the
+`,` (continuing execution from where compile time execution had to
+stop).
 
 ## Other projects optimising BF
 
