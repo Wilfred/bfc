@@ -80,7 +80,7 @@ impl fmt::Display for Info {
                     caret_line = caret_line + " ";
                 }
                 caret_line = caret_line + "^";
-                for _ in 0..width {
+                for _ in 0..(width - 1) {
                     caret_line = caret_line + "~";
                 }
             }
