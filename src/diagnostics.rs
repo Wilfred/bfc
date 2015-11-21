@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::Range;
 use ansi_term::Colour::{Red,Purple};
 use ansi_term::Style;
 use ansi_term::ANSIStrings;
@@ -17,7 +18,7 @@ pub struct Info {
     pub filename: String,
     pub message: String,
     // from and to (can be the same)
-    pub position: Option<(usize, usize)>,
+    pub position: Option<Range<usize>>,
     pub source: Option<String>,
 }
 
@@ -42,12 +43,12 @@ impl fmt::Display for Info {
         let mut file_text = self.filename.to_owned();
 
         // Find line and column offsets, if we have an index.
-        let offsets = match (self.position, &self.source) {
-            (Some((from, to)), &Some(ref source)) => {
-                let (line_idx, column_idx) = position(source, from);
+        let offsets = match (&self.position, &self.source) {
+            (&Some(ref range), &Some(ref source)) => {
+                let (line_idx, column_idx) = position(source, range.start);
 
                 file_text = file_text + &format!(":{}:{}", line_idx + 1, column_idx + 1);
-                Some((line_idx, column_idx, to - from))
+                Some((line_idx, column_idx, range.end - range.start))
             }
             _ => None
         };

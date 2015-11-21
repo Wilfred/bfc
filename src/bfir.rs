@@ -93,7 +93,7 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
                         level: Level::Error,
                         filename: filename.to_owned(),
                         message: "This ] has no matching [".to_owned(),
-                        position: Some((index, index)),
+                        position: Some(index..index),
                         source: Some(source.to_owned()),
                     })
                 }
@@ -108,7 +108,7 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
             level: Level::Error,
             filename: filename.to_owned(),
             message: "This [ has no matching ]".to_owned(),
-            position: Some((pos, pos)),
+            position: Some(pos..pos),
             source: Some(source.to_owned())
         })
     }
