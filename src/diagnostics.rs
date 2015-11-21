@@ -19,18 +19,20 @@ pub struct Info {
 
 impl fmt::Display for Info {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let bold = Style::new().bold();
+        try!(write!(f, "{}: ", self.filename));
+        
         match self.level {
             Warning => {
-                write!(f, "{}: {} {}", self.filename,
-                       Purple.paint("warning:").to_string(),
-                       bold.paint(self.message.clone()).to_string())
+                try!(write!(f, "{} ", Purple.paint("warning:").to_string()));
             }
             Error => {
-                write!(f, "{}: {} {}", self.filename,
-                       Red.paint("error:").to_string(),
-                       bold.paint(self.message.clone()).to_string())
+                try!(write!(f, "{} ", Red.paint("error:").to_string()));
             }
         }
+
+        let bold = Style::new().bold();
+        try!(write!(f, "{}", bold.paint(self.message.clone()).to_string()));
+
+        Ok(())
     }
 }
