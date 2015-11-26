@@ -3,13 +3,13 @@
 [![Build Status](https://travis-ci.org/Wilfred/bfc.svg?branch=master)](https://travis-ci.org/Wilfred/bfc)
 
 bfc is an optimising compiler for
-[BF](https://en.wikipedia.org/wiki/Brainfuck).
+[BF](https://en.wikipedia.org/wiki/Brainfuck). It is written in Rust
+and uses LLVM.
 
 Blog posts:
 [An Optimising BF Compiler](http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/)
-and [Even More BF Optimisations](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/).
-
-It is written in Rust and uses LLVM.
+and
+[Even More BF Optimisations](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/).
 
 ```
 BF source -> BF IR -> LLVM IR -> x86_32 Binary
