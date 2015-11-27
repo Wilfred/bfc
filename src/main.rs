@@ -138,11 +138,18 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         }
     };
 
-    let mut instrs = match bfir::parse(path, &src) {
+    let mut instrs = match bfir::parse(&src) {
         Ok(instrs) => {
             instrs
         }
-        Err(info) => {
+        Err(parse_error) => {
+            let info = Info {
+                level: Level::Error,
+                filename: path.to_owned(),
+                message: parse_error.message,
+                position: Some(parse_error.position),
+                source: Some(src)
+            };
             return Err(format!("{}", info));
         }
     };

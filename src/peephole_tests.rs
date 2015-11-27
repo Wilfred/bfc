@@ -61,28 +61,28 @@ impl Arbitrary for Instruction {
 
 #[test]
 fn combine_increments_flat() {
-    let initial = parse("", "++").unwrap();
+    let initial = parse("++").unwrap();
     let expected = vec![Increment { amount: Wrapping(2), offset: 0 }];
     assert_eq!(combine_increments(initial), expected);
 }
 
 #[test]
 fn combine_increments_unrelated() {
-    let initial = parse("", "+>+.").unwrap();
+    let initial = parse("+>+.").unwrap();
     let expected = initial.clone();
     assert_eq!(combine_increments(initial), expected);
 }
 
 #[test]
 fn combine_increments_nested() {
-    let initial = parse("", "[++]").unwrap();
+    let initial = parse("[++]").unwrap();
     let expected = vec![Loop(vec![Increment { amount: Wrapping(2), offset: 0 }])];
     assert_eq!(combine_increments(initial), expected);
 }
 
 #[test]
 fn combine_increments_remove_redundant() {
-    let initial = parse("", "+-").unwrap();
+    let initial = parse("+-").unwrap();
     assert_eq!(combine_increments(initial), vec![]);
 }
 
@@ -113,7 +113,7 @@ fn combine_set_sum_to_zero() {
 #[test]
 fn should_combine_before_read() {
     // The increment before the read is dead and can be removed.
-    let initial = parse("", "+,.").unwrap();
+    let initial = parse("+,.").unwrap();
     let expected = vec![Read, Write];
     assert_eq!(optimize(initial), expected);
 }
@@ -126,7 +126,7 @@ fn dont_combine_before_read_different_offset() {
 
 #[test]
 fn should_combine_before_read_nested() {
-    let initial = parse("", "+[+,]").unwrap();
+    let initial = parse("+[+,]").unwrap();
     let expected = vec![Set { amount: Wrapping(1), offset: 0 }, Loop(vec![Read])];
     assert_eq!(optimize(initial), expected);
 }
@@ -134,21 +134,21 @@ fn should_combine_before_read_nested() {
 #[test]
 fn combine_before_read_not_consecutive() {
     // The increment before the read is dead and can be removed.
-    let initial = parse("", "+>-<,").unwrap();
-    let expected = parse("", ">-<,").unwrap();
+    let initial = parse("+>-<,").unwrap();
+    let expected = parse(">-<,").unwrap();
     assert_eq!(combine_before_read(initial), expected);
 }
 
 #[test]
 fn simplify_zeroing_loop() {
-    let initial = parse("", "[-]").unwrap();
+    let initial = parse("[-]").unwrap();
     let expected = vec![Set { amount: Wrapping(0), offset: 0 }];
     assert_eq!(simplify_loops(initial), expected);
 }
 
 #[test]
 fn simplify_nested_zeroing_loop() {
-    let initial = parse("", "[[-]]").unwrap();
+    let initial = parse("[[-]]").unwrap();
     let expected = vec![Loop(vec![Set { amount: Wrapping(0), offset: 0 }])];
     assert_eq!(simplify_loops(initial), expected);
 }
@@ -158,7 +158,7 @@ fn dont_simplify_multiple_decrement_loop() {
     // A user who wrote this probably meant '[-]'. However, if the
     // current cell has the value 3, we would actually wrap around
     // (although BF does not specify this).
-    let initial = parse("", "[--]").unwrap();
+    let initial = parse("[--]").unwrap();
     assert_eq!(simplify_loops(initial.clone()), initial);
 }
 
@@ -351,7 +351,7 @@ fn quickcheck_should_annotate_known_zero_at_start() {
 
 #[test]
 fn should_annotate_known_zero() {
-    let initial = parse("", "+[]").unwrap();
+    let initial = parse("+[]").unwrap();
     let expected = vec![Set { amount: Wrapping(0), offset: 0 },
                         Increment { amount: Wrapping(1), offset: 0 },
                         Loop(vec![]),
@@ -361,7 +361,7 @@ fn should_annotate_known_zero() {
 
 #[test]
 fn should_annotate_known_zero_nested() {
-    let initial = parse("", "[[]]").unwrap();
+    let initial = parse("[[]]").unwrap();
     let expected = vec![Set { amount: Wrapping(0), offset: 0 },
                         Loop(vec![Loop(vec![]), Set { amount: Wrapping(0), offset: 0 }]),
                         Set { amount: Wrapping(0), offset: 0 }];
@@ -388,7 +388,7 @@ fn should_preserve_set_0_in_loop() {
 fn should_remove_pure_code() {
     // The final increment here is side-effect free and can be
     // removed.
-    let initial = parse("", "+.+").unwrap();
+    let initial = parse("+.+").unwrap();
     let expected = vec![
         Set { amount: Wrapping(1), offset: 0 },
         Write];
@@ -460,7 +460,7 @@ fn quickcheck_optimize_should_decrease_size() {
 
 #[test]
 fn should_extract_multiply_simple() {
-    let instrs = parse("", "[->+++<]").unwrap();
+    let instrs = parse("[->+++<]").unwrap();
 
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(3));
@@ -471,7 +471,7 @@ fn should_extract_multiply_simple() {
 
 #[test]
 fn should_extract_multiply_nested() {
-    let instrs = parse("", "[[->+<]]").unwrap();
+    let instrs = parse("[[->+<]]").unwrap();
 
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(1));
@@ -482,7 +482,7 @@ fn should_extract_multiply_nested() {
 
 #[test]
 fn should_extract_multiply_negative_number() {
-    let instrs = parse("", "[->--<]").unwrap();
+    let instrs = parse("[->--<]").unwrap();
 
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(-2));
@@ -493,7 +493,7 @@ fn should_extract_multiply_negative_number() {
 
 #[test]
 fn should_extract_multiply_multiple_cells() {
-    let instrs = parse("", "[->+++>>>+<<<<]").unwrap();
+    let instrs = parse("[->+++>>>+<<<<]").unwrap();
 
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(3));
@@ -505,19 +505,19 @@ fn should_extract_multiply_multiple_cells() {
 
 #[test]
 fn should_not_extract_multiply_net_movement() {
-    let instrs = parse("", "[->+++<<]").unwrap();
+    let instrs = parse("[->+++<<]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
 #[test]
 fn should_not_extract_multiply_from_clear_loop() {
-    let instrs = parse("", "[-]").unwrap();
+    let instrs = parse("[-]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
 #[test]
 fn should_not_extract_multiply_with_inner_loop() {
-    let instrs = parse("", "[->+++<[]]").unwrap();
+    let instrs = parse("[->+++<[]]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
@@ -525,25 +525,25 @@ fn should_not_extract_multiply_with_inner_loop() {
 /// multiply.
 #[test]
 fn should_not_extract_multiply_without_decrement() {
-    let instrs = parse("", "[+>++<]").unwrap();
+    let instrs = parse("[+>++<]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
 #[test]
 fn should_not_extract_multiply_with_read() {
-    let instrs = parse("", "[+>++<,]").unwrap();
+    let instrs = parse("[+>++<,]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
 #[test]
 fn should_not_extract_multiply_with_write() {
-    let instrs = parse("", "[+>++<.]").unwrap();
+    let instrs = parse("[+>++<.]").unwrap();
     assert_eq!(extract_multiply(instrs.clone()), instrs);
 }
 
 #[test]
 fn sort_by_offset_increment() {
-    let instrs = parse("", "+>+>").unwrap();
+    let instrs = parse("+>+>").unwrap();
     let expected = vec![Increment { amount: Wrapping(1), offset: 0 },
                         Increment { amount: Wrapping(1), offset: 1 },
                         PointerIncrement(2)];
@@ -552,7 +552,7 @@ fn sort_by_offset_increment() {
 
 #[test]
 fn sort_by_offset_increment_nested() {
-    let instrs = parse("", "[+>+>]").unwrap();
+    let instrs = parse("[+>+>]").unwrap();
     let expected = vec![Loop(vec![Increment { amount: Wrapping(1), offset: 0 },
                                   Increment { amount: Wrapping(1), offset: 1 },
                                   PointerIncrement(2)])];
@@ -561,7 +561,7 @@ fn sort_by_offset_increment_nested() {
 
 #[test]
 fn sort_by_offset_remove_redundant() {
-    let initial = parse("", "><").unwrap();
+    let initial = parse("><").unwrap();
     assert_eq!(sort_by_offset(initial), vec![]);
 }
 
@@ -569,7 +569,7 @@ fn sort_by_offset_remove_redundant() {
 // after.
 #[test]
 fn sort_by_offset_read() {
-    let instrs = parse("", ">>,>>").unwrap();
+    let instrs = parse(">>,>>").unwrap();
     let expected = vec![PointerIncrement(2), Read, PointerIncrement(2)];
     assert_eq!(sort_by_offset(instrs), expected);
 }
@@ -614,7 +614,7 @@ fn quickcheck_sort_by_offset_pointer_increments() {
 /// combination opportunities.
 #[test]
 fn combine_increments_after_sort() {
-    let instrs = parse("", ",+>+<+.").unwrap();
+    let instrs = parse(",+>+<+.").unwrap();
     let expected = vec![Read,
                         Increment { amount: Wrapping(2), offset: 0 },
                         Increment { amount: Wrapping(1), offset: 1 },

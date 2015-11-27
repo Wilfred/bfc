@@ -1,9 +1,8 @@
 
 use std::fmt;
+use std::ops::Range;
 use std::num::Wrapping;
 use std::collections::HashMap;
-
-use diagnostics::{Info,Level};
 
 use self::Instruction::*;
 
@@ -55,16 +54,21 @@ impl fmt::Display for Instruction {
     }
 }
 
+#[derive(Debug)]
+pub struct ParseError {
+    pub message: String,
+    pub position: Range<usize>
+}
+
 /// Given a string of BF source code, parse and return our BF IR
 /// representation. If parsing fails, return an Info describing what
 /// went wrong.
-pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
+pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
     // Instructions in the current loop (or toplevel).
     let mut instructions = vec![];
     // Contains the instructions of open parent loops (or toplevel),
     // and the starting indices of the loops.
     let mut stack = vec![];
-
 
     for (index, c) in source.chars().enumerate() {
         match c {
@@ -89,12 +93,9 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
                     parent_instr.push(Loop(instructions));
                     instructions = parent_instr;
                 } else {
-                    return Err(Info {
-                        level: Level::Error,
-                        filename: filename.to_owned(),
+                    return Err(ParseError {
                         message: "This ] has no matching [".to_owned(),
-                        position: Some(index..index),
-                        source: Some(source.to_owned()),
+                        position: index..index,
                     })
                 }
             }
@@ -104,12 +105,9 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
 
     if !stack.is_empty() {
         let pos = stack.last().unwrap().1;
-        return Err(Info {
-            level: Level::Error,
-            filename: filename.to_owned(),
+        return Err(ParseError {
             message: "This [ has no matching ]".to_owned(),
-            position: Some(pos..pos),
-            source: Some(source.to_owned())
+            position: pos..pos,
         })
     }
 
@@ -118,12 +116,12 @@ pub fn parse(filename: &str, source: &str) -> Result<Vec<Instruction>, Info> {
 
 #[test]
 fn parse_increment() {
-    assert_eq!(parse("", "+").unwrap(),
+    assert_eq!(parse("+").unwrap(),
                [Increment {
                    amount: Wrapping(1),
                    offset: 0,
                }]);
-    assert_eq!(parse("", "++").unwrap(),
+    assert_eq!(parse("++").unwrap(),
                [Increment {
                    amount: Wrapping(1),
                    offset: 0,
@@ -136,7 +134,7 @@ fn parse_increment() {
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("", "-").unwrap(),
+    assert_eq!(parse("-").unwrap(),
                [Increment {
                    amount: Wrapping(-1),
                    offset: 0,
@@ -145,28 +143,28 @@ fn parse_decrement() {
 
 #[test]
 fn parse_pointer_increment() {
-    assert_eq!(parse("", ">").unwrap(), [PointerIncrement(1)]);
+    assert_eq!(parse(">").unwrap(), [PointerIncrement(1)]);
 }
 
 #[test]
 fn parse_pointer_decrement() {
-    assert_eq!(parse("", "<").unwrap(), [PointerIncrement(-1)]);
+    assert_eq!(parse("<").unwrap(), [PointerIncrement(-1)]);
 }
 
 #[test]
 fn parse_read() {
-    assert_eq!(parse("", ",").unwrap(), [Read]);
+    assert_eq!(parse(",").unwrap(), [Read]);
 }
 
 #[test]
 fn parse_write() {
-    assert_eq!(parse("", ".").unwrap(), [Write]);
+    assert_eq!(parse(".").unwrap(), [Write]);
 }
 
 #[test]
 fn parse_empty_loop() {
     let expected = [Loop(vec![])];
-    assert_eq!(parse("", "[]").unwrap(), expected);
+    assert_eq!(parse("[]").unwrap(), expected);
 }
 
 #[test]
@@ -176,7 +174,7 @@ fn parse_simple_loop() {
         offset: 0,
     }];
     let expected = [Loop(loop_body)];
-    assert_eq!(parse("", "[+]").unwrap(), expected);
+    assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
@@ -192,18 +190,18 @@ fn parse_complex_loop() {
         amount: Wrapping(-1),
         offset: 0,
     }];
-    assert_eq!(parse("", ".[,+]-").unwrap(), expected);
+    assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 
 #[test]
 fn parse_unbalanced_loop() {
-    assert!(parse("", "[").is_err());
-    assert!(parse("", "]").is_err());
-    assert!(parse("", "][").is_err());
-    assert!(parse("", "[][").is_err());
+    assert!(parse("[").is_err());
+    assert!(parse("]").is_err());
+    assert!(parse("][").is_err());
+    assert!(parse("[][").is_err());
 }
 
 #[test]
 fn parse_comment() {
-    assert_eq!(parse("", "foo! ").unwrap(), []);
+    assert_eq!(parse("foo! ").unwrap(), []);
 }

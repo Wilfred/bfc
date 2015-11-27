@@ -145,22 +145,22 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
 
 #[test]
 fn one_cell_bounds() {
-    let instrs = parse("", "+-.,").unwrap();
+    let instrs = parse("+-.,").unwrap();
     assert_eq!(highest_cell_index(&instrs), 0);
 }
 
 #[test]
 fn ptr_increment_bounds() {
-    let instrs = parse("", ">").unwrap();
+    let instrs = parse(">").unwrap();
     assert_eq!(highest_cell_index(&instrs), 1);
 }
 
 #[test]
 fn ptr_increment_sequence_bounds() {
-    let instrs = parse("", ">>.<").unwrap();
+    let instrs = parse(">>.<").unwrap();
     assert_eq!(highest_cell_index(&instrs), 2);
 
-    let instrs = parse("", ">><>>").unwrap();
+    let instrs = parse(">><>>").unwrap();
     assert_eq!(highest_cell_index(&instrs), 3);
 }
 
@@ -209,10 +209,10 @@ fn multiply_move_backwards_bounds() {
 
 #[test]
 fn unbounded_movement() {
-    let instrs = parse("", "[>]").unwrap();
+    let instrs = parse("[>]").unwrap();
     assert_eq!(highest_cell_index(&instrs), MAX_CELL_INDEX);
 
-    let instrs = parse("", ">[<]").unwrap();
+    let instrs = parse(">[<]").unwrap();
     assert_eq!(highest_cell_index(&instrs), 1);
 }
 
@@ -226,15 +226,15 @@ fn excessive_bounds_truncated() {
 #[test]
 fn loop_with_no_net_movement() {
     // Max cell index 1, final cell position 0.
-    let instrs = parse("", "[->+<]").unwrap();
+    let instrs = parse("[->+<]").unwrap();
     assert_eq!(highest_cell_index(&instrs), 1);
 
     // Max cell index 1, final cell position 1.
-    let instrs = parse("", "[->+<]>").unwrap();
+    let instrs = parse("[->+<]>").unwrap();
     assert_eq!(highest_cell_index(&instrs), 1);
 
     // Max cell index 2, final cell position 2.
-    let instrs = parse("", "[->+<]>>").unwrap();
+    let instrs = parse("[->+<]>>").unwrap();
     assert_eq!(highest_cell_index(&instrs), 2);
 }
 
