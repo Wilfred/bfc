@@ -327,6 +327,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
     // as sort_sequence_by_offset ensures that if the offset is the
     // same, the instruction is adjacent.
     instrs.into_iter().coalesce(|prev_instr, instr| {
+        // TODO: Set, Write, Increment -> Set, Write, Set
         if let (&Increment { offset: inc_offset, .. }, &Set { amount: set_amount, offset: set_offset }) = (&prev_instr, &instr) {
             if inc_offset == set_offset {
                 return Ok(Set { amount: set_amount, offset: set_offset });
