@@ -17,7 +17,8 @@ extern crate tempfile;
 extern crate getopts;
 extern crate ansi_term;
 
-#[macro_use] extern crate matches;
+#[macro_use]
+extern crate matches;
 
 use std::env;
 use std::fs::File;
@@ -28,7 +29,7 @@ use std::path::Path;
 use std::process::Command;
 use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
-use diagnostics::{Info,Level};
+use diagnostics::{Info, Level};
 
 mod bfir;
 mod llvm;
@@ -61,9 +62,7 @@ fn slurp(path: &str) -> Result<String, Info> {
     let mut contents = String::new();
 
     match file.read_to_string(&mut contents) {
-        Ok(_) => {
-            Ok(contents)
-        }
+        Ok(_) => Ok(contents),
         Err(message) => {
             Err(Info {
                 level: Level::Error,
@@ -95,12 +94,8 @@ fn print_usage(bin_name: &str, opts: Options) {
 
 fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
     match result {
-        Ok(value) => {
-            Ok(value)
-        }
-        Err(e) => {
-            Err(format!("{}", e))
-        }
+        Ok(value) => Ok(value),
+        Err(e) => Err(format!("{}", e)),
     }
 }
 
@@ -122,9 +117,7 @@ fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
                 Err((*stderr).to_owned())
             }
         }
-        Err(_) => {
-            Err(format!("Could not execute '{}'. Is it on $PATH?", command))
-        }
+        Err(_) => Err(format!("Could not execute '{}'. Is it on $PATH?", command)),
     }
 }
 
@@ -139,21 +132,19 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     };
 
     let mut instrs = match bfir::parse(&src) {
-        Ok(instrs) => {
-            instrs
-        }
+        Ok(instrs) => instrs,
         Err(parse_error) => {
             let info = Info {
                 level: Level::Error,
                 filename: path.to_owned(),
                 message: parse_error.message,
                 position: Some(parse_error.position),
-                source: Some(src)
+                source: Some(src),
             };
             return Err(format!("{}", info));
         }
     };
-    
+
     let opt_level = matches.opt_str("opt").unwrap_or(String::from("2"));
     if opt_level != "0" {
         instrs = peephole::optimize(instrs);
@@ -231,15 +222,10 @@ fn main() {
     opts.optflag("", "dump-ir", "print BF IR generated");
 
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
-    opts.optopt("",
-                "llvm-opt",
-                "LLVM optimization level (0 to 3)",
-                "LEVEL");
+    opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
 
     let matches = match opts.parse(&args[1..]) {
-        Ok(m) => {
-            m
-        }
+        Ok(m) => m,
         Err(_) => {
             print_usage(&args[0], opts);
             std::process::exit(1);
