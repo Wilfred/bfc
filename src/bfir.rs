@@ -54,10 +54,12 @@ impl fmt::Display for Instruction {
     }
 }
 
+pub type Position = Range<usize>;
+
 #[derive(Debug)]
 pub struct ParseError {
     pub message: String,
-    pub position: Range<usize>
+    pub position: Position
 }
 
 /// Given a string of BF source code, parse and return our BF IR
