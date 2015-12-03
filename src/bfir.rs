@@ -8,11 +8,14 @@ use self::Instruction::*;
 
 pub type Cell = Wrapping<i8>;
 
+pub type Position = Range<usize>;
+
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
     Increment {
         amount: Cell,
         offset: isize,
+        position: Position,
     },
     PointerIncrement(isize),
     Read,
@@ -54,8 +57,6 @@ impl fmt::Display for Instruction {
     }
 }
 
-pub type Position = Range<usize>;
-
 #[derive(Debug)]
 pub struct ParseError {
     pub message: String,
@@ -78,12 +79,14 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 instructions.push(Increment {
                     amount: Wrapping(1),
                     offset: 0,
+                    position: index..index,
                 })
             }
             '-' => {
                 instructions.push(Increment {
                     amount: Wrapping(-1),
                     offset: 0,
+                    position: index..index,
                 })
             }
             '>' => instructions.push(PointerIncrement(1)),

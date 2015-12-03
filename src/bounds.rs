@@ -97,7 +97,7 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
             (SaturatingInt::Number(amount as i64),
              SaturatingInt::Number(amount as i64))
         },
-        Increment { amount: _, offset } => {
+        Increment { amount: _, offset, .. } => {
             (SaturatingInt::Number(offset as i64),
              SaturatingInt::Number(0))
         },

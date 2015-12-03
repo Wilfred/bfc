@@ -150,12 +150,13 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // Collapse consecutive increments.
-              if let &Increment { amount: prev_amount, offset: prev_offset } = &prev_instr {
-                  if let &Increment { amount, offset } = &instr {
+              if let &Increment { amount: prev_amount, offset: prev_offset, position: ref prev_pos } = &prev_instr {
+                  if let &Increment { amount, offset, ref position } = &instr {
                       if prev_offset == offset {
                           return Ok(Increment {
                               amount: amount + prev_amount,
                               offset: offset,
+                              position: prev_pos.start..position.end,
                           });
                       }
                   }
@@ -197,7 +198,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map(|instr| {
               if let &Loop(ref body) = &instr {
                   // If the loop is [-]
-                  if *body == vec![Increment { amount: Wrapping(-1), offset: 0 }] {
+                  if body.len() == 0 && matches!(body[0], Increment { amount: Wrapping(-1), offset: 0, .. }) {
                       return Set { amount: Wrapping(0), offset: 0 }
                   }
               }
@@ -288,10 +289,10 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     for instr in instrs {
         match instr {
-            Increment { amount, offset } => {
+            Increment { amount, offset, position } => {
                 let new_offset = offset + current_offset;
                 let same_offset_instrs = instrs_by_offset.entry(new_offset).or_insert(vec![]);
-                same_offset_instrs.push(Increment { amount: amount, offset: new_offset });
+                same_offset_instrs.push(Increment { amount: amount, offset: new_offset, position: position });
             }
             Set { amount, offset } => {
                 let new_offset = offset + current_offset;
@@ -335,7 +336,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
         }
         Err((prev_instr, instr))
     }).coalesce(|prev_instr, instr| {
-        if let (&Set { amount: set_amount, offset: set_offset }, &Increment { amount: inc_amount, offset: inc_offset }) = (&prev_instr, &instr) {
+        if let (&Set { amount: set_amount, offset: set_offset }, &Increment { amount: inc_amount, offset: inc_offset, .. }) = (&prev_instr, &instr) {
             if inc_offset == set_offset {
                 return Ok(Set { amount: set_amount + inc_amount, offset: set_offset });
             }
@@ -476,7 +477,7 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
 
     for instr in instrs {
         match *instr {
-            Increment{ amount, offset } => {
+            Increment{ amount, offset, .. } => {
                 let current_amount = *changes.get(&(cell_index + offset)).unwrap_or(&Wrapping(0));
                 changes.insert(cell_index, current_amount + amount);
             }

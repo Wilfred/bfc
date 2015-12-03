@@ -79,7 +79,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
         let cell_ptr = state.cell_ptr as usize;
         
         match instrs[instr_idx] {
-            Increment { amount, offset } => {
+            Increment { amount, offset, .. } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
                 state.cells[target_cell_ptr] = state.cells[target_cell_ptr] + amount;
                 instr_idx += 1;
