@@ -579,8 +579,8 @@ unsafe fn compile_instr(instr: &Instruction,
         Set { amount, offset } => compile_set(amount, offset, module, bb, ctx),
         MultiplyMove(ref changes) => compile_multiply_move(changes, module, bb, ctx),
         PointerIncrement{ amount, .. } => compile_ptr_increment(amount, module, bb, ctx),
-        Read { .. } => compile_read(module, bb, ctx),
-        Write => compile_write(module, bb, ctx),
+        Read {..} => compile_read(module, bb, ctx),
+        Write {..} => compile_write(module, bb, ctx),
         Loop(ref body) => compile_loop(body, start_instr, module, main_fn, bb, ctx),
     }
 }

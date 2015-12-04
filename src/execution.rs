@@ -124,7 +124,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
 
                 instr_idx += 1;
             }
-            Write => {
+            Write {..} => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value.0);
                 instr_idx += 1;

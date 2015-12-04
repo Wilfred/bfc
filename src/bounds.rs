@@ -139,7 +139,7 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
                 }
             }
         }
-        Read {..} | Write => (SaturatingInt::Number(0), SaturatingInt::Number(0)),
+        Read {..} | Write {..} => (SaturatingInt::Number(0), SaturatingInt::Number(0)),
     }
 }
 

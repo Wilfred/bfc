@@ -24,7 +24,9 @@ pub enum Instruction {
     Read {
         position: Position,
     },
-    Write,
+    Write {
+        position: Position,
+    },
     Loop(Vec<Instruction>),
     // These instruction have no direct equivalent in BF, but we
     // generate them during optimisation.
@@ -107,7 +109,7 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 })
             }
             ',' => instructions.push(Read { position: index..index }),
-            '.' => instructions.push(Write),
+            '.' => instructions.push(Write { position: index..index }),
             '[' => {
                 stack.push((instructions, index));
                 instructions = vec![];

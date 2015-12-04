@@ -91,7 +91,7 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
                 }
             }
             // No cells changed, so just keep working backwards.
-            Write => {}
+            Write {..} => {}
             // These instructions may have modified the cell, so
             // we return None for "I don't know".
             Read {..} | Loop(_) => return None,
@@ -142,7 +142,7 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
                 }
             }
             // No cells changed, so just keep working backwards.
-            Write => {}
+            Write {..} => {}
             // These instructions may have modified the cell, so
             // we return None for "I don't know".
             Read {..} | Loop(_) => return None,
@@ -477,7 +477,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
     for index in (0..instrs.len()).rev() {
         match instrs[index] {
-            Read {..} | Write | Loop(_) => {
+            Read {..} | Write {..} | Loop(_) => {
                 instrs.truncate(index + 1);
                 return instrs;
             }
