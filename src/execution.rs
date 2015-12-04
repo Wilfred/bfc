@@ -129,7 +129,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                 state.outputs.push(cell_value.0);
                 instr_idx += 1;
             }
-            Read => {
+            Read {..} => {
                 state.start_instr = Some(&instrs[instr_idx]);
                 return Outcome::ReachedRuntimeValue;
             }

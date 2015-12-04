@@ -94,7 +94,7 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
             Write => {}
             // These instructions may have modified the cell, so
             // we return None for "I don't know".
-            Read | Loop(_) => return None,
+            Read {..} | Loop(_) => return None,
         }
     }
     None
@@ -145,7 +145,7 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
             Write => {}
             // These instructions may have modified the cell, so
             // we return None for "I don't know".
-            Read | Loop(_) => return None,
+            Read {..} | Loop(_) => return None,
         }
     }
     None
@@ -184,7 +184,7 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut redundant_instr_positions = HashSet::new();
 
     for (index, instr) in instrs.iter().enumerate() {
-        if let Read = *instr {
+        if let Read {..} = *instr {
             // If we modified this cell before the read, just
             // discard that instruction, because it's redundant.
             if let Some(prev_index) = previous_cell_change(&instrs, index) {
@@ -477,7 +477,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
     for index in (0..instrs.len()).rev() {
         match instrs[index] {
-            Read | Write | Loop(_) => {
+            Read {..} | Write | Loop(_) => {
                 instrs.truncate(index + 1);
                 return instrs;
             }
