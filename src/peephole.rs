@@ -332,11 +332,14 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
         }
     }
 
+    // Append the increment/set instructions, in offset order.
     let mut results: Vec<Instruction> = vec![];
     for same_offset_instrs in ordered_values(instrs_by_offset) {
         results.extend(same_offset_instrs.into_iter());
     }
 
+    // Add a single PointerIncrement at the end, reflecting the net
+    // pointer movement in this instruction sequence.
     if current_offset != 0 {
         results.push(PointerIncrement(current_offset));
     }
