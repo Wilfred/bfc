@@ -370,6 +370,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
               // TODO: Set, Write, Increment -> Set, Write, Set
               if let (&Increment { offset: inc_offset, .. },
                       &Set { amount: set_amount, offset: set_offset }) = (&prev_instr, &instr) {
+              // Inc x, Set y -> Set y
                   if inc_offset == set_offset {
                       return Ok(Set {
                           amount: set_amount,
@@ -380,6 +381,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
               Err((prev_instr, instr))
           })
           .coalesce(|prev_instr, instr| {
+              // Set x, Inc y -> Set x+y
               if let (&Set { amount: set_amount, offset: set_offset },
                       &Increment { amount: inc_amount, offset: inc_offset, .. }) = (&prev_instr,
                                                                                     &instr) {
@@ -393,6 +395,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
               Err((prev_instr, instr))
           })
           .coalesce(|prev_instr, instr| {
+              // Set x, Set y -> Set y
               if let (&Set { offset: offset1, .. },
                       &Set { amount, offset: offset2 }) = (&prev_instr, &instr) {
                   if offset1 == offset2 {
