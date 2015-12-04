@@ -210,7 +210,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map(|instr| {
               if let &Loop { ref body, ..} = &instr {
                   // If the loop is [-]
-                  if body.len() == 0 &&
+                  if body.len() == 1 &&
                      matches!(body[0], Increment { amount: Wrapping(-1), offset: 0, .. }) {
                       return Set {
                           amount: Wrapping(0),
