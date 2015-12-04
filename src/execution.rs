@@ -133,7 +133,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                 state.start_instr = Some(&instrs[instr_idx]);
                 return Outcome::ReachedRuntimeValue;
             }
-            Loop(ref body) => {
+            Loop { ref body, .. } => {
                 if state.cells[state.cell_ptr as usize].0 == 0 {
                     // Step over the loop because the current cell is
                     // zero.

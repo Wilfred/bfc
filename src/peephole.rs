@@ -40,7 +40,12 @@ trait MapLoopsExt: Iterator<Item=Instruction> {
     {
         self.map(|instr| {
                 match instr {
-                    Loop(body) => Loop(f(body)),
+                    Loop { body, position } => {
+                        Loop {
+                            body: f(body),
+                            position: position,
+                        }
+                    }
                     other => other,
                 }
             })
@@ -94,7 +99,7 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
             Write {..} => {}
             // These instructions may have modified the cell, so
             // we return None for "I don't know".
-            Read {..} | Loop(_) => return None,
+            Read {..} | Loop {..} => return None,
         }
     }
     None
@@ -145,7 +150,7 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
             Write {..} => {}
             // These instructions may have modified the cell, so
             // we return None for "I don't know".
-            Read {..} | Loop(_) => return None,
+            Read {..} | Loop {..} => return None,
         }
     }
     None
@@ -203,7 +208,7 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .map(|instr| {
-              if let &Loop(ref body) = &instr {
+              if let &Loop { ref body, ..} = &instr {
                   // If the loop is [-]
                   if body.len() == 0 &&
                      matches!(body[0], Increment { amount: Wrapping(-1), offset: 0, .. }) {
@@ -225,7 +230,7 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .enumerate()
           .filter(|&(index, ref instr)| {
               match *instr {
-                  Loop(_) => {}
+                  Loop {..} => {}
                   // Keep all instructions that aren't loops.
                   _ => {
                       return true;
@@ -271,8 +276,11 @@ pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     result.extend(sort_sequence_by_offset(sequence));
                     sequence = vec![];
                 }
-                if let Loop(body) = instr {
-                    result.push(Loop(sort_by_offset(body)));
+                if let Loop { body, position } = instr {
+                    result.push(Loop {
+                        body: sort_by_offset(body),
+                        position: position,
+                    });
                 } else {
                     result.push(instr);
                 }
@@ -416,7 +424,7 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     for (index, instr) in instrs.iter().enumerate() {
         match *instr {
-            Loop(_) | MultiplyMove(_) => {
+            Loop {..} | MultiplyMove(_) => {
                 // There's no point setting to zero after a loop, as
                 // the cell is already zero.
                 if let Some(next_index) = next_cell_change(&instrs, index) {
@@ -456,8 +464,11 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     for instr in instrs {
         match instr {
             // After a loop, we know the cell is currently zero.
-            Loop(body) => {
-                result.push(Loop(annotate_known_zero_inner(body)));
+            Loop { body, position } => {
+                result.push(Loop {
+                    body: annotate_known_zero_inner(body),
+                    position: position,
+                });
                 result.push(Set {
                     amount: Wrapping(0),
                     offset: 0,
@@ -477,7 +488,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
     for index in (0..instrs.len()).rev() {
         match instrs[index] {
-            Read {..} | Write {..} | Loop(_) => {
+            Read {..} | Write {..} | Loop {..} => {
                 instrs.truncate(index + 1);
                 return instrs;
             }
@@ -549,7 +560,7 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .map(|instr| {
               match instr {
-                  Loop(body) => {
+                  Loop { body, position } => {
                       if is_multiply_loop_body(&body) {
                           let mut changes = cell_changes(&body);
                           // MultiplyMove is for where we move to, so ignore
@@ -558,7 +569,10 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
                           MultiplyMove(changes)
                       } else {
-                          Loop(extract_multiply(body))
+                          Loop {
+                              body: extract_multiply(body),
+                              position: position,
+                          }
                       }
                   }
                   i => i,

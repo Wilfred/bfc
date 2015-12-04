@@ -115,7 +115,7 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
             (SaturatingInt::Number(highest_affected as i64),
              SaturatingInt::Number(0))
         }
-        Loop(ref body) => {
+        Loop { ref body, .. } => {
             let (max_in_body, net_in_body) = overall_movement(body);
 
             match net_in_body {

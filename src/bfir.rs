@@ -27,7 +27,10 @@ pub enum Instruction {
     Write {
         position: Position,
     },
-    Loop(Vec<Instruction>),
+    Loop {
+        body: Vec<Instruction>,
+        position: Position,
+    },
     // These instruction have no direct equivalent in BF, but we
     // generate them during optimisation.
     Set {
@@ -43,7 +46,7 @@ fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
     }
 
     match instr {
-        &Loop(ref loop_body) => {
+        &Loop {body: ref loop_body, .. } => {
             let _ = write!(f, "Loop");
 
             for loop_instr in loop_body {
@@ -115,8 +118,11 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 instructions = vec![];
             }
             ']' => {
-                if let Some((mut parent_instr, _)) = stack.pop() {
-                    parent_instr.push(Loop(instructions));
+                if let Some((mut parent_instr, open_index)) = stack.pop() {
+                    parent_instr.push(Loop {
+                        body: instructions,
+                        position: open_index..index,
+                    });
                     instructions = parent_instr;
                 } else {
                     return Err(ParseError {
