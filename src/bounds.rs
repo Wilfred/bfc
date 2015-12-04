@@ -90,18 +90,18 @@ fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
 /// If movement is unbounded, return Max.
 fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
     match *instr {
-        PointerIncrement(amount) => if amount < 0 {
+        PointerIncrement{ amount, .. } => if amount < 0 {
             (SaturatingInt::Number(0),
              SaturatingInt::Number(amount as i64))
         } else {
             (SaturatingInt::Number(amount as i64),
              SaturatingInt::Number(amount as i64))
         },
-        Increment { amount: _, offset, .. } => {
+        Increment { offset, .. } => {
             (SaturatingInt::Number(offset as i64),
              SaturatingInt::Number(0))
         },
-        Set { amount: _, offset } => {
+        Set { offset, .. } => {
             (SaturatingInt::Number(offset as i64),
              SaturatingInt::Number(0))
         }

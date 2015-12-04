@@ -17,7 +17,10 @@ pub enum Instruction {
         offset: isize,
         position: Position,
     },
-    PointerIncrement(isize),
+    PointerIncrement {
+        amount: isize,
+        position: Position,
+    },
     Read,
     Write,
     Loop(Vec<Instruction>),
@@ -89,8 +92,18 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                     position: index..index,
                 })
             }
-            '>' => instructions.push(PointerIncrement(1)),
-            '<' => instructions.push(PointerIncrement(-1)),
+            '>' => {
+                instructions.push(PointerIncrement {
+                    amount: 1,
+                    position: index..index,
+                })
+            }
+            '<' => {
+                instructions.push(PointerIncrement {
+                    amount: -1,
+                    position: index..index,
+                })
+            }
             ',' => instructions.push(Read),
             '.' => instructions.push(Write),
             '[' => {

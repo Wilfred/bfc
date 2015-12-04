@@ -89,7 +89,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                 state.cells[target_cell_ptr] = amount;
                 instr_idx += 1;
             }
-            PointerIncrement(amount) => {
+            PointerIncrement { amount, .. } => {
                 let new_cell_ptr = state.cell_ptr + amount;
                 if new_cell_ptr < 0 || new_cell_ptr >= state.cells.len() as isize {
                     state.start_instr = Some(&instrs[instr_idx]);

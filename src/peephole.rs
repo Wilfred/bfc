@@ -74,7 +74,7 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
                     return Some(i);
                 }
             }
-            PointerIncrement(amount) => {
+            PointerIncrement { amount, .. } => {
                 needed_offset += amount;
             }
             MultiplyMove(ref changes) => {
@@ -124,7 +124,7 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
                     return Some(i);
                 }
             }
-            PointerIncrement(amount) => {
+            PointerIncrement { amount, .. } => {
                 // Unlike previous_cell_change we must subtract the desired amount.
                 needed_offset -= amount;
             }
@@ -263,7 +263,7 @@ pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     for instr in instrs {
         match instr {
-            Increment{..} | Set{..} | PointerIncrement(_) => {
+            Increment{..} | Set{..} | PointerIncrement{..} => {
                 sequence.push(instr);
             }
             _ => {
@@ -301,6 +301,7 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut instrs_by_offset: HashMap<isize, Vec<Instruction>> = HashMap::new();
     let mut current_offset = 0;
+    let mut last_ptr_inc_pos = None;
 
     for instr in instrs {
         match instr {
@@ -321,8 +322,9 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     offset: new_offset,
                 });
             }
-            PointerIncrement(amount) => {
+            PointerIncrement { amount, position } => {
                 current_offset += amount;
+                last_ptr_inc_pos = Some(position);
             }
             // We assume that we were only given a Vec of
             // Increment/Set/PointerIncrement instructions. It's
@@ -341,7 +343,10 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     // Add a single PointerIncrement at the end, reflecting the net
     // pointer movement in this instruction sequence.
     if current_offset != 0 {
-        results.push(PointerIncrement(current_offset));
+        results.push(PointerIncrement {
+            amount: current_offset,
+            position: last_ptr_inc_pos.unwrap(),
+        });
     }
     results
 }
@@ -489,7 +494,7 @@ fn is_multiply_loop_body(body: &[Instruction]) -> bool {
     for body_instr in body {
         match *body_instr {
             Increment{..} => {}
-            PointerIncrement(_) => {}
+            PointerIncrement{..} => {}
             _ => return false,
         }
     }
@@ -498,7 +503,7 @@ fn is_multiply_loop_body(body: &[Instruction]) -> bool {
     // zero.
     let mut net_movement = 0;
     for body_instr in body {
-        if let PointerIncrement(amount) = *body_instr {
+        if let PointerIncrement{ amount, .. } = *body_instr {
             net_movement += amount;
         }
     }
@@ -529,7 +534,7 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
                 let current_amount = *changes.get(&(cell_index + offset)).unwrap_or(&Wrapping(0));
                 changes.insert(cell_index, current_amount + amount);
             }
-            PointerIncrement(amount) => {
+            PointerIncrement{ amount, .. } => {
                 cell_index += amount;
             }
             // We assume this is only called from is_multiply_loop.
