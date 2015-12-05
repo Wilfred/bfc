@@ -105,7 +105,7 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
             (SaturatingInt::Number(offset as i64),
              SaturatingInt::Number(0))
         }
-        MultiplyMove(ref changes) => {
+        MultiplyMove { ref changes, .. } => {
             let mut highest_affected = 0;
             for cell in changes.keys() {
                 if *cell > highest_affected {

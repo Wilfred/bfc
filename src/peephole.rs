@@ -82,7 +82,7 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
             PointerIncrement { amount, .. } => {
                 needed_offset += amount;
             }
-            MultiplyMove(ref changes) => {
+            MultiplyMove { ref changes, .. } => {
                 // These cells are written to.
                 let mut offsets: Vec<isize> = changes.keys()
                                                      .into_iter()
@@ -133,7 +133,7 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
                 // Unlike previous_cell_change we must subtract the desired amount.
                 needed_offset -= amount;
             }
-            MultiplyMove(ref changes) => {
+            MultiplyMove { ref changes, .. } => {
                 // These cells are written to.
                 let mut offsets: Vec<isize> = changes.keys()
                                                      .into_iter()
@@ -429,7 +429,7 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     for (index, instr) in instrs.iter().enumerate() {
         match *instr {
-            Loop {..} | MultiplyMove(_) => {
+            Loop {..} | MultiplyMove {..} => {
                 // There's no point setting to zero after a loop, as
                 // the cell is already zero.
                 if let Some(next_index) = next_cell_change(&instrs, index) {
@@ -583,7 +583,7 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
                           // the cell we're moving from.
                           changes.remove(&0);
 
-                          MultiplyMove(changes)
+                          MultiplyMove { changes: changes, position: position }
                       } else {
                           Loop {
                               body: extract_multiply(body),

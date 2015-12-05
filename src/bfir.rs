@@ -42,7 +42,10 @@ pub enum Instruction {
         offset: isize,
         position: Position,
     },
-    MultiplyMove(HashMap<isize, Cell>),
+    MultiplyMove {
+        changes: HashMap<isize, Cell>,
+        position: Position,
+    },
 }
 
 fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {

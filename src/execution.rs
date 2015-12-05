@@ -99,7 +99,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 }
             }
-            MultiplyMove(ref changes) => {
+            MultiplyMove { ref changes, .. } => {
                 // We will multiply by the current cell value.
                 let cell_value = state.cells[cell_ptr];
 
