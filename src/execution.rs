@@ -10,7 +10,7 @@ use quickcheck::quickcheck;
 #[cfg(test)]
 use bfir::parse;
 
-use bfir::{Instruction, Cell};
+use bfir::{Instruction, Cell, Position};
 use bfir::Instruction::*;
 
 #[cfg(test)]
@@ -222,12 +222,12 @@ fn multiply_move_executed() {
     changes.insert(3, Wrapping(3));
 
     let instrs = [// Initial cells: [2, 1, 0, 0]
-        Increment { amount: Wrapping(2), offset: 0 },
-        PointerIncrement(1),
-        Increment { amount: Wrapping(1), offset: 0 },
-        PointerIncrement(-1),
+        Increment { amount: Wrapping(2), offset: 0, position: Position { start: 0, end: 0 } },
+        PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } },
+        Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
+        PointerIncrement { amount: -1, position: Position { start: 0, end: 0 } },
 
-        MultiplyMove(changes)];
+        MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -243,7 +243,8 @@ fn multiply_move_executed() {
 fn multiply_move_wrapping() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(3));
-    let instrs = [Increment { amount: Wrapping(100), offset: 0 }, MultiplyMove(changes)];
+    let instrs = [Increment { amount: Wrapping(100), offset: 0, position: Position { start: 0, end: 0 } },
+                  MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -260,7 +261,7 @@ fn multiply_move_wrapping() {
 fn multiply_move_offset_too_high() {
     let mut changes: HashMap<isize, Cell> = HashMap::new();
     changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
-    let instrs = [MultiplyMove(changes)];
+    let instrs = [MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -276,7 +277,7 @@ fn multiply_move_offset_too_high() {
 fn multiply_move_offset_too_low() {
     let mut changes = HashMap::new();
     changes.insert(-1, Wrapping(1));
-    let instrs = [MultiplyMove(changes)];
+    let instrs = [MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }];
 
     let final_state = execute(&instrs, MAX_STEPS);
     assert_eq!(final_state,
@@ -292,7 +293,7 @@ fn multiply_move_offset_too_low() {
 fn set_executed() {
     let instrs = [Set {
         amount: Wrapping(2),
-        offset: 0,
+        offset: 0, position: Position { start: 0, end: 0 },
     }];
     let final_state = execute(&instrs, MAX_STEPS);
 
@@ -307,7 +308,7 @@ fn set_executed() {
 
 #[test]
 fn set_wraps() {
-    let instrs = [Set { amount: Wrapping(-1), offset: 0 }];
+    let instrs = [Set { amount: Wrapping(-1), offset: 0, position: Position { start: 0, end: 0 } }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -335,8 +336,8 @@ fn decrement_executed() {
 
 #[test]
 fn increment_wraps() {
-    let instrs = [Increment { amount: Wrapping(-1), offset: 0 },
-                  Increment { amount: Wrapping(1), offset: 0 }];
+    let instrs = [Increment { amount: Wrapping(-1), offset: 0, position: Position { start: 0, end: 0 } },
+                  Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }];
     let final_state = execute(&instrs, MAX_STEPS);
 
     assert_eq!(final_state,
@@ -429,9 +430,9 @@ fn partially_execute_up_to_runtime_value() {
 
     // Get the inner read instruction
     let start_instr = match instrs[1] {
-        Loop(ref body) => {
+        Loop { ref body, .. } => {
             match body[0] {
-                Loop(ref body2) => {
+                Loop { body: ref body2, .. } => {
                     &body2[0]
                 }
                 _ => unreachable!()
@@ -439,7 +440,7 @@ fn partially_execute_up_to_runtime_value() {
         }
         _ => unreachable!()
     };
-    assert_eq!(*start_instr, Read);
+    assert_eq!(*start_instr, Read { position: Position { start: 3, end: 3 } });
 
     assert_eq!(final_state,
                ExecutionState {
@@ -472,7 +473,7 @@ fn partially_execute_up_to_step_limit() {
     let final_state = execute(&instrs, 3);
 
     let start_instr = match instrs[1] {
-        Loop(ref body) => {
+        Loop { ref body, .. } => {
             &body[2]
         }
         _ => unreachable!()
@@ -512,12 +513,12 @@ fn loop_with_read_body() {
 
     // Get the inner read instruction
     let start_instr = match instrs[1] {
-        Loop(ref body) => {
+        Loop { ref body, .. } => {
             &body[1]
         }
         _ => unreachable!()
     };
-    assert_eq!(*start_instr, Read);
+    assert_eq!(*start_instr, Read { position: Position { start: 3, end: 3 } });
 
     assert_eq!(final_state,
                ExecutionState {

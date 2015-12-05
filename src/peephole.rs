@@ -162,13 +162,23 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // Collapse consecutive increments.
-              if let &Increment { amount: prev_amount, offset: prev_offset, position: ref prev_pos } = &prev_instr {
-                  if let &Increment { amount, offset, ref position } = &instr {
+              if let &Increment { amount: prev_amount, offset: prev_offset, position: prev_pos } = &prev_instr {
+                  if let &Increment { amount, offset, position } = &instr {
                       if prev_offset == offset {
+                          let new_pos = if prev_pos.end + 1 == position.start {
+                              // Instructions were adjacent in source
+                              // code so we can concatenate position.
+                              Position { start: prev_pos.start, end: position.end }
+                          } else {
+                              // Instructions were not adjacent so
+                              // just use the position of the second
+                              // instruction.
+                              position
+                          };
                           return Ok(Increment {
                               amount: amount + prev_amount,
                               offset: offset,
-                              position: Position { start: prev_pos.start, end: position.end},
+                              position: new_pos,
                           });
                       }
                   }
@@ -208,10 +218,10 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .map(|instr| {
-              if let &Loop { ref body, ..} = &instr {
+              if let &Loop { ref body, position } = &instr {
                   // If the loop is [-]
                   if body.len() == 1 {
-                      if let Increment { amount: Wrapping(-1), offset: 0, position } = body[0] {
+                      if let Increment { amount: Wrapping(-1), offset: 0, .. } = body[0] {
                           return Set {
                               amount: Wrapping(0),
                               offset: 0,
@@ -304,6 +314,9 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 
 /// Given a BF program, combine sets/increments using offsets so we
 /// have single PointerIncrement at the end.
+// TODO: it would be nice to have a separate pass for combining
+// adjacent instructions, as we can track those positions more
+// accurately. Here, we cannot combine, as instructions may not be adjacent.
 pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut instrs_by_offset: HashMap<isize, Vec<Instruction>> = HashMap::new();
     let mut current_offset = 0;
@@ -385,10 +398,20 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
               if let Set { amount: set_amount, offset: set_offset, position: set_pos } = prev_instr {
                   if let Increment { amount: inc_amount, offset: inc_offset, position: inc_pos } = instr {
                       if inc_offset == set_offset {
+                          let new_pos = if set_pos.end + 1 == inc_pos.start {
+                              // Instructions were adjacent in source
+                              // code so we can concatenate position.
+                              Position { start: set_pos.start, end: inc_pos.end }
+                          } else {
+                              // Instructions were not adjacent so
+                              // just use the position of the second
+                              // instruction.
+                              inc_pos
+                          };
                           return Ok(Set {
                               amount: set_amount + inc_amount,
                               offset: set_offset,
-                              position: Position { start: set_pos.start, end: inc_pos.end},
+                              position: new_pos,
                           });
                       }
                   }
@@ -456,7 +479,8 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
         // Choose the first character arbitrarily.
         Position { start: 0, end: 0 }
     } else {
-        get_position(&instrs[0])
+        let first_instr_pos = get_position(&instrs[0]);
+        Position { start: first_instr_pos.start, end: first_instr_pos.start }
     };
 
     // Cells in BF are initialised to zero, so we know the current

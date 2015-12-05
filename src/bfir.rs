@@ -206,16 +206,16 @@ fn parse_increment() {
     assert_eq!(parse("+").unwrap(),
                [Increment {
                     amount: Wrapping(1),
-                    offset: 0,
+                    offset: 0, position: Position { start: 0, end: 0 },
                 }]);
     assert_eq!(parse("++").unwrap(),
                [Increment {
                     amount: Wrapping(1),
-                    offset: 0,
+                    offset: 0, position: Position { start: 0, end: 0 },
                 },
                 Increment {
                     amount: Wrapping(1),
-                    offset: 0,
+                    offset: 0, position: Position { start: 1, end: 1 },
                 }]);
 }
 
@@ -224,33 +224,46 @@ fn parse_decrement() {
     assert_eq!(parse("-").unwrap(),
                [Increment {
                     amount: Wrapping(-1),
-                    offset: 0,
+                    offset: 0, position: Position { start: 0, end: 0 },
                 }]);
 }
 
 #[test]
 fn parse_pointer_increment() {
-    assert_eq!(parse(">").unwrap(), [PointerIncrement(1)]);
+    assert_eq!(parse(">").unwrap(),
+               [PointerIncrement {
+                    amount: 1,
+                    position: Position { start: 0, end: 0 },
+                }]);
 }
 
 #[test]
 fn parse_pointer_decrement() {
-    assert_eq!(parse("<").unwrap(), [PointerIncrement(-1)]);
+    assert_eq!(parse("<").unwrap(),
+               [PointerIncrement {
+                    amount: -1,
+                    position: Position { start: 0, end: 0 },
+                }]);
 }
 
 #[test]
 fn parse_read() {
-    assert_eq!(parse(",").unwrap(), [Read]);
+    assert_eq!(parse(",").unwrap(),
+               [Read { position: Position { start: 0, end: 0 } }]);
 }
 
 #[test]
 fn parse_write() {
-    assert_eq!(parse(".").unwrap(), [Write]);
+    assert_eq!(parse(".").unwrap(),
+               [Write { position: Position { start: 0, end: 0 } }]);
 }
 
 #[test]
 fn parse_empty_loop() {
-    let expected = [Loop(vec![])];
+    let expected = [Loop {
+                        body: vec![],
+                        position: Position { start: 0, end: 1 },
+                    }];
     assert_eq!(parse("[]").unwrap(), expected);
 }
 
@@ -258,24 +271,32 @@ fn parse_empty_loop() {
 fn parse_simple_loop() {
     let loop_body = vec![Increment {
                              amount: Wrapping(1),
-                             offset: 0,
+                             offset: 0, position: Position { start: 1, end: 1 },
                          }];
-    let expected = [Loop(loop_body)];
+    let expected = [Loop {
+                        body: loop_body,
+                        position: Position { start: 0, end: 2 },
+                    }];
     assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
 fn parse_complex_loop() {
-    let loop_body = vec![Read,
+    let loop_body = vec![Read { position: Position { start: 2, end: 2 } },
                          Increment {
                              amount: Wrapping(1),
                              offset: 0,
+                             position: Position { start: 3, end: 3 },
                          }];
-    let expected = [Write,
-                    Loop(loop_body),
+    let expected = [Write { position: Position { start: 0, end: 0 } },
+                    Loop {
+                        body: loop_body,
+                        position: Position { start: 1, end: 4 },
+                    },
                     Increment {
                         amount: Wrapping(-1),
                         offset: 0,
+                        position: Position { start: 5, end: 5 },
                     }];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
