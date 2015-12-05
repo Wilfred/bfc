@@ -75,6 +75,18 @@ impl fmt::Display for Instruction {
     }
 }
 
+pub fn get_position(instr: &Instruction) -> Position {
+    match *instr {
+        Increment { position, .. } => position,
+        PointerIncrement { position, .. } => position,
+        Read { position } => position,
+        Write { position } => position,
+        Loop { position, .. } => position,
+        Set { position, .. } => position,
+        MultiplyMove { position, .. } => position,
+    }
+}
+
 #[derive(Debug)]
 pub struct ParseError {
     pub message: String,

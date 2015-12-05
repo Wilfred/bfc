@@ -4,7 +4,7 @@ use std::num::Wrapping;
 
 use itertools::Itertools;
 
-use bfir::{Instruction, Position, Cell};
+use bfir::{Instruction, Position, Cell, get_position};
 use bfir::Instruction::*;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
@@ -456,8 +456,7 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
         // Choose the first character arbitrarily.
         Position { start: 0, end: 0 }
     } else {
-        // TODO: get position of the first instruction.
-        Position { start: 0, end: 0 }
+        get_position(&instrs[0])
     };
 
     // Cells in BF are initialised to zero, so we know the current
