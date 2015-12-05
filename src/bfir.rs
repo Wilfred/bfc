@@ -109,30 +109,56 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 instructions.push(Increment {
                     amount: Wrapping(1),
                     offset: 0,
-                    position: Position { start: index, end: index },
+                    position: Position {
+                        start: index,
+                        end: index,
+                    },
                 })
             }
             '-' => {
                 instructions.push(Increment {
                     amount: Wrapping(-1),
                     offset: 0,
-                    position: Position { start: index, end: index },
+                    position: Position {
+                        start: index,
+                        end: index,
+                    },
                 })
             }
             '>' => {
                 instructions.push(PointerIncrement {
                     amount: 1,
-                    position: Position { start: index, end: index },
+                    position: Position {
+                        start: index,
+                        end: index,
+                    },
                 })
             }
             '<' => {
                 instructions.push(PointerIncrement {
                     amount: -1,
-                    position: Position { start: index, end: index },
+                    position: Position {
+                        start: index,
+                        end: index,
+                    },
                 })
             }
-            ',' => instructions.push(Read { position: Position { start: index, end: index } }),
-            '.' => instructions.push(Write { position: Position { start: index, end: index } }),
+            ',' => {
+                instructions.push(Read {
+                    position: Position {
+                        start: index,
+                        end: index,
+                    },
+                })
+            }
+            '.' => {
+                instructions.push(Write {
+                    position: Position {
+                        start: index,
+                        end: index,
+                    },
+                })
+            }
             '[' => {
                 stack.push((instructions, index));
                 instructions = vec![];
@@ -141,13 +167,19 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 if let Some((mut parent_instr, open_index)) = stack.pop() {
                     parent_instr.push(Loop {
                         body: instructions,
-                        position: Position { start: open_index, end: index },
+                        position: Position {
+                            start: open_index,
+                            end: index,
+                        },
                     });
                     instructions = parent_instr;
                 } else {
                     return Err(ParseError {
                         message: "This ] has no matching [".to_owned(),
-                        position: Position { start: index, end: index },
+                        position: Position {
+                            start: index,
+                            end: index,
+                        },
                     });
                 }
             }
@@ -159,7 +191,10 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
         let pos = stack.last().unwrap().1;
         return Err(ParseError {
             message: "This [ has no matching ]".to_owned(),
-            position: Position { start: pos, end: pos },
+            position: Position {
+                start: pos,
+                end: pos,
+            },
         });
     }
 
