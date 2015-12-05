@@ -625,8 +625,8 @@ fn combine_increments_after_sort() {
 #[test]
 fn prev_mutate_loop() {
     // If we see a loop, we don't know when the current cell was last
-    // mutate.
     let instrs = vec![Loop(vec![]), Read];
+    // mutated.
     assert_eq!(previous_cell_change(&instrs, 1), None);
 }
 
