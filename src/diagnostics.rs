@@ -1,8 +1,9 @@
 use std::fmt;
-use std::ops::Range;
 use ansi_term::Colour::{Red,Purple};
 use ansi_term::Style;
 use ansi_term::ANSIStrings;
+
+use bfir::Position;
 use self::Level::*;
 
 #[derive(Debug)]
@@ -18,7 +19,7 @@ pub struct Info {
     pub filename: String,
     pub message: String,
     // from and to (can be the same)
-    pub position: Option<Range<usize>>,
+    pub position: Option<Position>,
     pub source: Option<String>,
 }
 

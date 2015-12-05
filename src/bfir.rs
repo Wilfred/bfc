@@ -1,6 +1,5 @@
 
 use std::fmt;
-use std::ops::Range;
 use std::num::Wrapping;
 use std::collections::HashMap;
 
@@ -8,7 +7,12 @@ use self::Instruction::*;
 
 pub type Cell = Wrapping<i8>;
 
-pub type Position = Range<usize>;
+// An inclusive range used for tracking positions in source code.
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub struct Position {
+    pub start: usize,
+    pub end: usize,
+}
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
@@ -89,30 +93,30 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 instructions.push(Increment {
                     amount: Wrapping(1),
                     offset: 0,
-                    position: index..index,
+                    position: Position { start: index, end: index },
                 })
             }
             '-' => {
                 instructions.push(Increment {
                     amount: Wrapping(-1),
                     offset: 0,
-                    position: index..index,
+                    position: Position { start: index, end: index },
                 })
             }
             '>' => {
                 instructions.push(PointerIncrement {
                     amount: 1,
-                    position: index..index,
+                    position: Position { start: index, end: index },
                 })
             }
             '<' => {
                 instructions.push(PointerIncrement {
                     amount: -1,
-                    position: index..index,
+                    position: Position { start: index, end: index },
                 })
             }
-            ',' => instructions.push(Read { position: index..index }),
-            '.' => instructions.push(Write { position: index..index }),
+            ',' => instructions.push(Read { position: Position { start: index, end: index } }),
+            '.' => instructions.push(Write { position: Position { start: index, end: index } }),
             '[' => {
                 stack.push((instructions, index));
                 instructions = vec![];
@@ -121,13 +125,13 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 if let Some((mut parent_instr, open_index)) = stack.pop() {
                     parent_instr.push(Loop {
                         body: instructions,
-                        position: open_index..index,
+                        position: Position { start: open_index, end: index },
                     });
                     instructions = parent_instr;
                 } else {
                     return Err(ParseError {
                         message: "This ] has no matching [".to_owned(),
-                        position: index..index,
+                        position: Position { start: index, end: index },
                     });
                 }
             }
@@ -139,7 +143,7 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
         let pos = stack.last().unwrap().1;
         return Err(ParseError {
             message: "This [ has no matching ]".to_owned(),
-            position: pos..pos,
+            position: Position { start: pos, end: pos },
         });
     }
 

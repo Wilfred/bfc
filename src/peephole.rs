@@ -4,7 +4,7 @@ use std::num::Wrapping;
 
 use itertools::Itertools;
 
-use bfir::{Instruction, Cell};
+use bfir::{Instruction, Position, Cell};
 use bfir::Instruction::*;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
@@ -168,7 +168,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
                           return Ok(Increment {
                               amount: amount + prev_amount,
                               offset: offset,
-                              position: prev_pos.start..position.end,
+                              position: Position { start: prev_pos.start, end: position.end},
                           });
                       }
                   }
