@@ -84,7 +84,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                 state.cells[target_cell_ptr] = state.cells[target_cell_ptr] + amount;
                 instr_idx += 1;
             }
-            Set { amount, offset } => {
+            Set { amount, offset, .. } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
                 state.cells[target_cell_ptr] = amount;
                 instr_idx += 1;

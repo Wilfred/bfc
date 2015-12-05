@@ -210,12 +210,14 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map(|instr| {
               if let &Loop { ref body, ..} = &instr {
                   // If the loop is [-]
-                  if body.len() == 1 &&
-                     matches!(body[0], Increment { amount: Wrapping(-1), offset: 0, .. }) {
-                      return Set {
-                          amount: Wrapping(0),
-                          offset: 0,
-                      };
+                  if body.len() == 1 {
+                      if let Increment { amount: Wrapping(-1), offset: 0, position } = body[0] {
+                          return Set {
+                              amount: Wrapping(0),
+                              offset: 0,
+                              position: position,
+                          };
+                      }
                   }
               }
               instr
@@ -241,11 +243,7 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
               if let Some(prev_change_index) = previous_cell_change(&instrs, index) {
                   let prev_instr = &instrs[prev_change_index];
                   // If the previous instruction set to zero, our loop is dead.
-                  if prev_instr ==
-                     &(Set {
-                      amount: Wrapping(0),
-                      offset: 0,
-                  }) {
+                  if let Set { amount: Wrapping(0), offset: 0, .. } = *prev_instr {
                       return false;
                   }
               }
@@ -322,12 +320,13 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     position: position,
                 });
             }
-            Set { amount, offset } => {
+            Set { amount, offset, position } => {
                 let new_offset = offset + current_offset;
                 let same_offset_instrs = instrs_by_offset.entry(new_offset).or_insert(vec![]);
                 same_offset_instrs.push(Set {
                     amount: amount,
                     offset: new_offset,
+                    position: position,
                 });
             }
             PointerIncrement { amount, position } => {
@@ -368,13 +367,14 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // TODO: Set, Write, Increment -> Set, Write, Set
-              if let (&Increment { offset: inc_offset, .. },
-                      &Set { amount: set_amount, offset: set_offset }) = (&prev_instr, &instr) {
               // Inc x, Set y -> Set y
+              if let (&Increment { offset: inc_offset, .. },
+                      &Set { amount: set_amount, offset: set_offset, position: set_pos }) = (&prev_instr, &instr) {
                   if inc_offset == set_offset {
                       return Ok(Set {
                           amount: set_amount,
                           offset: set_offset,
+                          position: set_pos,
                       });
                   }
               }
@@ -382,14 +382,15 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
           })
           .coalesce(|prev_instr, instr| {
               // Set x, Inc y -> Set x+y
-              if let (&Set { amount: set_amount, offset: set_offset },
-                      &Increment { amount: inc_amount, offset: inc_offset, .. }) = (&prev_instr,
-                                                                                    &instr) {
-                  if inc_offset == set_offset {
-                      return Ok(Set {
-                          amount: set_amount + inc_amount,
-                          offset: set_offset,
-                      });
+              if let Set { amount: set_amount, offset: set_offset, position: set_pos } = prev_instr {
+                  if let Increment { amount: inc_amount, offset: inc_offset, position: inc_pos } = instr {
+                      if inc_offset == set_offset {
+                          return Ok(Set {
+                              amount: set_amount + inc_amount,
+                              offset: set_offset,
+                              position: Position { start: set_pos.start, end: inc_pos.end},
+                          });
+                      }
                   }
               }
               Err((prev_instr, instr))
@@ -397,11 +398,12 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
           .coalesce(|prev_instr, instr| {
               // Set x, Set y -> Set y
               if let (&Set { offset: offset1, .. },
-                      &Set { amount, offset: offset2 }) = (&prev_instr, &instr) {
+                      &Set { amount, offset: offset2, position }) = (&prev_instr, &instr) {
                   if offset1 == offset2 {
                       return Ok(Set {
                           amount: amount,
                           offset: offset1,
+                          position: position,
                       });
                   }
               }
@@ -415,7 +417,7 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     // Remove a set zero at the beginning of the program, since cells
     // are initialised to zero anyway.
-    if let Some(&Set { amount: Wrapping(0), offset: 0 }) = reduced.first() {
+    if let Some(&Set { amount: Wrapping(0), offset: 0, .. }) = reduced.first() {
         reduced.remove(0);
     }
 
@@ -431,7 +433,7 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
                 // There's no point setting to zero after a loop, as
                 // the cell is already zero.
                 if let Some(next_index) = next_cell_change(&instrs, index) {
-                    if instrs[next_index] == (Set { amount: Wrapping(0), offset: 0 }) {
+                    if let Set { amount: Wrapping(0), offset: 0, .. } = instrs[next_index] {
                         redundant_instr_positions.insert(next_index);
                     }
                 }
@@ -450,11 +452,20 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
 
+    let position = if instrs.is_empty() {
+        // Choose the first character arbitrarily.
+        Position { start: 0, end: 0 }
+    } else {
+        // TODO: get position of the first instruction.
+        Position { start: 0, end: 0 }
+    };
+
     // Cells in BF are initialised to zero, so we know the current
     // cell is zero at the start of execution.
     result.push(Set {
         amount: Wrapping(0),
         offset: 0,
+        position: position,
     });
 
     result.extend(annotate_known_zero_inner(instrs));
@@ -475,6 +486,8 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
                 result.push(Set {
                     amount: Wrapping(0),
                     offset: 0,
+                    // Treat this set as positioned at the ].
+                    position: Position { start: position.end, end: position.end },
                 })
             }
             i => {

@@ -40,6 +40,7 @@ pub enum Instruction {
     Set {
         amount: Cell,
         offset: isize,
+        position: Position,
     },
     MultiplyMove(HashMap<isize, Cell>),
 }
