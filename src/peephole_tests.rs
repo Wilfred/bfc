@@ -132,6 +132,15 @@ fn combine_increment_sum_to_zero() {
 }
 
 #[test]
+fn should_combine_ptr_increments() {
+    let initial = parse(">>").unwrap();
+    let expected = vec![
+        PointerIncrement { amount: 2, position: Some(Position { start: 0, end: 1 })}
+        ];
+    assert_eq!(combine_ptr_increments(initial), expected);
+}
+
+#[test]
 fn combine_set_sum_to_zero() {
     let initial = vec![Set { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
                        Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];

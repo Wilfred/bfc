@@ -25,7 +25,8 @@ pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Apply all our peephole optimisations once and return the result.
 fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let combined = combine_increments(instrs);
+fn optimize_once(instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>) {
+    let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
     let extracted = extract_multiply(annotated);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
@@ -185,6 +186,30 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map_loops(combine_increments)
 }
 
+pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    instrs.into_iter()
+          .coalesce(|prev_instr, instr| {
+              // Collapse consecutive increments.
+              if let &PointerIncrement { amount: prev_amount, position: prev_pos } = &prev_instr {
+                  if let &PointerIncrement { amount, position } = &instr {
+                      return Ok(PointerIncrement {
+                          amount: amount + prev_amount,
+                          position: prev_pos.combine(position),
+                      });
+                  }
+              }
+              Err((prev_instr, instr))
+          })
+          .filter(|instr| {
+              // Remove any pointer increments of 0.
+              if let &PointerIncrement { amount: 0, .. } = instr {
+                  return false;
+              }
+              true
+          })
+          .map_loops(combine_ptr_increments)
+}
+
 pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut redundant_instr_positions = HashSet::new();
 
@@ -304,9 +329,6 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 
 /// Given a BF program, combine sets/increments using offsets so we
 /// have single PointerIncrement at the end.
-// TODO: it would be nice to have a separate pass for combining
-// adjacent instructions, as we can track those positions more
-// accurately. Here, we cannot combine, as instructions may not be adjacent.
 pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut instrs_by_offset: HashMap<isize, Vec<Instruction>> = HashMap::new();
     let mut current_offset = 0;
