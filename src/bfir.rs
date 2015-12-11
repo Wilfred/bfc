@@ -31,8 +31,8 @@ impl Combine<Option<Position>> for Option<Position> {
                 // If they're adjacent positions, we can merge them.
                 if first_pos.end + 1 >= second_pos.start {
                     Some(Position {
-                        start: pos1.start,
-                        end: pos2.end,
+                        start: first_pos.start,
+                        end: second_pos.end,
                     })
                 } else {
                     // Otherwise, just use the second position.
@@ -342,4 +342,36 @@ fn parse_unbalanced_loop() {
 #[test]
 fn parse_comment() {
     assert_eq!(parse("foo! ").unwrap(), []);
+}
+
+#[test]
+fn test_combine_pos() {
+    let pos1 = Some(Position { start: 1, end: 2 });
+    let pos2 = Some(Position { start: 3, end: 4 });
+
+    assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 4 }));
+}
+
+#[test]
+fn test_combine_order() {
+    let pos1 = Some(Position { start: 3, end: 4 });
+    let pos2 = Some(Position { start: 1, end: 2 });
+
+    assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 4 }));
+}
+
+#[test]
+fn test_combine_pos_not_consecutive() {
+    let pos1 = Some(Position { start: 1, end: 2 });
+    let pos2 = Some(Position { start: 4, end: 5 });
+
+    assert_eq!(pos1.combine(pos2), Some(Position { start: 4, end: 5 }));
+}
+
+#[test]
+fn test_combine_pos_overlap() {
+    let pos1 = Some(Position { start: 1, end: 1 });
+    let pos2 = Some(Position { start: 1, end: 3 });
+
+    assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 3 }));
 }
