@@ -87,7 +87,7 @@ impl fmt::Display for Info {
             }
             caret_line = caret_line + "^";
             if width > 1 {
-                for _ in 0..(width - 1) {
+                for _ in 0..width {
                     caret_line = caret_line + "~";
                 }
             }
