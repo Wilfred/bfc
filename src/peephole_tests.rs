@@ -19,66 +19,66 @@ impl Arbitrary for Instruction {
             0 => Increment {
                 amount: Wrapping(Arbitrary::arbitrary(g)),
                 offset: 0,
-                position: Position { start: 0, end: 0 },
+                position: Some(Position { start: 0, end: 0 }),
             },
             1 => PointerIncrement {
                 amount: Arbitrary::arbitrary(g),
-                position: Position { start: 0, end: 0 },
+                position: Some(Position { start: 0, end: 0 }),
             },
             // TODO: use arbitrary offsets.
             2 => Set {
                 amount: Wrapping(Arbitrary::arbitrary(g)),
                 offset: 0,
-                position: Position { start: 0, end: 0 },
+                position: Some(Position { start: 0, end: 0 }),
             },
-            3 => Read { position: Position { start: 0, end: 0 } },
-            4 => Write { position: Position { start: 0, end: 0 } },
+            3 => Read { position: Some(Position { start: 0, end: 0 }) },
+            4 => Write { position: Some(Position { start: 0, end: 0 }) },
             // TODO: we should be able to generate arbitrary nested
             // instructions, instead of this limited range. See
             // https://github.com/BurntSushi/quickcheck/issues/23
             5 => Loop {
                 body: vec![],
-                position: Position { start: 0, end: 0 },
+                position: Some(Position { start: 0, end: 0 }),
             },
             6 => Loop {
                 body: vec![Increment {
                     amount: Wrapping(Arbitrary::arbitrary(g)),
-                    offset: 0, position: Position { start: 0, end: 0 },
+                    offset: 0, position: Some(Position { start: 0, end: 0 }),
                 }],
-                position: Position { start: 0, end: 0 },
+                position: Some(Position { start: 0, end: 0 }),
             },
             7 => Loop {
                 body: vec![PointerIncrement {
                     amount: Arbitrary::arbitrary(g),
-                    position: Position { start: 1, end: 1 },
+                    position: Some(Position { start: 1, end: 1 }),
                 }],
-                position: Position { start: 0, end: 2 },
+                position: Some(Position { start: 0, end: 2 }),
             },
             8 => Loop {
                 body: vec![Set {
                     amount: Wrapping(Arbitrary::arbitrary(g)),
-                    offset: 0, position: Position { start: 0, end: 0 },
+                    offset: 0, position: Some(Position { start: 0, end: 0 }),
                 }],
-                position: Position { start: 0, end: 0 },
+                position: Some(Position { start: 0, end: 0 }),
             },
             9 => Loop {
-                body: vec![Read { position: Position { start: 0, end: 0 } }],
-                position: Position { start: 0, end: 0 },
+                body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
+                position: Some(Position { start: 0, end: 0 }),
             },
             10 => Loop {
-                body: vec![Read { position: Position { start: 0, end: 0 } }],
-                position: Position { start: 0, end: 0 },
+                body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
+                position: Some(Position { start: 0, end: 0 }),
             },
             11 => {
                 let mut changes = HashMap::new();
                 changes.insert(1, Wrapping(-1));
-                MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }
+                MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }
             }
             12 => {
                 let mut changes = HashMap::new();
                 changes.insert(1, Wrapping(2));
                 changes.insert(4, Wrapping(10));
-                MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }
+                MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }
             }
             _ => unreachable!(),
         }
@@ -88,7 +88,7 @@ impl Arbitrary for Instruction {
 #[test]
 fn combine_increments_flat() {
     let initial = parse("++").unwrap();
-    let expected = vec![Increment { amount: Wrapping(2), offset: 0, position: Position { start: 0, end: 1 } }];
+    let expected = vec![Increment { amount: Wrapping(2), offset: 0, position: Some(Position { start: 0, end: 1 }) }];
     assert_eq!(combine_increments(initial), expected);
 }
 
@@ -103,8 +103,8 @@ fn combine_increments_unrelated() {
 fn combine_increments_nested() {
     let initial = parse("[++]").unwrap();
     let expected = vec![Loop {
-        body: vec![Increment { amount: Wrapping(2), offset: 0, position: Position { start: 1, end: 2 } }],
-        position: Position { start: 0, end: 3 },
+        body: vec![Increment { amount: Wrapping(2), offset: 0, position: Some(Position { start: 1, end: 2 }) }],
+        position: Some(Position { start: 0, end: 3 }),
     }];
     assert_eq!(combine_increments(initial), expected);
 }
@@ -118,7 +118,7 @@ fn combine_increments_remove_redundant() {
 #[test]
 fn quickcheck_combine_increments_remove_zero_any_offset() {
     fn combine_increments_remove_zero_any_offset(offset: isize) -> bool {
-        let initial = vec![Increment { amount: Wrapping(0), offset: offset, position: Position { start: 0, end: 0 }}];
+        let initial = vec![Increment { amount: Wrapping(0), offset: offset, position: Some(Position { start: 0, end: 0 })}];
         combine_increments(initial) == vec![]
     }
     quickcheck(combine_increments_remove_zero_any_offset as fn(isize) -> bool);
@@ -126,31 +126,31 @@ fn quickcheck_combine_increments_remove_zero_any_offset() {
 
 #[test]
 fn combine_increment_sum_to_zero() {
-    let initial = vec![Increment { amount: Wrapping(-1), offset: 0, position: Position { start: 0, end: 0 } },
-                       Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }];
+    let initial = vec![Increment { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                       Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(combine_increments(initial), vec![]);
 }
 
 #[test]
 fn combine_set_sum_to_zero() {
-    let initial = vec![Set { amount: Wrapping(-1), offset: 0, position: Position { start: 0, end: 0 } },
-                       Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }];
+    let initial = vec![Set { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                       Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(combine_set_and_increments(initial),
-               vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }]);
+               vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }]);
 }
 
 #[test]
 fn should_combine_before_read() {
     // The increment before the read is dead and can be removed.
     let initial = parse("+,.").unwrap();
-    let expected = vec![Read { position: Position { start: 1, end: 1 } }, Write { position: Position { start: 2, end: 2 } }];
+    let expected = vec![Read { position: Some(Position { start: 1, end: 1 }) }, Write { position: Some(Position { start: 2, end: 2 }) }];
     assert_eq!(optimize(initial), expected);
 }
 
 #[test]
 fn dont_combine_before_read_different_offset() {
     // The read does not affect the increment here.
-    let initial = vec![Increment { amount: Wrapping(1), offset: 2, position: Position { start: 0, end: 0 } }, Read { position: Position { start: 0, end: 0 } }];
+    let initial = vec![Increment { amount: Wrapping(1), offset: 2, position: Some(Position { start: 0, end: 0 }) }, Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(combine_before_read(initial.clone()), initial);
 }
 
@@ -159,10 +159,10 @@ fn should_combine_before_read_nested() {
     // The read clobbers the increment here.
     let initial = parse("+[+,]").unwrap();
     let expected = vec![
-        Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
+        Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
         Loop {
-            body: vec![Read { position: Position { start: 3, end: 3 } }],
-            position: Position { start: 1, end: 4 },
+            body: vec![Read { position: Some(Position { start: 3, end: 3 }) }],
+            position: Some(Position { start: 1, end: 4 }),
         }];
     assert_eq!(optimize(initial), expected);
 }
@@ -174,19 +174,19 @@ fn combine_before_read_not_consecutive() {
     let expected = vec![
         PointerIncrement {
             amount: 1,
-            position: Position { start: 1, end: 1 },
+            position: Some(Position { start: 1, end: 1 }),
         },
         Increment {
             amount: Wrapping(-1),
             offset: 0,
-            position: Position { start: 2, end: 2 },
+            position: Some(Position { start: 2, end: 2 }),
         },
         PointerIncrement {
             amount: -1,
-            position: Position { start: 3, end: 3 },
+            position: Some(Position { start: 3, end: 3 }),
         },
         Read {
-            position: Position { start: 4, end: 4 },
+            position: Some(Position { start: 4, end: 4 }),
         }];
     assert_eq!(combine_before_read(initial), expected);
 }
@@ -194,7 +194,7 @@ fn combine_before_read_not_consecutive() {
 #[test]
 fn simplify_zeroing_loop() {
     let initial = parse("[-]").unwrap();
-    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 2 } }];
+    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 2 }) }];
     assert_eq!(simplify_loops(initial), expected);
 }
 
@@ -202,8 +202,8 @@ fn simplify_zeroing_loop() {
 fn simplify_nested_zeroing_loop() {
     let initial = parse("[[-]]").unwrap();
     let expected = vec![Loop {
-        body: vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 1, end: 3 } }],
-        position: Position { start: 0, end: 4 }
+        body: vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 1, end: 3 }) }],
+        position: Some(Position { start: 0, end: 4 })
     }];
     assert_eq!(simplify_loops(initial), expected);
 }
@@ -219,15 +219,15 @@ fn dont_simplify_multiple_decrement_loop() {
 
 #[test]
 fn remove_repeated_loops() {
-    let initial = vec![Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }, Loop { body: vec![], position: Position { start: 0, end: 0 }}, Loop { body: vec![], position: Position { start: 0, end: 0 }}];
-    let expected = vec![Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }, Loop { body: vec![], position: Position { start: 0, end: 0 }}];
+    let initial = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }, Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}, Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}];
+    let expected = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }, Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}];
     assert_eq!(optimize(initial), expected);
 }
 
 #[test]
 fn remove_dead_loops_after_set() {
-    let initial = vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }, Loop { body: vec![], position: Position { start: 0, end: 0 }}];
-    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }];
+    let initial = vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }, Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}];
+    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
@@ -235,25 +235,25 @@ fn remove_dead_loops_after_set() {
 fn remove_dead_loops_nested() {
     let initial = vec![Loop {
         body: vec![
-            Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } },
-            Loop { body: vec![], position: Position { start: 0, end: 0 }}],
-        position: Position { start: 0, end: 0 },
+            Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+            Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}],
+        position: Some(Position { start: 0, end: 0 }),
     }];
     let expected = vec![Loop {
         body: vec![
-            Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }],
-        position: Position { start: 0, end: 0 },
+            Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }],
+        position: Some(Position { start: 0, end: 0 }),
     }];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
 #[test]
 fn remove_dead_loops_not_adjacent() {
-    let initial = vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } },
-                       Set { amount: Wrapping(1), offset: 1, position: Position { start: 0, end: 0 } },
-                       Loop { body: vec![], position: Position { start: 0, end: 0 }}];
-    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } },
-                        Set { amount: Wrapping(1), offset: 1, position: Position { start: 0, end: 0 } }];
+    let initial = vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                       Set { amount: Wrapping(1), offset: 1, position: Some(Position { start: 0, end: 0 }) },
+                       Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}];
+    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                        Set { amount: Wrapping(1), offset: 1, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(remove_dead_loops(initial), expected);
 }
 
@@ -264,10 +264,10 @@ fn quickcheck_should_combine_set_and_increment() {
         let increment_amount = Wrapping(increment_amount);
 
         let initial = vec![
-            Set { amount: set_amount, offset: offset, position: Position { start: 0, end: 0 }},
-            Increment { amount: increment_amount, offset: offset, position: Position { start: 0, end: 0 }}];
+            Set { amount: set_amount, offset: offset, position: Some(Position { start: 0, end: 0 })},
+            Increment { amount: increment_amount, offset: offset, position: Some(Position { start: 0, end: 0 })}];
         let expected = vec![Set { amount: set_amount + increment_amount, offset: offset,
-                                  position: Position { start: 0, end: 0 },
+                                  position: Some(Position { start: 0, end: 0 }),
         }];
         combine_set_and_increments(initial) == expected
     }
@@ -284,8 +284,8 @@ fn quickcheck_combine_set_and_increment_different_offsets() {
                 return TestResult::discard();
             }
 
-            let initial = vec![Set { amount: Wrapping(set_amount), offset: set_offset, position: Position { start: 0, end: 0 }},
-                               Increment { amount: Wrapping(inc_amount), offset: inc_offset, position: Position { start: 0, end: 0 }}];
+            let initial = vec![Set { amount: Wrapping(set_amount), offset: set_offset, position: Some(Position { start: 0, end: 0 })},
+                               Increment { amount: Wrapping(inc_amount), offset: inc_offset, position: Some(Position { start: 0, end: 0 })}];
             let expected = initial.clone();
 
             TestResult::from_bool(combine_set_and_increments(initial) == expected)
@@ -302,8 +302,8 @@ fn quickcheck_combine_increment_and_set_different_offsets() {
             }
 
             let initial = vec![
-                Increment { amount: Wrapping(inc_amount), offset: inc_offset, position: Position { start: 0, end: 0 }},
-                Set { amount: Wrapping(set_amount), offset: set_offset, position: Position { start: 0, end: 0 }}];
+                Increment { amount: Wrapping(inc_amount), offset: inc_offset, position: Some(Position { start: 0, end: 0 })},
+                Set { amount: Wrapping(set_amount), offset: set_offset, position: Some(Position { start: 0, end: 0 })}];
             let expected = initial.clone();
 
             TestResult::from_bool(combine_set_and_increments(initial) == expected)
@@ -314,9 +314,9 @@ fn quickcheck_combine_increment_and_set_different_offsets() {
 #[test]
 fn quickcheck_combine_set_and_set() {
     fn combine_set_and_set(offset: isize, set_amount_before: i8, set_amount_after: i8) -> bool {
-        let initial = vec![Set { amount: Wrapping(set_amount_before), offset: offset, position: Position { start: 0, end: 0 }},
-                           Set { amount: Wrapping(set_amount_after), offset: offset, position: Position { start: 0, end: 0 }}];
-        let expected = vec![Set { amount: Wrapping(set_amount_after), offset: offset, position: Position { start: 0, end: 0 }}];
+        let initial = vec![Set { amount: Wrapping(set_amount_before), offset: offset, position: Some(Position { start: 0, end: 0 })},
+                           Set { amount: Wrapping(set_amount_after), offset: offset, position: Some(Position { start: 0, end: 0 })}];
+        let expected = vec![Set { amount: Wrapping(set_amount_after), offset: offset, position: Some(Position { start: 0, end: 0 })}];
         combine_set_and_increments(initial) == expected
     }
     quickcheck(combine_set_and_set as fn(isize, i8, i8) -> bool);
@@ -330,8 +330,8 @@ fn quickcheck_combine_set_and_set_different_offsets() {
         }
 
         let initial = vec![
-            Set { amount: Wrapping(amount1), offset: offset1, position: Position { start: 0, end: 0 }},
-            Set { amount: Wrapping(amount2), offset: offset2, position: Position { start: 0, end: 0 }}];
+            Set { amount: Wrapping(amount1), offset: offset1, position: Some(Position { start: 0, end: 0 })},
+            Set { amount: Wrapping(amount2), offset: offset2, position: Some(Position { start: 0, end: 0 })}];
         let expected = initial.clone();
 
         TestResult::from_bool(combine_set_and_increments(initial) == expected)
@@ -342,13 +342,13 @@ fn quickcheck_combine_set_and_set_different_offsets() {
 #[test]
 fn should_combine_set_and_set_nested() {
     let initial = vec![Loop {
-        body: vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } },
-                   Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }],
-        position: Position { start: 0, end: 0 },
+        body: vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                   Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }],
+        position: Some(Position { start: 0, end: 0 }),
     }];
     let expected = vec![Loop {
-        body: vec![Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }],
-        position: Position { start: 0, end: 0 },
+        body: vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }],
+        position: Some(Position { start: 0, end: 0 }),
     }];
     assert_eq!(combine_set_and_increments(initial), expected);
 }
@@ -356,9 +356,9 @@ fn should_combine_set_and_set_nested() {
 #[test]
 fn quickcheck_should_combine_increment_and_set() {
     fn should_combine_increment_and_set(offset: isize) -> bool {
-        let initial = vec![Increment { amount: Wrapping(2), offset: offset, position: Position { start: 0, end: 0 }},
-                           Set { amount: Wrapping(3), offset: offset, position: Position { start: 0, end: 0 }}];
-        let expected = vec![Set { amount: Wrapping(3), offset: offset, position: Position { start: 0, end: 0 }}];
+        let initial = vec![Increment { amount: Wrapping(2), offset: offset, position: Some(Position { start: 0, end: 0 })},
+                           Set { amount: Wrapping(3), offset: offset, position: Some(Position { start: 0, end: 0 })}];
+        let expected = vec![Set { amount: Wrapping(3), offset: offset, position: Some(Position { start: 0, end: 0 })}];
         combine_set_and_increments(initial) == expected
     }
     quickcheck(should_combine_increment_and_set as fn(isize) -> bool);
@@ -366,10 +366,10 @@ fn quickcheck_should_combine_increment_and_set() {
 
 #[test]
 fn should_remove_redundant_set() {
-    let initial = vec![Loop { body: vec![], position: Position { start: 0, end: 0 }},
-                       Set { amount: Wrapping(0), offset: -1, position: Position { start: 0, end: 0 }},
-                       Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }];
-    let expected = vec![Loop { body: vec![], position: Position { start: 0, end: 0 }}, Set { amount: Wrapping(0), offset: -1, position: Position { start: 0, end: 0 }}];
+    let initial = vec![Loop { body: vec![], position: Some(Position { start: 0, end: 0 })},
+                       Set { amount: Wrapping(0), offset: -1, position: Some(Position { start: 0, end: 0 })},
+                       Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
+    let expected = vec![Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}, Set { amount: Wrapping(0), offset: -1, position: Some(Position { start: 0, end: 0 })}];
     assert_eq!(remove_redundant_sets(initial), expected);
 }
 
@@ -378,8 +378,8 @@ fn should_remove_redundant_set_multiply() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(1));
 
-    let initial = vec![MultiplyMove { changes: changes.clone(), position: Position { start: 0, end: 0 } }, Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }];
-    let expected = vec![MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }];
+    let initial = vec![MultiplyMove { changes: changes.clone(), position: Some(Position { start: 0, end: 0 }) }, Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
+    let expected = vec![MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(remove_redundant_sets(initial), expected);
 }
 
@@ -387,7 +387,7 @@ fn should_remove_redundant_set_multiply() {
 /// remove it.
 #[test]
 fn not_redundant_set_when_nonzero() {
-    let instrs = vec![Loop { body: vec![], position: Position { start: 0, end: 0 }}, Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}, Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(remove_redundant_sets(instrs.clone()), instrs);
 }
 
@@ -413,7 +413,7 @@ fn is_pure(instrs: &[Instruction]) -> bool {
 fn quickcheck_should_annotate_known_zero_at_start() {
     fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> bool {
         let annotated = annotate_known_zero(instrs);
-        annotated[0] == Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }
+        annotated[0] == Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }
     }
     quickcheck(should_annotate_known_zero_at_start as fn(Vec<Instruction>) -> bool);
 }
@@ -421,23 +421,23 @@ fn quickcheck_should_annotate_known_zero_at_start() {
 #[test]
 fn should_annotate_known_zero() {
     let initial = parse("+[]").unwrap();
-    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } },
-                        Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
-                        Loop { body: vec![], position: Position { start: 1, end: 2 }},
-                        Set { amount: Wrapping(0), offset: 0, position: Position { start: 2, end: 2 } }];
+    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                        Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                        Loop { body: vec![], position: Some(Position { start: 1, end: 2 })},
+                        Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 2, end: 2 }) }];
     assert_eq!(annotate_known_zero(initial), expected);
 }
 
 #[test]
 fn should_annotate_known_zero_nested() {
     let initial = parse("[[]]").unwrap();
-    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } },
+    let expected = vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) },
                         Loop {
-                            body: vec![Loop { body: vec![], position: Position { start: 1, end: 2 }},
-                                       Set { amount: Wrapping(0), offset: 0, position: Position { start: 2, end: 2 } }],
-                            position: Position { start: 0, end: 3 },
+                            body: vec![Loop { body: vec![], position: Some(Position { start: 1, end: 2 })},
+                                       Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 2, end: 2 }) }],
+                            position: Some(Position { start: 0, end: 3 }),
                         },
-                        Set { amount: Wrapping(0), offset: 0, position: Position { start: 3, end: 3 } }];
+                        Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 3, end: 3 }) }];
     assert_eq!(annotate_known_zero(initial), expected);
 }
 
@@ -446,7 +446,7 @@ fn should_annotate_known_zero_nested() {
 /// remove the Set 0 if we haven't combined it.
 #[test]
 fn should_annotate_known_zero_cleaned_up() {
-    let initial = vec![Write { position: Position { start: 0, end: 0 } }];
+    let initial = vec![Write { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(optimize(initial.clone()), initial);
 }
 
@@ -454,10 +454,10 @@ fn should_annotate_known_zero_cleaned_up() {
 fn should_preserve_set_0_in_loop() {
     // Regression test.
     let initial = vec![
-        Read { position: Position { start: 0, end: 0 } },
+        Read { position: Some(Position { start: 0, end: 0 }) },
         Loop {
-            body: vec![Set { amount: Wrapping(0), offset: 0, position: Position { start: 0, end: 0 } }],
-            position: Position { start: 0, end: 0 },
+            body: vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }],
+            position: Some(Position { start: 0, end: 0 }),
         }];
     assert_eq!(optimize(initial.clone()), initial);
 }
@@ -468,8 +468,8 @@ fn should_remove_pure_code() {
     // removed.
     let initial = parse("+.+").unwrap();
     let expected = vec![
-        Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
-        Write { position: Position { start: 1, end: 1 } }];
+        Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+        Write { position: Some(Position { start: 1, end: 1 }) }];
     assert_eq!(optimize(initial), expected);
 }
 
@@ -498,18 +498,18 @@ fn quickcheck_optimize_should_be_idempotent() {
 
 #[test]
 fn pathological_optimisation_opportunity() {
-    let instrs = vec![Read { position: Position { start: 0, end: 0 } },
-                      Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
-                      PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } },
-                      Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
-                      PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } },
-                      PointerIncrement { amount: -1, position: Position { start: 0, end: 0 } },
-                      Increment { amount: Wrapping(-1), offset: 0, position: Position { start: 0, end: 0 } },
-                      PointerIncrement { amount: -1, position: Position { start: 0, end: 0 } },
-                      Increment { amount: Wrapping(-1), offset: 0, position: Position { start: 0, end: 0 } },
-                      Write { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Read { position: Some(Position { start: 0, end: 0 }) },
+                      Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                      PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) },
+                      Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                      PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) },
+                      PointerIncrement { amount: -1, position: Some(Position { start: 0, end: 0 }) },
+                      Increment { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                      PointerIncrement { amount: -1, position: Some(Position { start: 0, end: 0 }) },
+                      Increment { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                      Write { position: Some(Position { start: 0, end: 0 }) }];
 
-    let expected = vec![Read { position: Position { start: 0, end: 0 } }, Write { position: Position { start: 0, end: 0 } }];
+    let expected = vec![Read { position: Some(Position { start: 0, end: 0 }) }, Write { position: Some(Position { start: 0, end: 0 }) }];
 
     assert_eq!(optimize(instrs), expected);
 }
@@ -542,7 +542,7 @@ fn should_extract_multiply_simple() {
 
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(3));
-    let expected = vec![MultiplyMove { changes: dest_cells, position: Position { start: 0, end: 7 } }];
+    let expected = vec![MultiplyMove { changes: dest_cells, position: Some(Position { start: 0, end: 7 }) }];
 
     assert_eq!(extract_multiply(instrs), expected);
 }
@@ -554,8 +554,8 @@ fn should_extract_multiply_nested() {
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(1));
     let expected = vec![Loop {
-        body: vec![MultiplyMove { changes: dest_cells, position: Position { start: 1, end: 6 } }],
-        position: Position { start: 0, end: 7 },
+        body: vec![MultiplyMove { changes: dest_cells, position: Some(Position { start: 1, end: 6 }) }],
+        position: Some(Position { start: 0, end: 7 }),
     }];
 
     assert_eq!(extract_multiply(instrs), expected);
@@ -567,7 +567,7 @@ fn should_extract_multiply_negative_number() {
 
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(-2));
-    let expected = vec![MultiplyMove { changes: dest_cells, position: Position { start: 0, end: 6 } }];
+    let expected = vec![MultiplyMove { changes: dest_cells, position: Some(Position { start: 0, end: 6 }) }];
 
     assert_eq!(extract_multiply(instrs), expected);
 }
@@ -579,7 +579,7 @@ fn should_extract_multiply_multiple_cells() {
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(3));
     dest_cells.insert(4, Wrapping(1));
-    let expected = vec![MultiplyMove { changes: dest_cells, position: Position { start: 0, end: 14 } }];
+    let expected = vec![MultiplyMove { changes: dest_cells, position: Some(Position { start: 0, end: 14 }) }];
 
     assert_eq!(extract_multiply(instrs), expected);
 }
@@ -625,9 +625,9 @@ fn should_not_extract_multiply_with_write() {
 #[test]
 fn sort_by_offset_increment() {
     let instrs = parse("+>+>").unwrap();
-    let expected = vec![Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
-                        Increment { amount: Wrapping(1), offset: 1, position: Position { start: 2, end: 2 } },
-                        PointerIncrement { amount: 2, position: Position { start: 3, end: 3 } }];
+    let expected = vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                        Increment { amount: Wrapping(1), offset: 1, position: Some(Position { start: 2, end: 2 }) },
+                        PointerIncrement { amount: 2, position: Some(Position { start: 3, end: 3 }) }];
     assert_eq!(sort_by_offset(instrs), expected);
 }
 
@@ -635,10 +635,10 @@ fn sort_by_offset_increment() {
 fn sort_by_offset_increment_nested() {
     let instrs = parse("[+>+>]").unwrap();
     let expected = vec![Loop {
-        body: (vec![Increment { amount: Wrapping(1), offset: 0, position: Position { start: 1, end: 1 } },
-                    Increment { amount: Wrapping(1), offset: 1, position: Position { start: 3, end: 3 } },
-                    PointerIncrement { amount: 2, position: Position { start: 4, end: 4 } }]),
-        position: Position { start: 0, end: 5 },
+        body: (vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 1, end: 1 }) },
+                    Increment { amount: Wrapping(1), offset: 1, position: Some(Position { start: 3, end: 3 }) },
+                    PointerIncrement { amount: 2, position: Some(Position { start: 4, end: 4 }) }]),
+        position: Some(Position { start: 0, end: 5 }),
     }];
     assert_eq!(sort_by_offset(instrs), expected);
 }
@@ -654,22 +654,22 @@ fn sort_by_offset_remove_redundant() {
 #[test]
 fn sort_by_offset_read() {
     let instrs = parse(">>,>>").unwrap();
-    let expected = vec![PointerIncrement { amount: 2, position: Position { start: 1, end: 1 } },
-                        Read { position: Position { start: 2, end: 2 } },
-                        PointerIncrement { amount: 2, position: Position { start: 4, end: 4 } }];
+    let expected = vec![PointerIncrement { amount: 2, position: Some(Position { start: 1, end: 1 }) },
+                        Read { position: Some(Position { start: 2, end: 2 }) },
+                        PointerIncrement { amount: 2, position: Some(Position { start: 4, end: 4 }) }];
     assert_eq!(sort_by_offset(instrs), expected);
 }
 
 #[test]
 fn quickcheck_sort_by_offset_set() {
     fn sort_by_offset_set(amount1: i8, amount2: i8) -> bool {
-        let instrs = vec![Set { amount: Wrapping(amount1), offset: 0, position: Position { start: 0, end: 0 }},
-                          PointerIncrement { amount: -1, position: Position { start: 0, end: 0 } },
-                          Set { amount: Wrapping(amount2), offset: 0, position: Position { start: 0, end: 0 }}];
+        let instrs = vec![Set { amount: Wrapping(amount1), offset: 0, position: Some(Position { start: 0, end: 0 })},
+                          PointerIncrement { amount: -1, position: Some(Position { start: 0, end: 0 }) },
+                          Set { amount: Wrapping(amount2), offset: 0, position: Some(Position { start: 0, end: 0 })}];
 
-        let expected = vec![Set { amount: Wrapping(amount2), offset: -1, position: Position { start: 0, end: 0 }},
-                            Set { amount: Wrapping(amount1), offset: 0, position: Position { start: 0, end: 0 }},
-                            PointerIncrement { amount: -1, position: Position { start: 0, end: 0 } }];
+        let expected = vec![Set { amount: Wrapping(amount2), offset: -1, position: Some(Position { start: 0, end: 0 })},
+                            Set { amount: Wrapping(amount1), offset: 0, position: Some(Position { start: 0, end: 0 })},
+                            PointerIncrement { amount: -1, position: Some(Position { start: 0, end: 0 }) }];
         sort_by_offset(instrs) == expected
     }
     quickcheck(sort_by_offset_set as fn(i8, i8) -> bool);
@@ -689,8 +689,8 @@ fn quickcheck_sort_by_offset_pointer_increments() {
             return TestResult::discard();
         }
 
-        let instrs = vec![PointerIncrement { amount: amount1, position: Position { start: 0, end: 0 } }, PointerIncrement { amount: amount2, position: Position { start: 0, end: 0 } }];
-        let expected = vec![PointerIncrement { amount: amount1 + amount2, position: Position { start: 0, end: 0 } }];
+        let instrs = vec![PointerIncrement { amount: amount1, position: Some(Position { start: 0, end: 0 }) }, PointerIncrement { amount: amount2, position: Some(Position { start: 0, end: 0 }) }];
+        let expected = vec![PointerIncrement { amount: amount1 + amount2, position: Some(Position { start: 0, end: 0 }) }];
         TestResult::from_bool(sort_by_offset(instrs) == expected)
     }
     quickcheck(sort_by_offset_pointer_increments as fn(isize, isize) -> TestResult);
@@ -704,18 +704,18 @@ fn combine_increments_non_adjacent_instrs() {
         Increment {
             amount: Wrapping(1),
             offset: 0,
-            position: Position { start: 0, end: 0 }
+            position: Some(Position { start: 0, end: 0 })
         },
         Increment {
             amount: Wrapping(1),
             offset: 0,
-            position: Position { start: 2, end: 2 }
+            position: Some(Position { start: 2, end: 2 })
         }];
     let expected = vec![
         Increment {
             amount: Wrapping(2),
             offset: 0,
-            position: Position { start: 2, end: 2 }
+            position: Some(Position { start: 2, end: 2 })
         }];
     assert_eq!(combine_increments(instrs), expected);
 }
@@ -728,18 +728,18 @@ fn combine_set_and_increment_non_adjacent_instrs() {
         Set {
             amount: Wrapping(1),
             offset: 0,
-            position: Position { start: 0, end: 0 }
+            position: Some(Position { start: 0, end: 0 })
         },
         Increment {
             amount: Wrapping(1),
             offset: 0,
-            position: Position { start: 2, end: 2 }
+            position: Some(Position { start: 2, end: 2 })
         }];
     let expected = vec![
         Set {
             amount: Wrapping(2),
             offset: 0,
-            position: Position { start: 2, end: 2 }
+            position: Some(Position { start: 2, end: 2 })
         }];
     assert_eq!(combine_set_and_increments(instrs), expected);
 }
@@ -749,10 +749,10 @@ fn combine_set_and_increment_non_adjacent_instrs() {
 #[test]
 fn combine_increments_after_sort() {
     let instrs = parse(",+>+<+.").unwrap();
-    let expected = vec![Read { position: Position { start: 0, end: 0 } },
-                        Increment { amount: Wrapping(2), offset: 0, position: Position { start: 5, end: 5 } },
-                        Increment { amount: Wrapping(1), offset: 1, position: Position { start: 3, end: 3 } },
-                        Write { position: Position { start: 6, end: 6 } }];
+    let expected = vec![Read { position: Some(Position { start: 0, end: 0 }) },
+                        Increment { amount: Wrapping(2), offset: 0, position: Some(Position { start: 5, end: 5 }) },
+                        Increment { amount: Wrapping(1), offset: 1, position: Some(Position { start: 3, end: 3 }) },
+                        Write { position: Some(Position { start: 6, end: 6 }) }];
     assert_eq!(optimize(instrs), expected);
 }
 
@@ -760,22 +760,22 @@ fn combine_increments_after_sort() {
 fn prev_mutate_loop() {
     // If we see a loop, we don't know when the current cell was last
     // mutated.
-    let instrs = vec![Loop { body: vec![], position: Position { start: 0, end: 0 } },
-                      Read { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Loop { body: vec![], position: Some(Position { start: 0, end: 0 }) },
+                      Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 1), None);
 }
 
 #[test]
 fn prev_mutate_increment() {
-    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }, Read { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }, Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 1), Some(0));
 }
 
 #[test]
 fn prev_mutate_ignores_offset_at_index() {
-    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
+    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
                       // The fact that this instruction is at offset 1 should be irrelevant.
-                      Increment { amount: Wrapping(2), offset: 1, position: Position { start: 0, end: 0 } }];
+                      Increment { amount: Wrapping(2), offset: 1, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 1), Some(0));
 }
 
@@ -784,7 +784,7 @@ fn prev_mutate_multiply_offset_matches() {
     let mut changes = HashMap::new();
     changes.insert(-1, Wrapping(-1));
 
-    let instrs = vec![MultiplyMove { changes: changes.clone(), position: Position { start: 0, end: 0 } }, PointerIncrement { amount: -1, position: Position { start: 0, end: 0 } }, Read { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![MultiplyMove { changes: changes.clone(), position: Some(Position { start: 0, end: 0 }) }, PointerIncrement { amount: -1, position: Some(Position { start: 0, end: 0 }) }, Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 2), Some(0));
 }
 
@@ -794,9 +794,9 @@ fn prev_mutate_multiply_offset_doesnt_match() {
     changes.insert(1, Wrapping(2));
 
     let instrs = vec![
-        MultiplyMove { changes: changes.clone(), position: Position { start: 0, end: 0 } },
-        PointerIncrement { amount: 2, position: Position { start: 0, end: 0 } },
-        Read { position: Position { start: 0, end: 0 } }];
+        MultiplyMove { changes: changes.clone(), position: Some(Position { start: 0, end: 0 }) },
+        PointerIncrement { amount: 2, position: Some(Position { start: 0, end: 0 }) },
+        Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 2), None);
 }
 
@@ -807,30 +807,30 @@ fn prev_mutate_multiply_ignore_offset() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(-1));
 
-    let instrs = vec![MultiplyMove { changes: changes.clone(), position: Position { start: 0, end: 0 } }, Read { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![MultiplyMove { changes: changes.clone(), position: Some(Position { start: 0, end: 0 }) }, Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 1), Some(0));
 }
 
 #[test]
 fn prev_mutate_no_predecessors() {
-    let instrs = vec![Read { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 0), None);
 }
 
 #[test]
 fn prev_mutate_increment_matching_offset() {
-    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
-                      Increment { amount: Wrapping(10), offset: 1, position: Position { start: 0, end: 0 } },
-                      Read { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                      Increment { amount: Wrapping(10), offset: 1, position: Some(Position { start: 0, end: 0 }) },
+                      Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 2), Some(0));
 }
 
 #[test]
 fn prev_mutate_ignore_write() {
     let instrs = vec![
-        Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 }},
-        Write { position: Position { start: 0, end: 0 } },
-        Read { position: Position { start: 0, end: 0 } }];
+        Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 })},
+        Write { position: Some(Position { start: 0, end: 0 }) },
+        Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 2),
                Some(0));
 }
@@ -838,16 +838,16 @@ fn prev_mutate_ignore_write() {
 #[test]
 fn prev_mutate_consider_pointer_increment() {
     let instrs = vec![
-        Increment { amount: Wrapping(1), offset: 1, position: Position { start: 0, end: 0 }},
-        PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } },
-        Read { position: Position { start: 0, end: 0 } }];
+        Increment { amount: Wrapping(1), offset: 1, position: Some(Position { start: 0, end: 0 })},
+        PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) },
+        Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 2),
                Some(0));
 }
 
 #[test]
 fn prev_mutate_set() {
-    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 }}, Read { position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 })}, Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 1),
                Some(0));
 }
@@ -856,28 +856,28 @@ fn prev_mutate_set() {
 fn next_mutate_loop() {
     // If we see a loop, we don't know when the current cell is next
     // mutated.
-    let instrs = vec![Read { position: Position { start: 0, end: 0 } }, Loop {
+    let instrs = vec![Read { position: Some(Position { start: 0, end: 0 }) }, Loop {
         body: vec![],
-        position: Position { start: 0, end: 0 },
+        position: Some(Position { start: 0, end: 0 }),
     }];
     assert_eq!(next_cell_change(&instrs, 0), None);
 }
 
 #[test]
 fn next_mutate_increment() {
-    let instrs = vec![Read { position: Position { start: 0, end: 0 } },
-                      Increment { amount: Wrapping(1), offset: -1, position: Position { start: 0, end: 0 }},
-                      Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Read { position: Some(Position { start: 0, end: 0 }) },
+                      Increment { amount: Wrapping(1), offset: -1, position: Some(Position { start: 0, end: 0 })},
+                      Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(next_cell_change(&instrs, 0), Some(2));
 }
 
 #[test]
 fn next_mutate_consider_pointer_increment() {
     let instrs = vec![
-        Read { position: Position { start: 0, end: 0 } },
-        PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } },
-        Increment { amount: Wrapping(1), offset: 1, position: Position { start: 0, end: 0 }},
-        Increment { amount: Wrapping(1), offset: -1, position: Position { start: 0, end: 0 }}];
+        Read { position: Some(Position { start: 0, end: 0 }) },
+        PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) },
+        Increment { amount: Wrapping(1), offset: 1, position: Some(Position { start: 0, end: 0 })},
+        Increment { amount: Wrapping(1), offset: -1, position: Some(Position { start: 0, end: 0 })}];
     
     assert_eq!(next_cell_change(&instrs, 0),
                Some(3));

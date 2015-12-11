@@ -10,8 +10,8 @@ use execution::ExecutionState;
 #[test]
 fn compile_loop() {
     let instrs = vec![Loop {
-        body: vec![Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 }}],
-        position: Position { start: 0, end: 0 },
+        body: vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 })}],
+        position: Some(Position { start: 0, end: 0 }),
     }];
     
     let result = compile_to_ir(
@@ -113,7 +113,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_set() {
-    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
@@ -162,7 +162,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_set_with_offset() {
-    let instrs = vec![Set { amount: Wrapping(1), offset: 42, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Set { amount: Wrapping(1), offset: 42, position: Some(Position { start: 0, end: 0 }) }];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
@@ -211,7 +211,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn respect_initial_cell_ptr() {
-    let instrs = vec![PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
@@ -262,7 +262,7 @@ fn compile_multiply_move() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(2));
     changes.insert(2, Wrapping(3));
-    let instrs = vec![MultiplyMove { changes: changes, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
     
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
@@ -322,7 +322,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn set_initial_cell_values() {
-    let instrs = vec![PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
@@ -418,7 +418,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_ptr_increment() {
-    let instrs = vec![PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
@@ -466,7 +466,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment() {
-    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 }}];
+    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 })}];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
@@ -517,7 +517,7 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment_with_offset() {
-    let instrs = vec![Increment { amount: Wrapping(1), offset: 3, position: Position { start: 0, end: 0 }}];
+    let instrs = vec![Increment { amount: Wrapping(1), offset: 3, position: Some(Position { start: 0, end: 0 })}];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
@@ -567,8 +567,8 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_start_instr_midway() {
-    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Position { start: 0, end: 0 } },
-                      Set { amount: Wrapping(2), offset: 0, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
+                      Set { amount: Wrapping(2), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
     let result = compile_to_ir("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[1]),

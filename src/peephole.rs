@@ -4,7 +4,7 @@ use std::num::Wrapping;
 
 use itertools::Itertools;
 
-use bfir::{Instruction, Position, Cell, get_position};
+use bfir::{Instruction, Position, Combine, Cell, get_position};
 use bfir::Instruction::*;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
@@ -165,20 +165,10 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
               if let &Increment { amount: prev_amount, offset: prev_offset, position: prev_pos } = &prev_instr {
                   if let &Increment { amount, offset, position } = &instr {
                       if prev_offset == offset {
-                          let new_pos = if prev_pos.end + 1 == position.start {
-                              // Instructions were adjacent in source
-                              // code so we can concatenate position.
-                              Position { start: prev_pos.start, end: position.end }
-                          } else {
-                              // Instructions were not adjacent so
-                              // just use the position of the second
-                              // instruction.
-                              position
-                          };
                           return Ok(Increment {
                               amount: amount + prev_amount,
                               offset: offset,
-                              position: new_pos,
+                              position: prev_pos.combine(position),
                           });
                       }
                   }
@@ -398,20 +388,10 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
               if let Set { amount: set_amount, offset: set_offset, position: set_pos } = prev_instr {
                   if let Increment { amount: inc_amount, offset: inc_offset, position: inc_pos } = instr {
                       if inc_offset == set_offset {
-                          let new_pos = if set_pos.end + 1 == inc_pos.start {
-                              // Instructions were adjacent in source
-                              // code so we can concatenate position.
-                              Position { start: set_pos.start, end: inc_pos.end }
-                          } else {
-                              // Instructions were not adjacent so
-                              // just use the position of the second
-                              // instruction.
-                              inc_pos
-                          };
                           return Ok(Set {
                               amount: set_amount + inc_amount,
                               offset: set_offset,
-                              position: new_pos,
+                              position: set_pos.combine(inc_pos),
                           });
                       }
                   }
@@ -476,11 +456,11 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
 
     let position = if instrs.is_empty() {
-        // Choose the first character arbitrarily.
-        Position { start: 0, end: 0 }
+        None
     } else {
-        let first_instr_pos = get_position(&instrs[0]);
-        Position { start: first_instr_pos.start, end: first_instr_pos.start }
+        get_position(&instrs[0]).map(|first_instr_pos| {
+            Position { start: first_instr_pos.start, end: first_instr_pos.start }
+        })
     };
 
     // Cells in BF are initialised to zero, so we know the current
@@ -506,11 +486,14 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     body: annotate_known_zero_inner(body),
                     position: position,
                 });
+                // Treat this set as positioned at the ].
+                let set_pos = position.map(|loop_pos| {
+                    Position { start: loop_pos.end, end: loop_pos.end }
+                });
                 result.push(Set {
                     amount: Wrapping(0),
                     offset: 0,
-                    // Treat this set as positioned at the ].
-                    position: Position { start: position.end, end: position.end },
+                    position: set_pos,
                 })
             }
             i => {

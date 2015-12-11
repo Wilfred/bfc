@@ -10,11 +10,11 @@ use std::num::Wrapping;
 use std::ops::Add;
 use std::cmp::{Ord, Ordering, max};
 
-use bfir::{Instruction, Position};
+use bfir::Instruction;
 use bfir::Instruction::*;
 
 #[cfg(test)]
-use bfir::parse;
+use bfir::{parse, Position};
 
 // 100,000 cells, zero-indexed.
 pub const MAX_CELL_INDEX: usize = 99999;
@@ -168,7 +168,7 @@ fn ptr_increment_sequence_bounds() {
 fn multiple_ptr_increment_bounds() {
     let instrs = vec![PointerIncrement {
         amount: 2,
-        position: Position { start: 0, end: 0 },
+        position: Some(Position { start: 0, end: 0 }),
     }];
     assert_eq!(highest_cell_index(&instrs), 2);
 }
@@ -181,14 +181,14 @@ fn multiply_move_bounds() {
     let instrs = vec![
         MultiplyMove {
             changes: dest_cells,
-            position: Position { start: 0, end: 0 },
+            position: Some(Position { start: 0, end: 0 }),
         },
         // Multiply move should have increased the highest cell
         // reached, but not the current cell. This instruction
         // should not affect the output:
         PointerIncrement {
             amount: 2,
-            position: Position { start: 1, end: 1 },
+            position: Some(Position { start: 1, end: 1 }),
         }];
 
     assert_eq!(highest_cell_index(&instrs), 4);
@@ -201,9 +201,9 @@ fn multiply_move_bounds_are_relative() {
     let mut dest_cells = HashMap::new();
     dest_cells.insert(1, Wrapping(5));
     let instrs = vec![// Move to cell #2.
-                      PointerIncrement { amount: 2, position: Position { start: 0, end: 0 } },
+                      PointerIncrement { amount: 2, position: Some(Position { start: 0, end: 0 }) },
                       // Move (with multiply) to cell #3 (#2 offset 1).
-                      MultiplyMove { changes: dest_cells, position: Position { start: 0, end: 0 } }];
+                      MultiplyMove { changes: dest_cells, position: Some(Position { start: 0, end: 0 }) }];
 
     assert_eq!(highest_cell_index(&instrs), 3);
 }
@@ -212,7 +212,7 @@ fn multiply_move_bounds_are_relative() {
 fn multiply_move_backwards_bounds() {
     let mut dest_cells = HashMap::new();
     dest_cells.insert(-1, Wrapping(2));
-    let instrs = vec![PointerIncrement { amount: 1, position: Position { start: 0, end: 0 } }, MultiplyMove { changes: dest_cells, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }, MultiplyMove { changes: dest_cells, position: Some(Position { start: 0, end: 0 }) }];
 
     assert_eq!(highest_cell_index(&instrs), 1);
 }
@@ -229,7 +229,7 @@ fn unbounded_movement() {
 #[test]
 fn excessive_bounds_truncated() {
     // TODO: we should generate a warning in this situation.
-    let instrs = vec![PointerIncrement { amount: MAX_CELL_INDEX as isize + 1, position: Position { start: 0, end: 0 } }];
+    let instrs = vec![PointerIncrement { amount: MAX_CELL_INDEX as isize + 1, position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(highest_cell_index(&instrs), MAX_CELL_INDEX);
 }
 
@@ -259,14 +259,14 @@ fn quickcheck_highest_cell_index_in_bounds() {
 
 #[test]
 fn increment_offset_bounds() {
-    let instrs = [Increment { amount: Wrapping(2), offset: 5, position: Position { start: 0, end: 0 }}];
+    let instrs = [Increment { amount: Wrapping(2), offset: 5, position: Some(Position { start: 0, end: 0 })}];
     assert_eq!(highest_cell_index(&instrs), 5);
 }
 
 #[test]
 fn set_offset_bounds() {
-    let instrs = [Set { amount: Wrapping(2), offset: 10, position: Position { start: 0, end: 0 }},
-                  Set { amount: Wrapping(2), offset: 11, position: Position { start: 0, end: 0 }}];
+    let instrs = [Set { amount: Wrapping(2), offset: 10, position: Some(Position { start: 0, end: 0 })},
+                  Set { amount: Wrapping(2), offset: 11, position: Some(Position { start: 0, end: 0 })}];
     assert_eq!(highest_cell_index(&instrs), 11);
 }
 

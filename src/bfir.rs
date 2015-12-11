@@ -14,37 +14,67 @@ pub struct Position {
     pub end: usize,
 }
 
+pub trait Combine<T> {
+    fn combine(&self, T) -> T;
+}
+
+impl Combine<Option<Position>> for Option<Position> {
+    fn combine(&self, other: Self) -> Self {
+        match (*self, other) {
+            (Some(pos1), Some(pos2)) => {
+                let (first_pos, second_pos) = if pos1.start <= pos2.start {
+                    (pos1, pos2)
+                } else {
+                    (pos2, pos1)
+                };
+
+                // If they're adjacent positions, we can merge them.
+                if first_pos.end + 1 >= second_pos.start {
+                    Some(Position {
+                        start: pos1.start,
+                        end: pos2.end,
+                    })
+                } else {
+                    // Otherwise, just use the second position.
+                    Some(pos2)
+                }
+            }
+            _ => None
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
     Increment {
         amount: Cell,
         offset: isize,
-        position: Position,
+        position: Option<Position>,
     },
     PointerIncrement {
         amount: isize,
-        position: Position,
+        position: Option<Position>,
     },
     Read {
-        position: Position,
+        position: Option<Position>,
     },
     Write {
-        position: Position,
+        position: Option<Position>,
     },
     Loop {
         body: Vec<Instruction>,
-        position: Position,
+        position: Option<Position>,
     },
     // These instruction have no direct equivalent in BF, but we
     // generate them during optimisation.
     Set {
         amount: Cell,
         offset: isize,
-        position: Position,
+        position: Option<Position>,
     },
     MultiplyMove {
         changes: HashMap<isize, Cell>,
-        position: Position,
+        position: Option<Position>,
     },
 }
 
@@ -75,7 +105,7 @@ impl fmt::Display for Instruction {
     }
 }
 
-pub fn get_position(instr: &Instruction) -> Position {
+pub fn get_position(instr: &Instruction) -> Option<Position> {
     match *instr {
         Increment { position, .. } => position,
         PointerIncrement { position, .. } => position,
@@ -109,54 +139,54 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 instructions.push(Increment {
                     amount: Wrapping(1),
                     offset: 0,
-                    position: Position {
+                    position: Some(Position {
                         start: index,
                         end: index,
-                    },
+                    }),
                 })
             }
             '-' => {
                 instructions.push(Increment {
                     amount: Wrapping(-1),
                     offset: 0,
-                    position: Position {
+                    position: Some(Position {
                         start: index,
                         end: index,
-                    },
+                    }),
                 })
             }
             '>' => {
                 instructions.push(PointerIncrement {
                     amount: 1,
-                    position: Position {
+                    position: Some(Position {
                         start: index,
                         end: index,
-                    },
+                    }),
                 })
             }
             '<' => {
                 instructions.push(PointerIncrement {
                     amount: -1,
-                    position: Position {
+                    position: Some(Position {
                         start: index,
                         end: index,
-                    },
+                    }),
                 })
             }
             ',' => {
                 instructions.push(Read {
-                    position: Position {
+                    position: Some(Position {
                         start: index,
                         end: index,
-                    },
+                    }),
                 })
             }
             '.' => {
                 instructions.push(Write {
-                    position: Position {
+                    position: Some(Position {
                         start: index,
                         end: index,
-                    },
+                    }),
                 })
             }
             '[' => {
@@ -167,10 +197,10 @@ pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
                 if let Some((mut parent_instr, open_index)) = stack.pop() {
                     parent_instr.push(Loop {
                         body: instructions,
-                        position: Position {
+                        position: Some(Position {
                             start: open_index,
                             end: index,
-                        },
+                        }),
                     });
                     instructions = parent_instr;
                 } else {
@@ -206,16 +236,16 @@ fn parse_increment() {
     assert_eq!(parse("+").unwrap(),
                [Increment {
                     amount: Wrapping(1),
-                    offset: 0, position: Position { start: 0, end: 0 },
+                    offset: 0, position:Some( Position { start: 0, end: 0 }),
                 }]);
     assert_eq!(parse("++").unwrap(),
                [Increment {
                     amount: Wrapping(1),
-                    offset: 0, position: Position { start: 0, end: 0 },
+                    offset: 0, position:Some( Position { start: 0, end: 0 }),
                 },
                 Increment {
                     amount: Wrapping(1),
-                    offset: 0, position: Position { start: 1, end: 1 },
+                    offset: 0, position:Some( Position { start: 1, end: 1 }),
                 }]);
 }
 
@@ -224,7 +254,7 @@ fn parse_decrement() {
     assert_eq!(parse("-").unwrap(),
                [Increment {
                     amount: Wrapping(-1),
-                    offset: 0, position: Position { start: 0, end: 0 },
+                    offset: 0, position:Some( Position { start: 0, end: 0 }),
                 }]);
 }
 
@@ -233,7 +263,7 @@ fn parse_pointer_increment() {
     assert_eq!(parse(">").unwrap(),
                [PointerIncrement {
                     amount: 1,
-                    position: Position { start: 0, end: 0 },
+                    position:Some( Position { start: 0, end: 0 }),
                 }]);
 }
 
@@ -242,27 +272,27 @@ fn parse_pointer_decrement() {
     assert_eq!(parse("<").unwrap(),
                [PointerIncrement {
                     amount: -1,
-                    position: Position { start: 0, end: 0 },
+                    position:Some( Position { start: 0, end: 0 }),
                 }]);
 }
 
 #[test]
 fn parse_read() {
     assert_eq!(parse(",").unwrap(),
-               [Read { position: Position { start: 0, end: 0 } }]);
+               [Read { position:Some( Position { start: 0, end: 0 }) }]);
 }
 
 #[test]
 fn parse_write() {
     assert_eq!(parse(".").unwrap(),
-               [Write { position: Position { start: 0, end: 0 } }]);
+               [Write { position:Some( Position { start: 0, end: 0 }) }]);
 }
 
 #[test]
 fn parse_empty_loop() {
     let expected = [Loop {
                         body: vec![],
-                        position: Position { start: 0, end: 1 },
+                        position:Some( Position { start: 0, end: 1 }),
                     }];
     assert_eq!(parse("[]").unwrap(), expected);
 }
@@ -271,32 +301,32 @@ fn parse_empty_loop() {
 fn parse_simple_loop() {
     let loop_body = vec![Increment {
                              amount: Wrapping(1),
-                             offset: 0, position: Position { start: 1, end: 1 },
+                             offset: 0, position:Some( Position { start: 1, end: 1 }),
                          }];
     let expected = [Loop {
                         body: loop_body,
-                        position: Position { start: 0, end: 2 },
+                        position:Some( Position { start: 0, end: 2 }),
                     }];
     assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
 fn parse_complex_loop() {
-    let loop_body = vec![Read { position: Position { start: 2, end: 2 } },
+    let loop_body = vec![Read { position:Some( Position { start: 2, end: 2 }) },
                          Increment {
                              amount: Wrapping(1),
                              offset: 0,
-                             position: Position { start: 3, end: 3 },
+                             position:Some( Position { start: 3, end: 3 }),
                          }];
-    let expected = [Write { position: Position { start: 0, end: 0 } },
+    let expected = [Write { position:Some( Position { start: 0, end: 0 }) },
                     Loop {
                         body: loop_body,
-                        position: Position { start: 1, end: 4 },
+                        position:Some( Position { start: 1, end: 4 }),
                     },
                     Increment {
                         amount: Wrapping(-1),
                         offset: 0,
-                        position: Position { start: 5, end: 5 },
+                        position:Some( Position { start: 5, end: 5 }),
                     }];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
