@@ -18,7 +18,6 @@ pub struct Info {
     pub level: Level,
     pub filename: String,
     pub message: String,
-    // from and to (can be the same)
     pub position: Option<Position>,
     pub source: Option<String>,
 }
