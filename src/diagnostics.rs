@@ -4,7 +4,12 @@ use ansi_term::Style;
 use ansi_term::ANSIStrings;
 
 use bfir::Position;
-use self::Level::*;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Warning {
+    pub message: String,
+    pub position: Option<Position>,
+}
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -56,11 +61,11 @@ impl fmt::Display for Info {
         let level_text;
         let color;
         match self.level {
-            Warning => {
+            Level::Warning => {
                 color = Purple;
                 level_text = " warning: ";
             }
-            Error => {
+            Level::Error => {
                 color = Red;
                 level_text = " error: ";
             }
