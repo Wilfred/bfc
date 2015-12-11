@@ -49,7 +49,9 @@ impl fmt::Display for Info {
 
         // Find line and column offsets, if we have an index.
         let offsets = match (&self.position, &self.source) {
-            (&Some(ref range), &Some(ref source)) => {
+            (&Some(range), &Some(ref source)) => {
+                debug_assert!(range.start <= range.end);
+
                 let (line_idx, column_idx) = position(source, range.start);
 
                 file_text = file_text + &format!(":{}:{}", line_idx + 1, column_idx + 1);
