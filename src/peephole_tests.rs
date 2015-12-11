@@ -17,69 +17,95 @@ impl Arbitrary for Instruction {
         let i = g.next_u32();
         match i % 13 {
             // TODO: use arbitrary offsets.
-            0 => Increment {
-                amount: Wrapping(Arbitrary::arbitrary(g)),
-                offset: 0,
-                position: Some(Position { start: 0, end: 0 }),
-            },
-            1 => PointerIncrement {
-                amount: Arbitrary::arbitrary(g),
-                position: Some(Position { start: 0, end: 0 }),
-            },
+            0 => {
+                Increment {
+                    amount: Wrapping(Arbitrary::arbitrary(g)),
+                    offset: 0,
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
+            1 => {
+                PointerIncrement {
+                    amount: Arbitrary::arbitrary(g),
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
             // TODO: use arbitrary offsets.
-            2 => Set {
-                amount: Wrapping(Arbitrary::arbitrary(g)),
-                offset: 0,
-                position: Some(Position { start: 0, end: 0 }),
-            },
+            2 => {
+                Set {
+                    amount: Wrapping(Arbitrary::arbitrary(g)),
+                    offset: 0,
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
             3 => Read { position: Some(Position { start: 0, end: 0 }) },
             4 => Write { position: Some(Position { start: 0, end: 0 }) },
             // TODO: we should be able to generate arbitrary nested
             // instructions, instead of this limited range. See
             // https://github.com/BurntSushi/quickcheck/issues/23
-            5 => Loop {
-                body: vec![],
-                position: Some(Position { start: 0, end: 0 }),
-            },
-            6 => Loop {
-                body: vec![Increment {
-                    amount: Wrapping(Arbitrary::arbitrary(g)),
-                    offset: 0, position: Some(Position { start: 0, end: 0 }),
-                }],
-                position: Some(Position { start: 0, end: 0 }),
-            },
-            7 => Loop {
-                body: vec![PointerIncrement {
-                    amount: Arbitrary::arbitrary(g),
-                    position: Some(Position { start: 1, end: 1 }),
-                }],
-                position: Some(Position { start: 0, end: 2 }),
-            },
-            8 => Loop {
-                body: vec![Set {
-                    amount: Wrapping(Arbitrary::arbitrary(g)),
-                    offset: 0, position: Some(Position { start: 0, end: 0 }),
-                }],
-                position: Some(Position { start: 0, end: 0 }),
-            },
-            9 => Loop {
-                body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
-                position: Some(Position { start: 0, end: 0 }),
-            },
-            10 => Loop {
-                body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
-                position: Some(Position { start: 0, end: 0 }),
-            },
+            5 => {
+                Loop {
+                    body: vec![],
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
+            6 => {
+                Loop {
+                    body: vec![Increment {
+                                   amount: Wrapping(Arbitrary::arbitrary(g)),
+                                   offset: 0,
+                                   position: Some(Position { start: 0, end: 0 }),
+                               }],
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
+            7 => {
+                Loop {
+                    body: vec![PointerIncrement {
+                                   amount: Arbitrary::arbitrary(g),
+                                   position: Some(Position { start: 1, end: 1 }),
+                               }],
+                    position: Some(Position { start: 0, end: 2 }),
+                }
+            }
+            8 => {
+                Loop {
+                    body: vec![Set {
+                                   amount: Wrapping(Arbitrary::arbitrary(g)),
+                                   offset: 0,
+                                   position: Some(Position { start: 0, end: 0 }),
+                               }],
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
+            9 => {
+                Loop {
+                    body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
+            10 => {
+                Loop {
+                    body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
+                    position: Some(Position { start: 0, end: 0 }),
+                }
+            }
             11 => {
                 let mut changes = HashMap::new();
                 changes.insert(1, Wrapping(-1));
-                MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }
+                MultiplyMove {
+                    changes: changes,
+                    position: Some(Position { start: 0, end: 0 }),
+                }
             }
             12 => {
                 let mut changes = HashMap::new();
                 changes.insert(1, Wrapping(2));
                 changes.insert(4, Wrapping(10));
-                MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }
+                MultiplyMove {
+                    changes: changes,
+                    position: Some(Position { start: 0, end: 0 }),
+                }
             }
             _ => unreachable!(),
         }
@@ -89,7 +115,11 @@ impl Arbitrary for Instruction {
 #[test]
 fn combine_increments_flat() {
     let initial = parse("++").unwrap();
-    let expected = vec![Increment { amount: Wrapping(2), offset: 0, position: Some(Position { start: 0, end: 1 }) }];
+    let expected = vec![Increment {
+                            amount: Wrapping(2),
+                            offset: 0,
+                            position: Some(Position { start: 0, end: 1 }),
+                        }];
     assert_eq!(combine_increments(initial), expected);
 }
 
@@ -104,9 +134,13 @@ fn combine_increments_unrelated() {
 fn combine_increments_nested() {
     let initial = parse("[++]").unwrap();
     let expected = vec![Loop {
-        body: vec![Increment { amount: Wrapping(2), offset: 0, position: Some(Position { start: 1, end: 2 }) }],
-        position: Some(Position { start: 0, end: 3 }),
-    }];
+                            body: vec![Increment {
+                                           amount: Wrapping(2),
+                                           offset: 0,
+                                           position: Some(Position { start: 1, end: 2 }),
+                                       }],
+                            position: Some(Position { start: 0, end: 3 }),
+                        }];
     assert_eq!(combine_increments(initial), expected);
 }
 
@@ -119,7 +153,11 @@ fn combine_increments_remove_redundant() {
 #[test]
 fn quickcheck_combine_increments_remove_zero_any_offset() {
     fn combine_increments_remove_zero_any_offset(offset: isize) -> bool {
-        let initial = vec![Increment { amount: Wrapping(0), offset: offset, position: Some(Position { start: 0, end: 0 })}];
+        let initial = vec![Increment {
+                               amount: Wrapping(0),
+                               offset: offset,
+                               position: Some(Position { start: 0, end: 0 }),
+                           }];
         combine_increments(initial) == vec![]
     }
     quickcheck(combine_increments_remove_zero_any_offset as fn(isize) -> bool);
@@ -127,40 +165,67 @@ fn quickcheck_combine_increments_remove_zero_any_offset() {
 
 #[test]
 fn combine_increment_sum_to_zero() {
-    let initial = vec![Increment { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
-                       Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
+    let initial = vec![Increment {
+                           amount: Wrapping(-1),
+                           offset: 0,
+                           position: Some(Position { start: 0, end: 0 }),
+                       },
+                       Increment {
+                           amount: Wrapping(1),
+                           offset: 0,
+                           position: Some(Position { start: 0, end: 0 }),
+                       }];
     assert_eq!(combine_increments(initial), vec![]);
 }
 
 #[test]
 fn should_combine_ptr_increments() {
     let initial = parse(">>").unwrap();
-    let expected = vec![
-        PointerIncrement { amount: 2, position: Some(Position { start: 0, end: 1 })}
-        ];
+    let expected = vec![PointerIncrement {
+                            amount: 2,
+                            position: Some(Position { start: 0, end: 1 }),
+                        }];
     assert_eq!(combine_ptr_increments(initial), expected);
 }
 
 #[test]
 fn combine_set_sum_to_zero() {
-    let initial = vec![Set { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
-                       Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
+    let initial = vec![Set {
+                           amount: Wrapping(-1),
+                           offset: 0,
+                           position: Some(Position { start: 0, end: 0 }),
+                       },
+                       Increment {
+                           amount: Wrapping(1),
+                           offset: 0,
+                           position: Some(Position { start: 0, end: 0 }),
+                       }];
     assert_eq!(combine_set_and_increments(initial),
-               vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }]);
+               vec![Set {
+                        amount: Wrapping(0),
+                        offset: 0,
+                        position: Some(Position { start: 0, end: 0 }),
+                    }]);
 }
 
 #[test]
 fn should_combine_before_read() {
     // The increment before the read is dead and can be removed.
     let initial = parse("+,.").unwrap();
-    let expected = vec![Read { position: Some(Position { start: 1, end: 1 }) }, Write { position: Some(Position { start: 2, end: 2 }) }];
+    let expected = vec![Read { position: Some(Position { start: 1, end: 1 }) },
+                        Write { position: Some(Position { start: 2, end: 2 }) }];
     assert_eq!(optimize(initial).0, expected);
 }
 
 #[test]
 fn dont_combine_before_read_different_offset() {
     // The read does not affect the increment here.
-    let initial = vec![Increment { amount: Wrapping(1), offset: 2, position: Some(Position { start: 0, end: 0 }) }, Read { position: Some(Position { start: 0, end: 0 }) }];
+    let initial = vec![Increment {
+                           amount: Wrapping(1),
+                           offset: 2,
+                           position: Some(Position { start: 0, end: 0 }),
+                       },
+                       Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(combine_before_read(initial.clone()), initial);
 }
 
