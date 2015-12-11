@@ -102,7 +102,7 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
                 // These cells are written to.
                 let mut offsets: Vec<isize> = changes.keys()
                                                      .into_iter()
-                                                     .map(|offset| *offset)
+                                                     .cloned()
                                                      .collect();
                 // This cell is zeroed.
                 offsets.push(0);
@@ -153,7 +153,7 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
                 // These cells are written to.
                 let mut offsets: Vec<isize> = changes.keys()
                                                      .into_iter()
-                                                     .map(|offset| *offset)
+                                                     .cloned()
                                                      .collect();
                 // This cell is zeroed.
                 offsets.push(0);
@@ -178,8 +178,8 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // Collapse consecutive increments.
-              if let &Increment { amount: prev_amount, offset: prev_offset, position: prev_pos } = &prev_instr {
-                  if let &Increment { amount, offset, position } = &instr {
+              if let Increment { amount: prev_amount, offset: prev_offset, position: prev_pos } = prev_instr {
+                  if let Increment { amount, offset, position } = instr {
                       if prev_offset == offset {
                           return Ok(Increment {
                               amount: amount + prev_amount,
@@ -193,7 +193,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
           })
           .filter(|instr| {
               // Remove any increments of 0.
-              if let &Increment{ amount: Wrapping(0), .. } = instr {
+              if let Increment{ amount: Wrapping(0), .. } = *instr {
                   return false;
               }
               true
@@ -205,8 +205,8 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // Collapse consecutive increments.
-              if let &PointerIncrement { amount: prev_amount, position: prev_pos } = &prev_instr {
-                  if let &PointerIncrement { amount, position } = &instr {
+              if let PointerIncrement { amount: prev_amount, position: prev_pos } = prev_instr {
+                  if let PointerIncrement { amount, position } = instr {
                       return Ok(PointerIncrement {
                           amount: amount + prev_amount,
                           position: prev_pos.combine(position),
@@ -217,7 +217,7 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
           })
           .filter(|instr| {
               // Remove any pointer increments of 0.
-              if let &PointerIncrement { amount: 0, .. } = instr {
+              if let PointerIncrement { amount: 0, .. } = *instr {
                   return false;
               }
               true
@@ -248,7 +248,7 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .map(|instr| {
-              if let &Loop { ref body, position } = &instr {
+              if let Loop { ref body, position } = instr {
                   // If the loop is [-]
                   if body.len() == 1 {
                       if let Increment { amount: Wrapping(-1), offset: 0, .. } = body[0] {
