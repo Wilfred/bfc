@@ -147,7 +147,19 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
 
     let opt_level = matches.opt_str("opt").unwrap_or(String::from("2"));
     if opt_level != "0" {
-        instrs = peephole::optimize(instrs);
+        let (opt_instrs, warnings) = peephole::optimize(instrs);
+        instrs = opt_instrs;
+
+        for warning in warnings {
+            let info = Info {
+                level: Level::Warning,
+                filename: path.to_owned(),
+                message: warning.message,
+                position: warning.position,
+                source: Some(src.clone()),
+            };
+            println!("{}", info);
+        }
     }
 
     if matches.opt_present("dump-ir") {

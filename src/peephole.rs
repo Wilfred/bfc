@@ -4,34 +4,49 @@ use std::num::Wrapping;
 
 use itertools::Itertools;
 
+use diagnostics::Warning;
+
 use bfir::{Instruction, Position, Combine, Cell, get_position};
 use bfir::Instruction::*;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
 /// (repeatedly if necessary).
-pub fn optimize(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn optimize(instrs: Vec<Instruction>) -> (Vec<Instruction>, Vec<Warning>) {
     // Many of our individual peephole optimisations remove
     // instructions, creating new opportunities to combine. We run
     // until we've found a fixed-point where no further optimisations
     // can be made.
     let mut prev = instrs.clone();
-    let mut result = optimize_once(instrs);
+    let mut warnings = vec![];
+
+    let (mut result, warning) = optimize_once(instrs);
+
+    if let Some(warning) = warning {
+        warnings.push(warning);
+    }
+    
     while prev != result {
         prev = result.clone();
-        result = optimize_once(result);
+
+        let (new_result, new_warning) = optimize_once(result);
+        
+        if let Some(warning) = new_warning {
+            warnings.push(warning);
+        }
+        result = new_result;
     }
-    result
+
+    (result, warnings)
 }
 
 /// Apply all our peephole optimisations once and return the result.
-fn optimize_once(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn optimize_once(instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>) {
     let combined = combine_ptr_increments(combine_increments(instrs));
     let annotated = annotate_known_zero(combined);
     let extracted = extract_multiply(annotated);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
-    let removed = remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
-    sort_by_offset(removed)
+    let (removed, warning) = remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
+    (sort_by_offset(removed), warning)
 }
 
 /// Defines a method on iterators to map a function over all loop bodies.
@@ -529,17 +544,38 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Remove code at the end of the program that has no side
 /// effects. This means we have no write commands afterwards, nor
 /// loops (which may not terminate so we should not remove).
-fn remove_pure_code(mut instrs: Vec<Instruction>) -> Vec<Instruction> {
-    for index in (0..instrs.len()).rev() {
-        match instrs[index] {
+fn remove_pure_code(mut instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>) {
+    let mut pure_instrs = vec![];
+    while !instrs.is_empty() {
+        let last_instr = instrs.pop().unwrap();
+
+        match last_instr {
             Read {..} | Write {..} | Loop {..} => {
-                instrs.truncate(index + 1);
-                return instrs;
+                instrs.push(last_instr);
+                break;
             }
-            _ => {}
+            _ => {
+                pure_instrs.push(last_instr);
+            }
         }
     }
-    vec![]
+
+    let warning = if pure_instrs.is_empty() {
+        None
+    } else {
+        let position = pure_instrs
+            .into_iter()
+            .map(|instr| { get_position (&instr) })
+            .filter(|pos| { pos.is_some() })
+            .fold1(|pos1, pos2| { pos1.combine(pos2) })
+            .unwrap();
+        Some(Warning {
+            message: "These instructions have no effect.".to_owned(),
+            position: position,
+        })
+    };
+
+    (instrs, warning)
 }
 
 /// Does this loop body represent a multiplication operation?

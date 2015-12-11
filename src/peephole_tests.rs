@@ -5,6 +5,7 @@ use quickcheck::quickcheck;
 
 use bfir::{Instruction, Position};
 use bfir::Instruction::*;
+use diagnostics::Warning;
 
 use peephole::*;
 use bfir::parse;
@@ -153,7 +154,7 @@ fn should_combine_before_read() {
     // The increment before the read is dead and can be removed.
     let initial = parse("+,.").unwrap();
     let expected = vec![Read { position: Some(Position { start: 1, end: 1 }) }, Write { position: Some(Position { start: 2, end: 2 }) }];
-    assert_eq!(optimize(initial), expected);
+    assert_eq!(optimize(initial).0, expected);
 }
 
 #[test]
@@ -173,7 +174,7 @@ fn should_combine_before_read_nested() {
             body: vec![Read { position: Some(Position { start: 3, end: 3 }) }],
             position: Some(Position { start: 1, end: 4 }),
         }];
-    assert_eq!(optimize(initial), expected);
+    assert_eq!(optimize(initial).0, expected);
 }
 
 #[test]
@@ -230,7 +231,7 @@ fn dont_simplify_multiple_decrement_loop() {
 fn remove_repeated_loops() {
     let initial = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }, Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}, Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}];
     let expected = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }, Loop { body: vec![], position: Some(Position { start: 0, end: 0 })}];
-    assert_eq!(optimize(initial), expected);
+    assert_eq!(optimize(initial).0, expected);
 }
 
 #[test]
@@ -422,7 +423,7 @@ fn is_pure(instrs: &[Instruction]) -> bool {
 fn quickcheck_should_annotate_known_zero_at_start() {
     fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> bool {
         let annotated = annotate_known_zero(instrs);
-        annotated[0] == Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }
+        matches!(annotated[0], Set { amount: Wrapping(0), offset: 0, .. })
     }
     quickcheck(should_annotate_known_zero_at_start as fn(Vec<Instruction>) -> bool);
 }
@@ -456,7 +457,7 @@ fn should_annotate_known_zero_nested() {
 #[test]
 fn should_annotate_known_zero_cleaned_up() {
     let initial = vec![Write { position: Some(Position { start: 0, end: 0 }) }];
-    assert_eq!(optimize(initial.clone()), initial);
+    assert_eq!(optimize(initial.clone()).0, initial);
 }
 
 #[test]
@@ -468,7 +469,7 @@ fn should_preserve_set_0_in_loop() {
             body: vec![Set { amount: Wrapping(0), offset: 0, position: Some(Position { start: 0, end: 0 }) }],
             position: Some(Position { start: 0, end: 0 }),
         }];
-    assert_eq!(optimize(initial.clone()), initial);
+    assert_eq!(optimize(initial.clone()).0, initial);
 }
 
 #[test]
@@ -479,7 +480,14 @@ fn should_remove_pure_code() {
     let expected = vec![
         Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
         Write { position: Some(Position { start: 1, end: 1 }) }];
-    assert_eq!(optimize(initial), expected);
+
+    let (result, warnings) = optimize(initial);
+    
+    assert_eq!(result, expected);
+    assert_eq!(warnings, vec![Warning {
+        message: "These instructions have no effect.".to_owned(),
+        position: Some(Position { start: 2, end: 2 }),
+    }]);
 }
 
 #[test]
@@ -488,7 +496,7 @@ fn quickcheck_should_remove_dead_pure_code() {
         if !is_pure(&instrs) {
             return TestResult::discard();
         }
-        TestResult::from_bool(optimize(instrs) == vec![])
+        TestResult::from_bool(optimize(instrs).0 == vec![])
     }
     quickcheck(should_remove_dead_pure_code as fn(Vec<Instruction>) -> TestResult);
 }
@@ -499,8 +507,8 @@ fn quickcheck_optimize_should_be_idempotent() {
         // Once we've optimized once, running again shouldn't reduce the
         // instructions further. If it does, we're probably running our
         // optimisations in the wrong order.
-        let minimal = optimize(instrs.clone());
-        optimize(minimal.clone()) == minimal
+        let minimal = optimize(instrs.clone()).0;
+        optimize(minimal.clone()).0 == minimal
     }
     quickcheck(optimize_should_be_idempotent as fn(Vec<Instruction>) -> bool);
 }
@@ -520,7 +528,7 @@ fn pathological_optimisation_opportunity() {
 
     let expected = vec![Read { position: Some(Position { start: 0, end: 0 }) }, Write { position: Some(Position { start: 0, end: 0 }) }];
 
-    assert_eq!(optimize(instrs), expected);
+    assert_eq!(optimize(instrs).0, expected);
 }
 
 fn count_instrs(instrs: &[Instruction]) -> u64 {
@@ -539,7 +547,7 @@ fn quickcheck_optimize_should_decrease_size() {
     fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
         // The result of optimize() should never increase the number of
         // instructions.
-        let result = optimize(instrs.clone());
+        let result = optimize(instrs.clone()).0;
         count_instrs(&result) <= count_instrs(&instrs)
     }
     quickcheck(optimize_should_decrease_size as fn(Vec<Instruction>) -> bool);
@@ -762,7 +770,7 @@ fn combine_increments_after_sort() {
                         Increment { amount: Wrapping(2), offset: 0, position: Some(Position { start: 5, end: 5 }) },
                         Increment { amount: Wrapping(1), offset: 1, position: Some(Position { start: 3, end: 3 }) },
                         Write { position: Some(Position { start: 6, end: 6 }) }];
-    assert_eq!(optimize(instrs), expected);
+    assert_eq!(optimize(instrs).0, expected);
 }
 
 #[test]
