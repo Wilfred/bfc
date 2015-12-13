@@ -408,13 +408,15 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
           .coalesce(|prev_instr, instr| {
               // TODO: Set, Write, Increment -> Set, Write, Set
               // Inc x, Set y -> Set y
-              if let (&Increment { offset: inc_offset, .. },
+              if let (&Increment { offset: inc_offset, position: inc_pos, .. },
                       &Set { amount: set_amount, offset: set_offset, position: set_pos }) = (&prev_instr, &instr) {
                   if inc_offset == set_offset {
                       return Ok(Set {
                           amount: set_amount,
                           offset: set_offset,
-                          position: set_pos,
+                          // Whilst the Inc is dead here, by including
+                          // it in the position tracking we can show better warnings.
+                          position: set_pos.combine(inc_pos),
                       });
                   }
               }
@@ -437,13 +439,15 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
           })
           .coalesce(|prev_instr, instr| {
               // Set x, Set y -> Set y
-              if let (&Set { offset: offset1, .. },
-                      &Set { amount, offset: offset2, position }) = (&prev_instr, &instr) {
+              if let (&Set { offset: offset1, position: position1, .. },
+                      &Set { amount, offset: offset2, position: position2 }) = (&prev_instr, &instr) {
                   if offset1 == offset2 {
                       return Ok(Set {
                           amount: amount,
                           offset: offset1,
-                          position: position,
+                          // Whilst the first Set is dead here, by including
+                          // it in the position tracking we can show better warnings.
+                          position: position1.combine(position2),
                       });
                   }
               }
