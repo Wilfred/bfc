@@ -121,6 +121,8 @@ fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
     }
 }
 
+// TODO: return a Vec<Info> that may contain warnings or errors,
+// instead of printing in lots of different place shere.
 fn compile_file(matches: &Matches) -> Result<(), String> {
     let path = &matches.free[0];
 
@@ -169,16 +171,27 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         return Ok(());
     }
 
-    let state = if opt_level == "2" {
+    let (state, warning) = if opt_level == "2" {
         execution::execute(&instrs, execution::MAX_STEPS)
     } else {
-        execution::ExecutionState {
+        (execution::ExecutionState {
             start_instr: Some(&instrs[0]),
             cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) + 1],
             cell_ptr: 0,
             outputs: vec![],
-        }
+        }, None)
     };
+
+    if let Some(warning) = warning {
+        let info = Info {
+            level: Level::Warning,
+            filename: path.to_owned(),
+            message: warning.message,
+            position: warning.position,
+            source: Some(src),
+        };
+        println!("{}", info);
+    }
 
     let llvm_ir_raw = llvm::compile_to_ir(path, &instrs, &state);
 
