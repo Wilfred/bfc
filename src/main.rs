@@ -179,7 +179,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
             cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) + 1],
             cell_ptr: 0,
             outputs: vec![],
-        }, None)
+        },
+         None)
     };
 
     if let Some(warning) = warning {

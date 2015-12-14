@@ -1,5 +1,5 @@
 use std::fmt;
-use ansi_term::Colour::{Red,Purple};
+use ansi_term::Colour::{Red, Purple};
 use ansi_term::Style;
 use ansi_term::ANSIStrings;
 
@@ -15,7 +15,7 @@ pub struct Warning {
 #[allow(dead_code)]
 pub enum Level {
     Warning,
-    Error
+    Error,
 }
 
 #[derive(Debug)]
@@ -57,7 +57,7 @@ impl fmt::Display for Info {
                 file_text = file_text + &format!(":{}:{}", line_idx + 1, column_idx + 1);
                 Some((line_idx, column_idx, range.end - range.start))
             }
-            _ => None
+            _ => None,
         };
 
         let level_text;
