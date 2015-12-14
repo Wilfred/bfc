@@ -58,21 +58,13 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
     // Sanity check: if we have a start instruction we
     // can't have executed the entire program at compile time.
     match state.start_instr {
-        Some(_) => {
-            debug_assert!(!matches!(outcome, Outcome::Completed(_)))
-        }
-        None => {
-            debug_assert!(matches!(outcome, Outcome::Completed(_)))
-        }
+        Some(_) => debug_assert!(!matches!(outcome, Outcome::Completed(_))),
+        None => debug_assert!(matches!(outcome, Outcome::Completed(_))),
     }
 
     match outcome {
-        Outcome::RuntimeError(warning) => {
-            (state, Some(warning))
-        }
-        _ => {
-            (state, None)
-        }
+        Outcome::RuntimeError(warning) => (state, Some(warning)),
+        _ => (state, None),
     }
 }
 
@@ -86,7 +78,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
     let mut instr_idx = 0;
     while instr_idx < instrs.len() && steps_left > 0 {
         let cell_ptr = state.cell_ptr as usize;
-        
+
         match instrs[instr_idx] {
             Increment { amount, offset, .. } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
@@ -108,10 +100,14 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
 
                     let message = if new_cell_ptr < 0 {
                         format!("This instruction moves the pointer to cell {}.",
-                                new_cell_ptr).to_owned()
+                                new_cell_ptr)
+                            .to_owned()
                     } else {
-                        format!("This instruction moves the pointer after the last cell ({}), to cell {}.",
-                                state.cells.len() - 1, new_cell_ptr).to_owned()
+                        format!("This instruction moves the pointer after the last cell ({}), to \
+                                 cell {}.",
+                                state.cells.len() - 1,
+                                new_cell_ptr)
+                            .to_owned()
                     };
                     return Outcome::RuntimeError(Warning {
                         message: message,
@@ -133,15 +129,19 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                         state.start_instr = Some(&instrs[instr_idx]);
                         return Outcome::RuntimeError(Warning {
                             message: format!("This multiply loop tried to access cell {}.",
-                                             dest_ptr).to_owned(),
+                                             dest_ptr)
+                                         .to_owned(),
                             position: position,
                         });
                     }
                     if dest_ptr as usize >= state.cells.len() {
                         state.start_instr = Some(&instrs[instr_idx]);
                         return Outcome::RuntimeError(Warning {
-                            message: format!("This multiply loop tried to access cell {} (the highest cell is {})",
-                                             dest_ptr, state.cells.len() - 1).to_owned(),
+                            message: format!("This multiply loop tried to access cell {} (the \
+                                              highest cell is {})",
+                                             dest_ptr,
+                                             state.cells.len() - 1)
+                                         .to_owned(),
                             position: position,
                         });
                     }
@@ -171,9 +171,7 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_outcome = execute_inner(body,
-                                                     state,
-                                                     steps_left);
+                    let loop_outcome = execute_inner(body, state, steps_left);
                     match loop_outcome {
                         Outcome::Completed(remaining_steps) => {
                             // We've run several steps during the loop
@@ -253,12 +251,29 @@ fn multiply_move_executed() {
     changes.insert(3, Wrapping(3));
 
     let instrs = [// Initial cells: [2, 1, 0, 0]
-        Increment { amount: Wrapping(2), offset: 0, position: Some(Position { start: 0, end: 0 }) },
-        PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) },
-        Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
-        PointerIncrement { amount: -1, position: Some(Position { start: 0, end: 0 }) },
+                  Increment {
+                      amount: Wrapping(2),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  PointerIncrement {
+                      amount: 1,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  Increment {
+                      amount: Wrapping(1),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  PointerIncrement {
+                      amount: -1,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
 
-        MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
+                  MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
 
     let final_state = execute(&instrs, MAX_STEPS).0;
     assert_eq!(final_state,
@@ -274,8 +289,15 @@ fn multiply_move_executed() {
 fn multiply_move_wrapping() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(3));
-    let instrs = [Increment { amount: Wrapping(100), offset: 0, position: Some(Position { start: 0, end: 0 }) },
-                  MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
+    let instrs = [Increment {
+                      amount: Wrapping(100),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
 
     let final_state = execute(&instrs, MAX_STEPS).0;
     assert_eq!(final_state,
@@ -292,7 +314,10 @@ fn multiply_move_wrapping() {
 fn multiply_move_offset_too_high() {
     let mut changes: HashMap<isize, Cell> = HashMap::new();
     changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
-    let instrs = [MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
+    let instrs = [MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
 
     let final_state = execute(&instrs, MAX_STEPS).0;
     assert_eq!(final_state,
@@ -308,7 +333,10 @@ fn multiply_move_offset_too_high() {
 fn multiply_move_offset_too_low() {
     let mut changes = HashMap::new();
     changes.insert(-1, Wrapping(1));
-    let instrs = [MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
+    let instrs = [MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
 
     let final_state = execute(&instrs, MAX_STEPS).0;
     assert_eq!(final_state,
@@ -323,9 +351,10 @@ fn multiply_move_offset_too_low() {
 #[test]
 fn set_executed() {
     let instrs = [Set {
-        amount: Wrapping(2),
-        offset: 0, position: Some(Position { start: 0, end: 0 }),
-    }];
+                      amount: Wrapping(2),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
     let final_state = execute(&instrs, MAX_STEPS).0;
 
     assert_eq!(final_state,
@@ -339,7 +368,11 @@ fn set_executed() {
 
 #[test]
 fn set_wraps() {
-    let instrs = [Set { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
+    let instrs = [Set {
+                      amount: Wrapping(-1),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
     let final_state = execute(&instrs, MAX_STEPS).0;
 
     assert_eq!(final_state,
@@ -367,8 +400,16 @@ fn decrement_executed() {
 
 #[test]
 fn increment_wraps() {
-    let instrs = [Increment { amount: Wrapping(-1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
-                  Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
+    let instrs = [Increment {
+                      amount: Wrapping(-1),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  Increment {
+                      amount: Wrapping(1),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
     let final_state = execute(&instrs, MAX_STEPS).0;
 
     assert_eq!(final_state,
@@ -463,15 +504,14 @@ fn partially_execute_up_to_runtime_value() {
     let start_instr = match instrs[1] {
         Loop { ref body, .. } => {
             match body[0] {
-                Loop { body: ref body2, .. } => {
-                    &body2[0]
-                }
-                _ => unreachable!()
+                Loop { body: ref body2, .. } => &body2[0],
+                _ => unreachable!(),
             }
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     };
-    assert_eq!(*start_instr, Read { position: Some(Position { start: 3, end: 3 }) });
+    assert_eq!(*start_instr,
+               Read { position: Some(Position { start: 3, end: 3 }) });
 
     assert_eq!(final_state,
                ExecutionState {
@@ -504,10 +544,8 @@ fn partially_execute_up_to_step_limit() {
     let final_state = execute(&instrs, 3).0;
 
     let start_instr = match instrs[1] {
-        Loop { ref body, .. } => {
-            &body[2]
-        }
-        _ => unreachable!()
+        Loop { ref body, .. } => &body[2],
+        _ => unreachable!(),
     };
 
     assert_eq!(final_state,
@@ -544,12 +582,11 @@ fn loop_with_read_body() {
 
     // Get the inner read instruction
     let start_instr = match instrs[1] {
-        Loop { ref body, .. } => {
-            &body[1]
-        }
-        _ => unreachable!()
+        Loop { ref body, .. } => &body[1],
+        _ => unreachable!(),
     };
-    assert_eq!(*start_instr, Read { position: Some(Position { start: 3, end: 3 }) });
+    assert_eq!(*start_instr,
+               Read { position: Some(Position { start: 3, end: 3 }) });
 
     assert_eq!(final_state,
                ExecutionState {
