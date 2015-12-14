@@ -1,9 +1,15 @@
 use std::fmt;
-use std::ops::Range;
 use ansi_term::Colour::{Red,Purple};
 use ansi_term::Style;
 use ansi_term::ANSIStrings;
-use self::Level::*;
+
+use bfir::Position;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Warning {
+    pub message: String,
+    pub position: Option<Position>,
+}
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -17,8 +23,7 @@ pub struct Info {
     pub level: Level,
     pub filename: String,
     pub message: String,
-    // from and to (can be the same)
-    pub position: Option<Range<usize>>,
+    pub position: Option<Position>,
     pub source: Option<String>,
 }
 
@@ -44,7 +49,9 @@ impl fmt::Display for Info {
 
         // Find line and column offsets, if we have an index.
         let offsets = match (&self.position, &self.source) {
-            (&Some(ref range), &Some(ref source)) => {
+            (&Some(range), &Some(ref source)) => {
+                debug_assert!(range.start <= range.end);
+
                 let (line_idx, column_idx) = position(source, range.start);
 
                 file_text = file_text + &format!(":{}:{}", line_idx + 1, column_idx + 1);
@@ -56,11 +63,11 @@ impl fmt::Display for Info {
         let level_text;
         let color;
         match self.level {
-            Warning => {
+            Level::Warning => {
                 color = Purple;
                 level_text = " warning: ";
             }
-            Error => {
+            Level::Error => {
                 color = Red;
                 level_text = " error: ";
             }
@@ -79,8 +86,10 @@ impl fmt::Display for Info {
                 caret_line = caret_line + " ";
             }
             caret_line = caret_line + "^";
-            for _ in 0..(width - 1) {
-                caret_line = caret_line + "~";
+            if width > 0 {
+                for _ in 0..width {
+                    caret_line = caret_line + "~";
+                }
             }
         }
 

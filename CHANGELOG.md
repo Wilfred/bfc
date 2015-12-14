@@ -19,7 +19,12 @@ Bug fixes:
 
 Usability:
 
-* bfc now reports errors with colour-coded diagnostics and filenames.
+* bfc now reports errors and warnings with colour-coded diagnostics
+  and filenames.
+* bfc now generates an error with position on syntax errors.
+* bfc now generates a warning with position on dead code.
+* bfc now generates a warning with position on code that is guaranteed
+  to error at runtime.
 
 # v1.2.0
 
