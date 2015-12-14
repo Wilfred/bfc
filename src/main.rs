@@ -236,7 +236,6 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     Ok(())
 }
 
-#[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args: Vec<_> = env::args().collect();
 
