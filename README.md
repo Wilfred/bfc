@@ -96,6 +96,16 @@ programs can be found at
 [1](http://esoteric.sange.fi/brainfuck/bf-source/prog/) and
 [2](http://www.hevanet.com/cristofd/brainfuck/).
 
+## Diagnostics
+
+bfc can report syntax errors and warnings with relevant line numbers
+and highlighting.
+
+![diagnostics screenshot](images/bfc_diagnostics.png)
+
+Note that some warning are produced during optimisation, so disabling
+optimisations will reduce warnings.
+
 ## Optimisations
 
 ### Peephole optimisations
