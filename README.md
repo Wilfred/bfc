@@ -2,56 +2,60 @@
 
 [![Build Status](https://travis-ci.org/Wilfred/bfc.svg?branch=master)](https://travis-ci.org/Wilfred/bfc)
 
-bfc is an optimising compiler for
-[BF](https://en.wikipedia.org/wiki/Brainfuck). It is written in Rust
-and uses LLVM.
+bfc is an industrial grade compiler for
+[BF](https://en.wikipedia.org/wiki/Brainfuck). It can:
 
-Blog posts:
-[An Optimising BF Compiler](http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/)
-and
-[Even More BF Optimisations](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/).
+* compile BF programs to executables
+* optimise runtime speed
+* optimise runtime memory usage
+* optimise executable size
+* show syntax errors with highlighting of the offending source code
+* show warnings with highlighting of the offending source code
+
+It is structured as follows:
 
 ```
 BF source -> BF IR -> LLVM IR -> x86_32 Binary
 ```
 
-GPLv2 or later license. Sample programs are largely written by other
-authors and are under other licenses.
+Interested readers may enjoy my blog posts:
+[An Optimising BF Compiler](http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/)
+and
+[Even More BF Optimisations](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/).
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
 
 - [An optimising compiler for BF](#an-optimising-compiler-for-bf)
-    - [Compiling](#compiling)
     - [Usage](#usage)
-    - [Running tests](#running-tests)
-    - [Portability](#portability)
-    - [Test programs](#test-programs)
-    - [Peephole optimisations](#peephole-optimisations)
-        - [Combining Instructions](#combining-instructions)
-        - [Loop Simplification](#loop-simplification)
-        - [Dead Code Elimination](#dead-code-elimination)
-        - [Reorder with offsets](#reorder-with-offsets)
-    - [Cell Bounds Analysis](#cell-bounds-analysis)
-    - [Speculative Execution](#speculative-execution)
-        - [Infinite Loops](#infinite-loops)
-        - [Runtime Values](#runtime-values)
-        - [Loop Execution](#loop-execution)
+        - [Running tests](#running-tests)
+        - [Portability](#portability)
+        - [Test programs](#test-programs)
+    - [Optimisations](#optimisations)
+        - [Peephole optimisations](#peephole-optimisations)
+            - [Combining Instructions](#combining-instructions)
+            - [Loop Simplification](#loop-simplification)
+            - [Dead Code Elimination](#dead-code-elimination)
+            - [Reorder with offsets](#reorder-with-offsets)
+        - [Cell Bounds Analysis](#cell-bounds-analysis)
+        - [Speculative Execution](#speculative-execution)
+            - [Infinite Loops](#infinite-loops)
+            - [Runtime Values](#runtime-values)
+            - [Loop Execution](#loop-execution)
+    - [License](#license)
     - [Other projects optimising BF](#other-projects-optimising-bf)
 
 <!-- markdown-toc end -->
 
-## Compiling
+## Usage
 
-You will need LLVM and Rust beta installed to compile bfc.
+You will need LLVM and Rust installed to compile bfc.
 
     $ cargo build --release
 
-Debug builds work, but large programs will take a large amount of time
+Debug builds work, but large BF programs will take a long time
 in speculative execution if bfc is compiled without optimisations. You
-can disable this by passing `--opt=0` or `--opt=1`.
-
-## Usage
+can disable this by passing `--opt=0` or `--opt=1` when running bfc.
 
 ```
 $ target/release/bfc sample_programs/hello_world.bf
@@ -59,13 +63,13 @@ $ ./hello_world
 Hello World!
 ```
 
-## Running tests
+### Running tests
 
 ```
 $ cargo test
 ```
 
-## Portability
+### Portability
 
 bfc assumes a word size of 32 bits, so you may get compilation errors
 on 64-bit environments.
@@ -74,15 +78,16 @@ bfc considers cells to be single bytes, and arithmetic wraps
 around. As a result, `-` sets cell #0 to 255.
 
 bfc provides 100,000 cells. Accessing cells outside of this range is
-explicitly undefined, and will probably segfault your program. This is
-not guaranteed: your program may terminate normally (e.g. `<-` will be
-optimised away rather than crashing).
+explicitly undefined, and will probably segfault your program. bfc
+will generate a warning if it can statically prove out-of-range cell
+access.
 
-bfc requires brackets to be balanced, so `+[]]` is rejected.
+bfc requires brackets to be balanced, so `+[]]` is rejected, unlike
+some BF interpreters.
 
 Finally, bfc assumes input files are valid UTF-8.
 
-## Test programs
+### Test programs
 
 There are a few test programs in this repo, but
 http://www.hevanet.com/cristofd/brainfuck/tests.b is an excellent
@@ -91,7 +96,9 @@ programs can be found at
 [1](http://esoteric.sange.fi/brainfuck/bf-source/prog/) and
 [2](http://www.hevanet.com/cristofd/brainfuck/).
 
-## Peephole optimisations
+## Optimisations
+
+### Peephole optimisations
 
 bfc provides a range of peephole optimisations. We use quickcheck to
 ensure our optimisations are in the optimal order (by verifying that
@@ -100,7 +107,7 @@ our optimiser is idempotent).
 There's also a roadmap in [optimisations.md](optimisations.md) of
 optimisations we haven't yet implemented.
 
-### Combining Instructions
+#### Combining Instructions
 
 We combine successive increments/decrements:
 
@@ -170,7 +177,7 @@ Read
 
 ```
 
-### Loop Simplification
+#### Loop Simplification
 
 `[-]` is a common BF idiom for zeroing cells. We replace that with
 `Set`, enabling further instruction combination.
@@ -181,7 +188,7 @@ Read
             Increment -1
 ```
 
-### Dead Code Elimination
+#### Dead Code Elimination
 
 We remove loops that we know are dead.
 
@@ -238,7 +245,7 @@ Write         =>           Write
 Increment 1
 ```
 
-### Reorder with offsets
+#### Reorder with offsets
 
 Given a sequence of instructions without loops or I/O, we can safely
 reorder them to have the same effect (we assume no out-of-bound cell
@@ -264,7 +271,7 @@ Increment 1 (offset 2)
 PointerIncrement 2
 ```
 
-## Cell Bounds Analysis
+### Cell Bounds Analysis
 
 BF programs can use up to 100,000 cells, all of which must be
 zero-initialised. However, most programs don't use the whole range.
@@ -289,7 +296,7 @@ than necessary.
 [>] may use any number of cells, so we must assume 100,000
 ```
 
-## Speculative Execution
+### Speculative Execution
 
 bfc executes as much as it can at compile time. For some programs
 (such as hello_world.bf) this optimises away the entire program to
@@ -309,19 +316,19 @@ entry:
 }
 ```
 
-### Infinite Loops
+#### Infinite Loops
 
 bfc sets a maximum number of execution steps, avoiding infinite loops
 hanging the compiler. As a result `+[]` will have `+` executed (so our
 initial cell value is `1` and `[]` will be in the compiled output.
 
-### Runtime Values
+#### Runtime Values
 
 If a program reads from stdin, speculation execution stops. As a
 result, `>,` will have `>` executed (setting the initial cell pointer
 to 1) and `,` will be in the compiled output.
 
-### Loop Execution
+#### Loop Execution
 
 If loops can be entirely executed at compile time, they will be
 removed from the resulting binary. Partially executed loops will be
@@ -333,6 +340,11 @@ entirely, but `[+,]` depends on runtme values. The
 compiled output contains `[+,]`, but we start execution at the
 `,` (continuing execution from where compile time execution had to
 stop).
+
+## License
+
+GPLv2 or later license. Sample programs are largely written by other
+authors and are under other licenses.
 
 ## Other projects optimising BF
 
