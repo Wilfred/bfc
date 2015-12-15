@@ -2,6 +2,7 @@ use itertools::Itertools;
 use llvm_sys::core::*;
 use llvm_sys::{LLVMModule, LLVMIntPredicate, LLVMBuilder};
 use llvm_sys::prelude::*;
+use llvm_sys::target_machine::LLVMGetDefaultTargetTriple;
 
 use libc::types::os::arch::c99::c_ulonglong;
 use libc::types::os::arch::c95::c_uint;
@@ -228,8 +229,10 @@ unsafe fn create_module(module_name: &str) -> Module {
 
     // These are necessary for maximum LLVM performance, see
     // http://llvm.org/docs/Frontend/PerformanceTips.html
-    LLVMSetTarget(llvm_module, module.new_string_ptr("i686-pc-linux-gnu"));
-    // Blindly copied from a clang dump of a C test program on my machine.
+    let target_triple = LLVMGetDefaultTargetTriple();
+    LLVMSetTarget(llvm_module, target_triple);
+    LLVMDisposeMessage(target_triple);
+
     LLVMSetDataLayout(llvm_module,
                       module.new_string_ptr("e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"));
 
