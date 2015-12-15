@@ -27,6 +27,7 @@ pub fn highest_cell_index(instrs: &[Instruction]) -> usize {
     match highest_index {
         SaturatingInt::Number(x) => {
             if x > MAX_CELL_INDEX as i64 {
+                // TODO: generate a warning here.
                 MAX_CELL_INDEX
             } else {
                 x as usize
