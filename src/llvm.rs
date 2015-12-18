@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use llvm_sys::core::*;
 use llvm_sys::{LLVMModule, LLVMIntPredicate, LLVMBuilder};
+use llvm_sys::transforms::pass_manager_builder::*;
 use llvm_sys::prelude::*;
 use llvm_sys::target_machine::LLVMGetDefaultTargetTriple;
 
@@ -21,7 +22,7 @@ const LLVM_TRUE: LLVMBool = 1;
 
 /// A struct that keeps ownership of all the strings we've passed to
 /// the LLVM API until we destroy the LLVMModule.
-struct Module {
+pub struct Module {
     module: *mut LLVMModule,
     strings: Vec<CString>,
 }
@@ -233,6 +234,7 @@ unsafe fn create_module(module_name: &str) -> Module {
     LLVMSetTarget(llvm_module, target_triple);
     LLVMDisposeMessage(target_triple);
 
+    // can we get this from the module?
     LLVMSetDataLayout(llvm_module,
                       module.new_string_ptr("e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"));
 
@@ -644,10 +646,10 @@ unsafe fn set_entry_point_after(module: &mut Module,
 }
 
 // TODO: use init_values terminology consistently for names here.
-pub fn compile_to_ir(module_name: &str,
-                     instrs: &[Instruction],
-                     initial_state: &ExecutionState)
-                     -> CString {
+pub fn compile_to_module(module_name: &str,
+                         instrs: &[Instruction],
+                         initial_state: &ExecutionState)
+                         -> Module {
     unsafe {
         let mut module = create_module(module_name);
         let main_fn = add_main_fn(&mut module);
@@ -697,6 +699,46 @@ pub fn compile_to_ir(module_name: &str,
 
         add_main_cleanup(bb);
 
+        module
+    }
+}
+
+pub fn compile_to_ir(module_name: &str,
+                     instrs: &[Instruction],
+                     initial_state: &ExecutionState,
+                     llvm_opt: i64)
+                     -> CString {
+    unsafe {
+        let mut module = compile_to_module(module_name, instrs, initial_state);
+
+        // Note that LLVM still does some IR munging at -O0. We
+        // deliberately skip it, so we can write unit tests against the raw
+        // IR.
+        if llvm_opt != 0 {
+            optimise_ir(&mut module, llvm_opt);
+        }
+        
         module.to_cstring()
     }
+}
+
+unsafe fn optimise_ir(module: &mut Module, llvm_opt: i64) {
+    // TODO: add a verifier pass too.
+
+    let builder = LLVMPassManagerBuilderCreate();
+    // E.g. if llvm_opt is 3, we want a pass equivalent to -O3.
+    LLVMPassManagerBuilderSetOptLevel(builder, llvm_opt as u32);
+
+    let pass_manager = LLVMCreatePassManager();
+    LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
+    
+    LLVMPassManagerBuilderDispose(builder);
+
+    // Run twice. This is a hack, we should really work out which
+    // optimisations need to run twice. See
+    // http://llvm.org/docs/Frontend/PerformanceTips.html#pass-ordering
+    LLVMRunPassManager(pass_manager, module.module);
+    LLVMRunPassManager(pass_manager, module.module);
+
+    LLVMDisposePassManager(pass_manager);
 }

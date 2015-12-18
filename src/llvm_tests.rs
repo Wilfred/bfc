@@ -22,7 +22,7 @@ fn compile_loop() {
             cells: vec![Wrapping(0)],
             cell_ptr: 0,
             outputs: vec![]
-        });
+        }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -84,7 +84,7 @@ fn compile_empty_program() {
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -120,7 +120,7 @@ fn compile_set() {
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -169,7 +169,7 @@ fn compile_set_with_offset() {
                                    cells: vec![Wrapping(0); 50],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -218,7 +218,7 @@ fn respect_initial_cell_ptr() {
                                    cells: vec![Wrapping(0); 10],
                                    cell_ptr: 8,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -270,7 +270,7 @@ fn compile_multiply_move() {
                                    cells: vec![Wrapping(0); 3],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -334,7 +334,7 @@ fn set_initial_cell_values() {
                                                Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -385,7 +385,7 @@ fn compile_static_outputs() {
                                    cells: vec![],
                                    cell_ptr: 0,
                                    outputs: vec![5, 10]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -425,7 +425,7 @@ fn compile_ptr_increment() {
                                    cells: vec![Wrapping(0); 2],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -473,7 +473,7 @@ fn compile_increment() {
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -524,7 +524,7 @@ fn compile_increment_with_offset() {
                                    cells: vec![Wrapping(0); 4],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -575,7 +575,7 @@ fn compile_start_instr_midway() {
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               });
+                               }, 0);
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"

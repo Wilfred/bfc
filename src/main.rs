@@ -194,7 +194,15 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         println!("{}", info);
     }
 
-    let llvm_ir_raw = llvm::compile_to_ir(path, &instrs, &state);
+    let llvm_opt_raw = matches.opt_str("llvm-opt").unwrap_or("3".to_owned());
+    let mut llvm_opt = llvm_opt_raw.parse::<i64>().unwrap_or(3);
+
+    if llvm_opt < 0 || llvm_opt > 3 {
+        // TODO: warn on unrecognised input.
+        llvm_opt = 3;
+    }
+    
+    let llvm_ir_raw = llvm::compile_to_ir(path, &instrs, &state, llvm_opt);
 
     if matches.opt_present("dump-llvm") {
         let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
@@ -209,11 +217,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     // Compile the LLVM IR to a temporary object file.
     let object_file = try!(convert_io_error(NamedTempFile::new()));
 
-    let llvm_opt_arg = format!("-O{}",
-                               matches.opt_str("llvm-opt").unwrap_or(String::from("3")));
-
-    let llc_args = [&llvm_opt_arg[..],
-                    "-filetype=obj",
+    let llc_args = ["-filetype=obj",
                     llvm_ir_file.path().to_str().expect("path not valid utf-8"),
                     "-o",
                     object_file.path().to_str().expect("path not valid utf-8")];
@@ -224,10 +228,11 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let output_name = executable_name(bf_name.to_str().unwrap());
 
     // Link the object file.
-    let clang_args = [&llvm_opt_arg[..],
-                      object_file.path().to_str().expect("path not valid utf-8"),
+    let clang_args = [object_file.path().to_str().expect("path not valid utf-8"),
                       "-o",
                       &output_name[..]];
+    // TODO: use cc instead of clang here.
+    // TODO: factor out linking, writing to smaller functions.
     try!(shell_command("clang", &clang_args[..]));
 
     // Strip the executable.
