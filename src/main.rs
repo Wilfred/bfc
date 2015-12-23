@@ -22,7 +22,6 @@ extern crate matches;
 
 use std::env;
 use std::fs::File;
-use std::io::Write;
 use std::io::prelude::Read;
 use std::num::Wrapping;
 use std::path::Path;
@@ -202,33 +201,26 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         llvm_opt = 3;
     }
     
-    let llvm_ir_raw = llvm::compile_to_ir(path, &instrs, &state, llvm_opt);
+    let mut llvm_module = llvm::compile_to_ir(path, &instrs, &state, llvm_opt);
 
     if matches.opt_present("dump-llvm") {
-        let llvm_ir = String::from_utf8_lossy(llvm_ir_raw.as_bytes());
+        let llvm_ir_cstr = llvm_module.to_cstring();
+        let llvm_ir = String::from_utf8_lossy(llvm_ir_cstr.as_bytes());
         println!("{}", llvm_ir);
         return Ok(());
     }
 
-    // Write the LLVM IR to a temporary file.
-    let mut llvm_ir_file = try!(convert_io_error(NamedTempFile::new()));
-    let _ = llvm_ir_file.write(llvm_ir_raw.as_bytes());
-
     // Compile the LLVM IR to a temporary object file.
     let object_file = try!(convert_io_error(NamedTempFile::new()));
-
-    let llc_args = ["-filetype=obj",
-                    llvm_ir_file.path().to_str().expect("path not valid utf-8"),
-                    "-o",
-                    object_file.path().to_str().expect("path not valid utf-8")];
-    try!(shell_command("llc", &llc_args[..]));
-
+    let obj_file_path = object_file.path().to_str().expect("path not valid utf-8");
+    llvm::write_object_file(&mut llvm_module, &obj_file_path);
+    
     // TODO: do path munging in executable_name().
     let bf_name = Path::new(path).file_name().unwrap();
     let output_name = executable_name(bf_name.to_str().unwrap());
 
     // Link the object file.
-    let clang_args = [object_file.path().to_str().expect("path not valid utf-8"),
+    let clang_args = [obj_file_path,
                       "-o",
                       &output_name[..]];
     // TODO: use cc instead of clang here.

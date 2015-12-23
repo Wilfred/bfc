@@ -3,11 +3,13 @@ use llvm_sys::core::*;
 use llvm_sys::{LLVMModule, LLVMIntPredicate, LLVMBuilder};
 use llvm_sys::transforms::pass_manager_builder::*;
 use llvm_sys::prelude::*;
-use llvm_sys::target_machine::LLVMGetDefaultTargetTriple;
+use llvm_sys::target::*;
+use llvm_sys::target_machine::*;
 
 use libc::types::os::arch::c99::c_ulonglong;
 use libc::types::os::arch::c95::c_uint;
 use std::ffi::{CString, CStr};
+use std::ptr::null_mut;
 
 use std::collections::HashMap;
 use std::num::Wrapping;
@@ -32,25 +34,32 @@ impl Module {
     /// and return a pointer that can be passed to LLVM APIs.
     /// Assumes s is pure-ASCII.
     fn new_string_ptr(&mut self, s: &str) -> *const i8 {
+        self.new_mut_string_ptr(s)
+    }
+
+    // TODO: ideally our pointers wouldn't be mutable.
+    fn new_mut_string_ptr(&mut self, s: &str) -> *mut i8 {
         let cstring = CString::new(s).unwrap();
-        let ptr = cstring.as_ptr() as *const _;
+        let ptr = cstring.as_ptr() as *mut _;
         self.strings.push(cstring);
         ptr
     }
+    
+    pub fn to_cstring(&self) -> CString {
+        unsafe {
+            // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
+            // as borrowed.
+            let llvm_ir_ptr = LLVMPrintModuleToString(self.module);
+            let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
 
-    unsafe fn to_cstring(&self) -> CString {
-        // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
-        // as borrowed.
-        let llvm_ir_ptr = LLVMPrintModuleToString(self.module);
-        let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
+            // Make an owned copy of the string in our memory space.
+            let module_string = CString::new(llvm_ir.to_bytes().clone()).unwrap();
 
-        // Make an owned copy of the string in our memory space.
-        let module_string = CString::new(llvm_ir.to_bytes().clone()).unwrap();
+            // Cleanup borrowed string.
+            LLVMDisposeMessage(llvm_ir_ptr);
 
-        // Cleanup borrowed string.
-        LLVMDisposeMessage(llvm_ir_ptr);
-
-        module_string
+            module_string
+        }
     }
 }
 
@@ -230,6 +239,7 @@ unsafe fn create_module(module_name: &str) -> Module {
 
     // These are necessary for maximum LLVM performance, see
     // http://llvm.org/docs/Frontend/PerformanceTips.html
+    // TODO: factor out a function for getting the target triple.
     let target_triple = LLVMGetDefaultTargetTriple();
     LLVMSetTarget(llvm_module, target_triple);
     LLVMDisposeMessage(target_triple);
@@ -707,7 +717,7 @@ pub fn compile_to_ir(module_name: &str,
                      instrs: &[Instruction],
                      initial_state: &ExecutionState,
                      llvm_opt: i64)
-                     -> CString {
+                     -> Module {
     unsafe {
         let mut module = compile_to_module(module_name, instrs, initial_state);
 
@@ -717,8 +727,8 @@ pub fn compile_to_ir(module_name: &str,
         if llvm_opt != 0 {
             optimise_ir(&mut module, llvm_opt);
         }
-        
-        module.to_cstring()
+
+        module
     }
 }
 
@@ -741,4 +751,53 @@ unsafe fn optimise_ir(module: &mut Module, llvm_opt: i64) {
     LLVMRunPassManager(pass_manager, module.module);
 
     LLVMDisposePassManager(pass_manager);
+}
+
+// TODO: take target_triple as an optional argument
+pub fn write_object_file(module: &mut Module, path: &str) {
+    unsafe {
+        let target_triple = LLVMGetDefaultTargetTriple();
+
+        // TODO: are all these necessary? Are there docs?
+        LLVM_InitializeAllTargetInfos();
+        LLVM_InitializeAllTargets();
+        LLVM_InitializeAllTargetMCs();
+        LLVM_InitializeAllAsmParsers();
+        LLVM_InitializeAllAsmPrinters();
+
+        let mut target = null_mut();
+        let mut err_msg = module.new_mut_string_ptr("Could not get target from triple!");
+        LLVMGetTargetFromTriple(target_triple, &mut target, &mut err_msg);
+
+        // TODO: rustc in src/librustc_trans/back/write.rs has a much
+        // nicer way of passing string pointers to FFI.
+
+        // cpu is documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mcpu
+        let cpu = module.new_string_ptr("generic");
+        // features are documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mattr
+        let features = module.new_string_ptr("");
+
+        // TODO: we could probably release this function as a nice
+        // utility package.
+        let target_machine = LLVMCreateTargetMachine(
+            target, target_triple, cpu, features,
+            LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
+            LLVMRelocMode::LLVMRelocDefault,
+            LLVMCodeModel::LLVMCodeModelDefault);
+
+        let mut obj_error = module.new_mut_string_ptr("Writing object file failed.");
+        let result = LLVMTargetMachineEmitToFile(
+            target_machine, module.module,
+            module.new_string_ptr(path) as *mut i8,
+            LLVMCodeGenFileType::LLVMObjectFile,
+            &mut obj_error);
+
+        if result != 0 {
+            println!("obj_error: {:?}", CStr::from_ptr(obj_error));
+            assert!(false);
+        }
+
+        LLVMDisposeMessage(target_triple);
+        LLVMDisposeTargetMachine(target_machine);
+    }
 }
