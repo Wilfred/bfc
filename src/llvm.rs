@@ -80,12 +80,18 @@ struct Builder {
 
 impl Builder {
     /// Create a new Builder in LLVM's global context.
-    unsafe fn new() -> Self {
-        Builder { builder: LLVMCreateBuilder() }
+    fn new() -> Self {
+        unsafe {
+            Builder {
+                builder: LLVMCreateBuilder()
+            }
+        }
     }
 
-    unsafe fn position_at_end(&self, bb: LLVMBasicBlockRef) {
-        LLVMPositionBuilderAtEnd(self.builder, bb);
+    fn position_at_end(&self, bb: LLVMBasicBlockRef) {
+        unsafe {
+            LLVMPositionBuilderAtEnd(self.builder, bb);
+        }
     }
 }
 
@@ -188,43 +194,45 @@ fn run_length_encode<T>(cells: &[T]) -> Vec<(T, usize)>
          .collect()
 }
 
-unsafe fn add_cells_init(init_values: &[Wrapping<i8>],
+fn add_cells_init(init_values: &[Wrapping<i8>],
                          module: &mut Module,
                          bb: LLVMBasicBlockRef)
                          -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
-    // Allocate stack memory for our cells.
-    let num_cells = int32(init_values.len() as c_ulonglong);
-    let cells_ptr = LLVMBuildArrayAlloca(builder.builder,
-                                         LLVMInt8Type(),
-                                         num_cells,
-                                         module.new_string_ptr("cells"));
+    unsafe {
+        // Allocate stack memory for our cells.
+        let num_cells = int32(init_values.len() as c_ulonglong);
+        let cells_ptr = LLVMBuildArrayAlloca(builder.builder,
+                                             LLVMInt8Type(),
+                                             num_cells,
+                                             module.new_string_ptr("cells"));
 
-    let one = int32(1);
-    let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
+        let one = int32(1);
+        let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
 
-    let mut offset = 0;
-    for (cell_val, cell_count) in run_length_encode(init_values) {
-        let llvm_cell_val = int8(cell_val.0 as c_ulonglong);
-        let llvm_cell_count = int32(cell_count as c_ulonglong);
+        let mut offset = 0;
+        for (cell_val, cell_count) in run_length_encode(init_values) {
+            let llvm_cell_val = int8(cell_val.0 as c_ulonglong);
+            let llvm_cell_count = int32(cell_count as c_ulonglong);
 
-        // TODO: factor out a build_gep function.
-        let mut offset_vec = vec![int32(offset as c_ulonglong)];
-        let offset_cell_ptr = LLVMBuildGEP(builder.builder,
-                                           cells_ptr,
-                                           offset_vec.as_mut_ptr(),
-                                           offset_vec.len() as u32,
-                                           module.new_string_ptr("offset_cell_ptr"));
+            // TODO: factor out a build_gep function.
+            let mut offset_vec = vec![int32(offset as c_ulonglong)];
+            let offset_cell_ptr = LLVMBuildGEP(builder.builder,
+                                               cells_ptr,
+                                               offset_vec.as_mut_ptr(),
+                                               offset_vec.len() as u32,
+                                               module.new_string_ptr("offset_cell_ptr"));
 
-        let mut memset_args = vec![offset_cell_ptr, llvm_cell_val, llvm_cell_count, one, false_];
-        add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
+            let mut memset_args = vec![offset_cell_ptr, llvm_cell_val, llvm_cell_count, one, false_];
+            add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
 
-        offset += cell_count;
+            offset += cell_count;
+        }
+
+        cells_ptr
     }
-
-    cells_ptr
 }
 
 fn create_module(module_name: &str) -> Module {
