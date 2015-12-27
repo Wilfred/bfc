@@ -762,11 +762,48 @@ fn get_default_target_triple() -> CString {
     target_triple
 }
 
+struct TargetMachine {
+    tm: LLVMTargetMachineRef,
+}
+
+impl TargetMachine {
+    fn new(target_triple: CString) -> Self {
+        let mut target = null_mut();
+        let mut err_msg = null_mut();
+        unsafe {
+            LLVMGetTargetFromTriple(target_triple.as_ptr(), &mut target, &mut err_msg);
+        }
+
+        // cpu is documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mcpu
+        let cpu = CString::new("generic").unwrap();
+        // features are documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mattr
+        let features = CString::new("").unwrap();
+
+        let target_machine;
+        unsafe {
+            target_machine = LLVMCreateTargetMachine(
+                target, target_triple.as_ptr(), cpu.as_ptr(), features.as_ptr(),
+                LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
+                LLVMRelocMode::LLVMRelocDefault,
+                LLVMCodeModel::LLVMCodeModelDefault);
+        }
+
+        TargetMachine { tm: target_machine }
+    }
+}
+
+impl Drop for TargetMachine {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeTargetMachine(self.tm);
+        }
+    }
+}
+
 // TODO: take target_triple as an optional argument
 pub fn write_object_file(module: &mut Module, path: &str) {
     let target_triple = get_default_target_triple();
     unsafe {
-
         // TODO: are all these necessary? Are there docs?
         LLVM_InitializeAllTargetInfos();
         LLVM_InitializeAllTargets();
@@ -774,29 +811,11 @@ pub fn write_object_file(module: &mut Module, path: &str) {
         LLVM_InitializeAllAsmParsers();
         LLVM_InitializeAllAsmPrinters();
 
-        let mut target = null_mut();
-        let mut err_msg = module.new_mut_string_ptr("Could not get target from triple!");
-        LLVMGetTargetFromTriple(target_triple.as_ptr(), &mut target, &mut err_msg);
-
-        // TODO: rustc in src/librustc_trans/back/write.rs has a much
-        // nicer way of passing string pointers to FFI.
-
-        // cpu is documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mcpu
-        let cpu = module.new_string_ptr("generic");
-        // features are documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mattr
-        let features = module.new_string_ptr("");
-
-        // TODO: we could probably release this function as a nice
-        // utility package.
-        let target_machine = LLVMCreateTargetMachine(
-            target, target_triple.as_ptr(), cpu, features,
-            LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
-            LLVMRelocMode::LLVMRelocDefault,
-            LLVMCodeModel::LLVMCodeModelDefault);
+        let target_machine = TargetMachine::new(target_triple);
 
         let mut obj_error = module.new_mut_string_ptr("Writing object file failed.");
         let result = LLVMTargetMachineEmitToFile(
-            target_machine, module.module,
+            target_machine.tm, module.module,
             module.new_string_ptr(path) as *mut i8,
             LLVMCodeGenFileType::LLVMObjectFile,
             &mut obj_error);
@@ -805,7 +824,5 @@ pub fn write_object_file(module: &mut Module, path: &str) {
             println!("obj_error: {:?}", CStr::from_ptr(obj_error));
             assert!(false);
         }
-
-        LLVMDisposeTargetMachine(target_machine);
     }
 }
