@@ -249,10 +249,8 @@ fn create_module(module_name: &str) -> Module {
 
         // These are necessary for maximum LLVM performance, see
         // http://llvm.org/docs/Frontend/PerformanceTips.html
-        // TODO: factor out a function for getting the target triple.
-        let target_triple = LLVMGetDefaultTargetTriple();
-        LLVMSetTarget(llvm_module, target_triple);
-        LLVMDisposeMessage(target_triple);
+        let target_triple = get_default_target_triple();
+        LLVMSetTarget(llvm_module, target_triple.as_ptr());
 
         // can we get this from the module?
         LLVMSetDataLayout(llvm_module,
@@ -753,10 +751,21 @@ pub fn optimise_ir(module: &mut Module, llvm_opt: i64) {
     }
 }
 
+fn get_default_target_triple() -> CString {
+    let target_triple;
+    unsafe {
+        let target_triple_ptr = LLVMGetDefaultTargetTriple();
+        target_triple = CStr::from_ptr(target_triple_ptr).to_owned();
+        LLVMDisposeMessage(target_triple_ptr);
+    }
+
+    target_triple
+}
+
 // TODO: take target_triple as an optional argument
 pub fn write_object_file(module: &mut Module, path: &str) {
+    let target_triple = get_default_target_triple();
     unsafe {
-        let target_triple = LLVMGetDefaultTargetTriple();
 
         // TODO: are all these necessary? Are there docs?
         LLVM_InitializeAllTargetInfos();
@@ -767,7 +776,7 @@ pub fn write_object_file(module: &mut Module, path: &str) {
 
         let mut target = null_mut();
         let mut err_msg = module.new_mut_string_ptr("Could not get target from triple!");
-        LLVMGetTargetFromTriple(target_triple, &mut target, &mut err_msg);
+        LLVMGetTargetFromTriple(target_triple.as_ptr(), &mut target, &mut err_msg);
 
         // TODO: rustc in src/librustc_trans/back/write.rs has a much
         // nicer way of passing string pointers to FFI.
@@ -780,7 +789,7 @@ pub fn write_object_file(module: &mut Module, path: &str) {
         // TODO: we could probably release this function as a nice
         // utility package.
         let target_machine = LLVMCreateTargetMachine(
-            target, target_triple, cpu, features,
+            target, target_triple.as_ptr(), cpu, features,
             LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
             LLVMRelocMode::LLVMRelocDefault,
             LLVMCodeModel::LLVMCodeModelDefault);
@@ -797,7 +806,6 @@ pub fn write_object_file(module: &mut Module, path: &str) {
             assert!(false);
         }
 
-        LLVMDisposeMessage(target_triple);
         LLVMDisposeTargetMachine(target_machine);
     }
 }
