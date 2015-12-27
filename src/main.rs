@@ -193,15 +193,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         println!("{}", info);
     }
 
-    let llvm_opt_raw = matches.opt_str("llvm-opt").unwrap_or("3".to_owned());
-    let mut llvm_opt = llvm_opt_raw.parse::<i64>().unwrap_or(3);
-
-    if llvm_opt < 0 || llvm_opt > 3 {
-        // TODO: warn on unrecognised input.
-        llvm_opt = 3;
-    }
-    
-    let mut llvm_module = llvm::compile_to_ir(path, &instrs, &state, llvm_opt);
+    let mut llvm_module = llvm::compile_to_module(path, &instrs, &state);
 
     if matches.opt_present("dump-llvm") {
         let llvm_ir_cstr = llvm_module.to_cstring();
@@ -209,6 +201,15 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         println!("{}", llvm_ir);
         return Ok(());
     }
+
+    let llvm_opt_raw = matches.opt_str("llvm-opt").unwrap_or("3".to_owned());
+    let mut llvm_opt = llvm_opt_raw.parse::<i64>().unwrap_or(3);
+    if llvm_opt < 0 || llvm_opt > 3 {
+        // TODO: warn on unrecognised input.
+        llvm_opt = 3;
+    }
+    
+    llvm::optimise_ir(&mut llvm_module, llvm_opt);
 
     // Compile the LLVM IR to a temporary object file.
     let object_file = try!(convert_io_error(NamedTempFile::new()));

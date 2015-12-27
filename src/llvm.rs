@@ -713,44 +713,26 @@ pub fn compile_to_module(module_name: &str,
     }
 }
 
-pub fn compile_to_ir(module_name: &str,
-                     instrs: &[Instruction],
-                     initial_state: &ExecutionState,
-                     llvm_opt: i64)
-                     -> Module {
-    unsafe {
-        let mut module = compile_to_module(module_name, instrs, initial_state);
-
-        // Note that LLVM still does some IR munging at -O0. We
-        // deliberately skip it, so we can write unit tests against the raw
-        // IR.
-        if llvm_opt != 0 {
-            optimise_ir(&mut module, llvm_opt);
-        }
-
-        module
-    }
-}
-
-unsafe fn optimise_ir(module: &mut Module, llvm_opt: i64) {
+pub fn optimise_ir(module: &mut Module, llvm_opt: i64) {
     // TODO: add a verifier pass too.
+    unsafe {
+        let builder = LLVMPassManagerBuilderCreate();
+        // E.g. if llvm_opt is 3, we want a pass equivalent to -O3.
+        LLVMPassManagerBuilderSetOptLevel(builder, llvm_opt as u32);
 
-    let builder = LLVMPassManagerBuilderCreate();
-    // E.g. if llvm_opt is 3, we want a pass equivalent to -O3.
-    LLVMPassManagerBuilderSetOptLevel(builder, llvm_opt as u32);
+        let pass_manager = LLVMCreatePassManager();
+        LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
+        
+        LLVMPassManagerBuilderDispose(builder);
 
-    let pass_manager = LLVMCreatePassManager();
-    LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
-    
-    LLVMPassManagerBuilderDispose(builder);
+        // Run twice. This is a hack, we should really work out which
+        // optimisations need to run twice. See
+        // http://llvm.org/docs/Frontend/PerformanceTips.html#pass-ordering
+        LLVMRunPassManager(pass_manager, module.module);
+        LLVMRunPassManager(pass_manager, module.module);
 
-    // Run twice. This is a hack, we should really work out which
-    // optimisations need to run twice. See
-    // http://llvm.org/docs/Frontend/PerformanceTips.html#pass-ordering
-    LLVMRunPassManager(pass_manager, module.module);
-    LLVMRunPassManager(pass_manager, module.module);
-
-    LLVMDisposePassManager(pass_manager);
+        LLVMDisposePassManager(pass_manager);
+    }
 }
 
 // TODO: take target_triple as an optional argument

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ffi::CString;
 use std::num::Wrapping;
 
-use llvm::compile_to_ir;
+use llvm::compile_to_module;
 use bfir::Instruction::*;
 use bfir::Position;
 use execution::ExecutionState;
@@ -14,7 +14,7 @@ fn compile_loop() {
         position: Some(Position { start: 0, end: 0 }),
     }];
     
-    let result = compile_to_ir(
+    let result = compile_to_module(
         "foo",
         &instrs,
         &ExecutionState {
@@ -22,7 +22,7 @@ fn compile_loop() {
             cells: vec![Wrapping(0)],
             cell_ptr: 0,
             outputs: vec![]
-        }, 0);
+        });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -73,18 +73,18 @@ loop_after:                                       ; preds = %loop_header
 
 attributes #0 = { nounwind }
 ";
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_empty_program() {
-    let result = compile_to_ir("foo", &vec![],
+    let result = compile_to_module("foo", &vec![],
                                &ExecutionState {
                                    start_instr: None,
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -108,19 +108,19 @@ beginning:                                        ; preds = %init
 
 attributes #0 = { nounwind }
 ";
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_set() {
     let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -157,19 +157,19 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_set_with_offset() {
     let instrs = vec![Set { amount: Wrapping(1), offset: 42, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 50],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -206,19 +206,19 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn respect_initial_cell_ptr() {
     let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 10],
                                    cell_ptr: 8,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -254,7 +254,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -264,13 +264,13 @@ fn compile_multiply_move() {
     changes.insert(2, Wrapping(3));
     let instrs = vec![MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
     
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 3],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -317,13 +317,13 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn set_initial_cell_values() {
     let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(1),
@@ -334,7 +334,7 @@ fn set_initial_cell_values() {
                                                Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -374,18 +374,18 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_static_outputs() {
-    let result = compile_to_ir("foo", &vec![],
+    let result = compile_to_module("foo", &vec![],
                                &ExecutionState {
                                    start_instr: None,
                                    cells: vec![],
                                    cell_ptr: 0,
                                    outputs: vec![5, 10]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -413,19 +413,19 @@ beginning:                                        ; preds = %init
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_ptr_increment() {
     let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 2],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -461,19 +461,19 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_increment() {
     let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 })}];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -512,19 +512,19 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_increment_with_offset() {
     let instrs = vec![Increment { amount: Wrapping(1), offset: 3, position: Some(Position { start: 0, end: 0 })}];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[0]),
                                    cells: vec![Wrapping(0); 4],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -562,20 +562,20 @@ after_init:                                       ; preds = %init, %beginning
 
 attributes #0 = { nounwind }
 ";
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
 fn compile_start_instr_midway() {
     let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
                       Set { amount: Wrapping(2), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_ir("foo", &instrs,
+    let result = compile_to_module("foo", &instrs,
                                &ExecutionState {
                                    start_instr: Some(&instrs[1]),
                                    cells: vec![Wrapping(0)],
                                    cell_ptr: 0,
                                    outputs: vec![]
-                               }, 0);
+                               });
     let expected = "; ModuleID = \'foo\'
 target datalayout = \"e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128\"
 target triple = \"i686-pc-linux-gnu\"
@@ -616,7 +616,6 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    println!("{}", String::from_utf8_lossy(result.as_bytes_with_nul()));
-    assert_eq!(result, CString::new(expected).unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
