@@ -227,50 +227,58 @@ unsafe fn add_cells_init(init_values: &[Wrapping<i8>],
     cells_ptr
 }
 
-unsafe fn create_module(module_name: &str) -> Module {
+fn create_module(module_name: &str) -> Module {
     let c_module_name = CString::new(module_name).unwrap();
 
-    let llvm_module =
-        LLVMModuleCreateWithName(c_module_name.to_bytes_with_nul().as_ptr() as *const _);
-    let mut module = Module {
-        module: llvm_module,
-        strings: vec![c_module_name],
-    };
+    let mut module;
+    unsafe {
+        let llvm_module =
+            LLVMModuleCreateWithName(c_module_name.to_bytes_with_nul().as_ptr() as *const _);
+        module = Module {
+            module: llvm_module,
+            strings: vec![c_module_name],
+        };
 
-    // These are necessary for maximum LLVM performance, see
-    // http://llvm.org/docs/Frontend/PerformanceTips.html
-    // TODO: factor out a function for getting the target triple.
-    let target_triple = LLVMGetDefaultTargetTriple();
-    LLVMSetTarget(llvm_module, target_triple);
-    LLVMDisposeMessage(target_triple);
+        // These are necessary for maximum LLVM performance, see
+        // http://llvm.org/docs/Frontend/PerformanceTips.html
+        // TODO: factor out a function for getting the target triple.
+        let target_triple = LLVMGetDefaultTargetTriple();
+        LLVMSetTarget(llvm_module, target_triple);
+        LLVMDisposeMessage(target_triple);
 
-    // can we get this from the module?
-    LLVMSetDataLayout(llvm_module,
-                      module.new_string_ptr("e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"));
+        // can we get this from the module?
+        LLVMSetDataLayout(llvm_module,
+                          module.new_string_ptr("e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"));
 
-    add_c_declarations(&mut module);
+        add_c_declarations(&mut module);
+    }
 
     module
 }
 
-unsafe fn add_main_fn(module: &mut Module) -> LLVMValueRef {
+fn add_main_fn(module: &mut Module) -> LLVMValueRef {
     let mut main_args = vec![];
-    let main_type = LLVMFunctionType(LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
-    LLVMAddFunction(module.module, module.new_string_ptr("main"), main_type)
+    unsafe {
+        let main_type = LLVMFunctionType(LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
+        // TODO: use add_function() here instead.
+        LLVMAddFunction(module.module, module.new_string_ptr("main"), main_type)
+    }
 }
 
 /// Set up the initial basic blocks for appending instructions.
-unsafe fn add_initial_bbs(module: &mut Module,
+fn add_initial_bbs(module: &mut Module,
                           main_fn: LLVMValueRef)
                           -> (LLVMBasicBlockRef, LLVMBasicBlockRef) {
-    // This basic block is empty, but we will add a branch during
-    // compilation according to InstrPosition.
-    let init_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("init"));
+    unsafe {
+        // This basic block is empty, but we will add a branch during
+        // compilation according to InstrPosition.
+        let init_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("init"));
 
-    // We'll begin by appending instructions here.
-    let beginning_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("beginning"));
+        // We'll begin by appending instructions here.
+        let beginning_bb = LLVMAppendBasicBlock(main_fn, module.new_string_ptr("beginning"));
 
-    (init_bb, beginning_bb)
+        (init_bb, beginning_bb)
+    }
 }
 
 // TODO: name our pointers cell_base and
@@ -600,39 +608,41 @@ unsafe fn compile_instr(instr: &Instruction,
     }
 }
 
-unsafe fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, outputs: &[i8]) {
-    let builder = Builder::new();
-    builder.position_at_end(bb);
+fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, outputs: &[i8]) {
+    unsafe {
+        let builder = Builder::new();
+        builder.position_at_end(bb);
 
-    let mut llvm_outputs = vec![];
-    for value in outputs {
-        llvm_outputs.push(int8(*value as c_ulonglong));
+        let mut llvm_outputs = vec![];
+        for value in outputs {
+            llvm_outputs.push(int8(*value as c_ulonglong));
+        }
+
+        let output_buf_type = LLVMArrayType(LLVMInt8Type(), llvm_outputs.len() as c_uint);
+        let llvm_outputs_arr = LLVMConstArray(LLVMInt8Type(),
+                                              llvm_outputs.as_mut_ptr(),
+                                              llvm_outputs.len() as c_uint);
+
+        let known_outputs = LLVMAddGlobal(module.module,
+                                          output_buf_type,
+                                          module.new_string_ptr("known_outputs"));
+        LLVMSetInitializer(known_outputs, llvm_outputs_arr);
+        LLVMSetGlobalConstant(known_outputs, LLVM_TRUE);
+
+        let stdout_fd = int32(1);
+        let llvm_num_outputs = int32(outputs.len() as c_ulonglong);
+
+        let known_outputs_ptr = LLVMBuildPointerCast(builder.builder,
+                                                     known_outputs,
+                                                     byte_pointer(),
+                                                     module.new_string_ptr("known_outputs_ptr"));
+
+        add_function_call(module,
+                          bb,
+                          "write",
+                          &mut vec![stdout_fd, known_outputs_ptr, llvm_num_outputs],
+                          "");
     }
-
-    let output_buf_type = LLVMArrayType(LLVMInt8Type(), llvm_outputs.len() as c_uint);
-    let llvm_outputs_arr = LLVMConstArray(LLVMInt8Type(),
-                                          llvm_outputs.as_mut_ptr(),
-                                          llvm_outputs.len() as c_uint);
-
-    let known_outputs = LLVMAddGlobal(module.module,
-                                      output_buf_type,
-                                      module.new_string_ptr("known_outputs"));
-    LLVMSetInitializer(known_outputs, llvm_outputs_arr);
-    LLVMSetGlobalConstant(known_outputs, LLVM_TRUE);
-
-    let stdout_fd = int32(1);
-    let llvm_num_outputs = int32(outputs.len() as c_ulonglong);
-
-    let known_outputs_ptr = LLVMBuildPointerCast(builder.builder,
-                                                 known_outputs,
-                                                 byte_pointer(),
-                                                 module.new_string_ptr("known_outputs_ptr"));
-
-    add_function_call(module,
-                      bb,
-                      "write",
-                      &mut vec![stdout_fd, known_outputs_ptr, llvm_num_outputs],
-                      "");
 }
 
 /// Ensure that execution starts after the basic block we pass in.
@@ -660,16 +670,16 @@ pub fn compile_to_module(module_name: &str,
                          instrs: &[Instruction],
                          initial_state: &ExecutionState)
                          -> Module {
+    let mut module = create_module(module_name);
+    let main_fn = add_main_fn(&mut module);
+
+    let (init_bb, mut bb) = add_initial_bbs(&mut module, main_fn);
+
+    if !initial_state.outputs.is_empty() {
+        compile_static_outputs(&mut module, init_bb, &initial_state.outputs);
+    }
+
     unsafe {
-        let mut module = create_module(module_name);
-        let main_fn = add_main_fn(&mut module);
-
-        let (init_bb, mut bb) = add_initial_bbs(&mut module, main_fn);
-
-        if !initial_state.outputs.is_empty() {
-            compile_static_outputs(&mut module, init_bb, &initial_state.outputs);
-        }
-
         // If there's no start instruction, then we executed all
         // instructions at compile time and we don't need to do anything here.
         match initial_state.start_instr {
