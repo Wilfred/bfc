@@ -774,6 +774,7 @@ impl TargetMachine {
             LLVMGetTargetFromTriple(target_triple.as_ptr(), &mut target, &mut err_msg);
         }
 
+        // TODO: do these strings live long enough?
         // cpu is documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mcpu
         let cpu = CString::new("generic").unwrap();
         // features are documented: http://llvm.org/docs/CommandGuide/llc.html#cmdoption-mattr
