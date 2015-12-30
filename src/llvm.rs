@@ -705,7 +705,6 @@ pub fn compile_to_module(module_name: &str,
                 for instr in instrs {
                     if ptr_equal(instr, start_instr) {
                         // This is the point we want to start execution from.
-                        // println!("in top level: {:?}", instr);
                         bb = set_entry_point_after(&mut module, main_fn, bb);
                     }
 
