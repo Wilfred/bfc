@@ -193,7 +193,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
           })
           .filter(|instr| {
               // Remove any increments of 0.
-              if let Increment{ amount: Wrapping(0), .. } = *instr {
+              if let Increment { amount: Wrapping(0), .. } = *instr {
                   return false;
               }
               true
@@ -306,7 +306,7 @@ pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     for instr in instrs {
         match instr {
-            Increment{..} | Set{..} | PointerIncrement{..} => {
+            Increment {..} | Set {..} | PointerIncrement {..} => {
                 sequence.push(instr);
             }
             _ => {
@@ -588,8 +588,8 @@ fn is_multiply_loop_body(body: &[Instruction]) -> bool {
     // A multiply loop may only contain increments and pointer increments.
     for body_instr in body {
         match *body_instr {
-            Increment{..} => {}
-            PointerIncrement{..} => {}
+            Increment {..} => {}
+            PointerIncrement {..} => {}
             _ => return false,
         }
     }
@@ -598,7 +598,7 @@ fn is_multiply_loop_body(body: &[Instruction]) -> bool {
     // zero.
     let mut net_movement = 0;
     for body_instr in body {
-        if let PointerIncrement{ amount, .. } = *body_instr {
+        if let PointerIncrement { amount, .. } = *body_instr {
             net_movement += amount;
         }
     }
@@ -625,11 +625,11 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
 
     for instr in instrs {
         match *instr {
-            Increment{ amount, offset, .. } => {
+            Increment { amount, offset, .. } => {
                 let current_amount = *changes.get(&(cell_index + offset)).unwrap_or(&Wrapping(0));
                 changes.insert(cell_index, current_amount + amount);
             }
-            PointerIncrement{ amount, .. } => {
+            PointerIncrement { amount, .. } => {
                 cell_index += amount;
             }
             // We assume this is only called from is_multiply_loop.
