@@ -247,14 +247,13 @@ fn create_module(module_name: &str) -> Module {
             strings: vec![c_module_name],
         };
 
-        // These are necessary for maximum LLVM performance, see
+        // This is necessary for maximum LLVM performance, see
         // http://llvm.org/docs/Frontend/PerformanceTips.html
         let target_triple = get_default_target_triple();
         LLVMSetTarget(llvm_module, target_triple.as_ptr());
 
-        // can we get this from the module?
-        LLVMSetDataLayout(llvm_module,
-                          module.new_string_ptr("e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"));
+        // TODO: add a function to the LLVM C API that gives us the
+        // data layout from the target machine.
 
         add_c_declarations(&mut module);
     }
