@@ -122,41 +122,66 @@ unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
     LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
 }
 
-unsafe fn byte_pointer() -> LLVMTypeRef {
-    LLVMPointerType(LLVMInt8Type(), 0)
+fn int1_type() -> LLVMTypeRef {
+    unsafe {
+        LLVMInt1Type()
+    }
 }
 
-unsafe fn add_function(module: &mut Module,
-                       fn_name: &str,
-                       args: &mut [LLVMTypeRef],
-                       ret_type: LLVMTypeRef) {
-    let fn_type = LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, LLVM_FALSE);
-    LLVMAddFunction(module.module, module.new_string_ptr(fn_name), fn_type);
+fn int8_type() -> LLVMTypeRef {
+    unsafe {
+        LLVMInt8Type()
+    }
 }
 
-unsafe fn add_c_declarations(module: &mut Module) {
-    let void = LLVMVoidType();
+fn int32_type() -> LLVMTypeRef {
+    unsafe {
+        LLVMInt32Type()
+    }
+}
+
+fn int8_ptr_type() -> LLVMTypeRef {
+    unsafe {
+        LLVMPointerType(LLVMInt8Type(), 0)
+    }
+}
+
+fn add_function(module: &mut Module,
+                fn_name: &str,
+                args: &mut [LLVMTypeRef],
+                ret_type: LLVMTypeRef) {
+    unsafe {
+        let fn_type = LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, LLVM_FALSE);
+        LLVMAddFunction(module.module, module.new_string_ptr(fn_name), fn_type);
+    }
+}
+
+fn add_c_declarations(module: &mut Module) {
+    let void;
+    unsafe {
+        void = LLVMVoidType();
+    }
 
     add_function(module,
                  "llvm.memset.p0i8.i32",
-                 &mut vec![byte_pointer(),
-                           LLVMInt8Type(),
-                           LLVMInt32Type(),
-                           LLVMInt32Type(),
-                           LLVMInt1Type()],
+                 &mut vec![int8_ptr_type(),
+                           int8_type(),
+                           int32_type(),
+                           int32_type(),
+                           int1_type()],
                  void);
 
     add_function(module,
                  "write",
-                 &mut vec![LLVMInt32Type(), byte_pointer(), LLVMInt32Type()],
-                 LLVMInt32Type());
+                 &mut vec![int32_type(), int8_ptr_type(), int32_type()],
+                 int32_type());
 
     add_function(module,
                  "putchar",
-                 &mut vec![LLVMInt32Type()],
-                 LLVMInt32Type());
+                 &mut vec![int32_type()],
+                 int32_type());
 
-    add_function(module, "getchar", &mut vec![], LLVMInt32Type());
+    add_function(module, "getchar", &mut vec![], int32_type());
 }
 
 unsafe fn add_function_call(module: &mut Module,
@@ -205,12 +230,12 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
         // Allocate stack memory for our cells.
         let num_cells = int32(init_values.len() as c_ulonglong);
         let cells_ptr = LLVMBuildArrayAlloca(builder.builder,
-                                             LLVMInt8Type(),
+                                             int8_type(),
                                              num_cells,
                                              module.new_string_ptr("cells"));
 
         let one = int32(1);
-        let false_ = LLVMConstInt(LLVMInt1Type(), 1, LLVM_FALSE);
+        let false_ = LLVMConstInt(int1_type(), 1, LLVM_FALSE);
 
         let mut offset = 0;
         for (cell_val, cell_count) in run_length_encode(init_values) {
@@ -237,34 +262,34 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
 
 fn create_module(module_name: &str) -> Module {
     let c_module_name = CString::new(module_name).unwrap();
+    let module_name_char_ptr = c_module_name.to_bytes_with_nul().as_ptr() as *const _;
 
-    let mut module;
+    let llvm_module;
     unsafe {
-        let llvm_module =
-            LLVMModuleCreateWithName(c_module_name.to_bytes_with_nul().as_ptr() as *const _);
-        module = Module {
-            module: llvm_module,
-            strings: vec![c_module_name],
-        };
-
-        // This is necessary for maximum LLVM performance, see
-        // http://llvm.org/docs/Frontend/PerformanceTips.html
-        let target_triple = get_default_target_triple();
-        LLVMSetTarget(llvm_module, target_triple.as_ptr());
-
-        // TODO: add a function to the LLVM C API that gives us the
-        // data layout from the target machine.
-
-        add_c_declarations(&mut module);
+        llvm_module = LLVMModuleCreateWithName(module_name_char_ptr);
     }
+    let mut module = Module {
+        module: llvm_module,
+        strings: vec![c_module_name],
+    };
 
+    // This is necessary for maximum LLVM performance, see
+    // http://llvm.org/docs/Frontend/PerformanceTips.html
+    let target_triple = get_default_target_triple();
+    unsafe {
+        LLVMSetTarget(llvm_module, target_triple.as_ptr());
+    }
+    // TODO: add a function to the LLVM C API that gives us the
+    // data layout from the target machine.
+
+    add_c_declarations(&mut module);
     module
 }
 
 fn add_main_fn(module: &mut Module) -> LLVMValueRef {
     let mut main_args = vec![];
     unsafe {
-        let main_type = LLVMFunctionType(LLVMInt32Type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
+        let main_type = LLVMFunctionType(int32_type(), main_args.as_mut_ptr(), 0, LLVM_FALSE);
         // TODO: use add_function() here instead.
         LLVMAddFunction(module.module, module.new_string_ptr("main"), main_type)
     }
@@ -298,7 +323,7 @@ unsafe fn add_cell_index_init(init_value: isize,
 
     // int cell_index = 0;
     let cell_index_ptr = LLVMBuildAlloca(builder.builder,
-                                         LLVMInt32Type(),
+                                         int32_type(),
                                          module.new_string_ptr("cell_index_ptr"));
     let cell_ptr_init = int32(init_value as c_ulonglong);
     LLVMBuildStore(builder.builder, cell_ptr_init, cell_index_ptr);
@@ -507,7 +532,7 @@ unsafe fn compile_read(module: &mut Module,
     let input_char = add_function_call(module, bb, "getchar", &mut getchar_args, "input_char");
     let input_byte = LLVMBuildTrunc(builder.builder,
                                     input_char,
-                                    LLVMInt8Type(),
+                                    int8_type(),
                                     module.new_string_ptr("input_byte"));
 
     LLVMBuildStore(builder.builder, input_byte, current_cell_ptr);
@@ -524,7 +549,7 @@ unsafe fn compile_write(module: &mut Module,
     let cell_val = add_current_cell_access(module, bb, ctx.cells, ctx.cell_index_ptr).0;
     let cell_val_as_char = LLVMBuildSExt(builder.builder,
                                          cell_val,
-                                         LLVMInt32Type(),
+                                         int32_type(),
                                          module.new_string_ptr("cell_val_as_char"));
 
     let mut putchar_args = vec![cell_val_as_char];
@@ -623,8 +648,8 @@ fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, outputs: &
             llvm_outputs.push(int8(*value as c_ulonglong));
         }
 
-        let output_buf_type = LLVMArrayType(LLVMInt8Type(), llvm_outputs.len() as c_uint);
-        let llvm_outputs_arr = LLVMConstArray(LLVMInt8Type(),
+        let output_buf_type = LLVMArrayType(int8_type(), llvm_outputs.len() as c_uint);
+        let llvm_outputs_arr = LLVMConstArray(int8_type(),
                                               llvm_outputs.as_mut_ptr(),
                                               llvm_outputs.len() as c_uint);
 
@@ -639,7 +664,7 @@ fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, outputs: &
 
         let known_outputs_ptr = LLVMBuildPointerCast(builder.builder,
                                                      known_outputs,
-                                                     byte_pointer(),
+                                                     int8_ptr_type(),
                                                      module.new_string_ptr("known_outputs_ptr"));
 
         add_function_call(module,
