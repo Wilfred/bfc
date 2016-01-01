@@ -44,7 +44,7 @@ impl Module {
         self.strings.push(cstring);
         ptr
     }
-    
+
     pub fn to_cstring(&self) -> CString {
         unsafe {
             // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
@@ -81,11 +81,7 @@ struct Builder {
 impl Builder {
     /// Create a new Builder in LLVM's global context.
     fn new() -> Self {
-        unsafe {
-            Builder {
-                builder: LLVMCreateBuilder()
-            }
-        }
+        unsafe { Builder { builder: LLVMCreateBuilder() } }
     }
 
     fn position_at_end(&self, bb: LLVMBasicBlockRef) {
@@ -123,27 +119,19 @@ unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
 }
 
 fn int1_type() -> LLVMTypeRef {
-    unsafe {
-        LLVMInt1Type()
-    }
+    unsafe { LLVMInt1Type() }
 }
 
 fn int8_type() -> LLVMTypeRef {
-    unsafe {
-        LLVMInt8Type()
-    }
+    unsafe { LLVMInt8Type() }
 }
 
 fn int32_type() -> LLVMTypeRef {
-    unsafe {
-        LLVMInt32Type()
-    }
+    unsafe { LLVMInt32Type() }
 }
 
 fn int8_ptr_type() -> LLVMTypeRef {
-    unsafe {
-        LLVMPointerType(LLVMInt8Type(), 0)
-    }
+    unsafe { LLVMPointerType(LLVMInt8Type(), 0) }
 }
 
 fn add_function(module: &mut Module,
@@ -164,11 +152,7 @@ fn add_c_declarations(module: &mut Module) {
 
     add_function(module,
                  "llvm.memset.p0i8.i32",
-                 &mut vec![int8_ptr_type(),
-                           int8_type(),
-                           int32_type(),
-                           int32_type(),
-                           int1_type()],
+                 &mut vec![int8_ptr_type(), int8_type(), int32_type(), int32_type(), int1_type()],
                  void);
 
     add_function(module,
@@ -176,10 +160,7 @@ fn add_c_declarations(module: &mut Module) {
                  &mut vec![int32_type(), int8_ptr_type(), int32_type()],
                  int32_type());
 
-    add_function(module,
-                 "putchar",
-                 &mut vec![int32_type()],
-                 int32_type());
+    add_function(module, "putchar", &mut vec![int32_type()], int32_type());
 
     add_function(module, "getchar", &mut vec![], int32_type());
 }
@@ -220,9 +201,9 @@ fn run_length_encode<T>(cells: &[T]) -> Vec<(T, usize)>
 }
 
 fn add_cells_init(init_values: &[Wrapping<i8>],
-                         module: &mut Module,
-                         bb: LLVMBasicBlockRef)
-                         -> LLVMValueRef {
+                  module: &mut Module,
+                  bb: LLVMBasicBlockRef)
+                  -> LLVMValueRef {
     let builder = Builder::new();
     builder.position_at_end(bb);
 
@@ -250,7 +231,11 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
                                                offset_vec.len() as u32,
                                                module.new_string_ptr("offset_cell_ptr"));
 
-            let mut memset_args = vec![offset_cell_ptr, llvm_cell_val, llvm_cell_count, one, false_];
+            let mut memset_args = vec![offset_cell_ptr,
+                                       llvm_cell_val,
+                                       llvm_cell_count,
+                                       one,
+                                       false_];
             add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
 
             offset += cell_count;
@@ -297,8 +282,8 @@ fn add_main_fn(module: &mut Module) -> LLVMValueRef {
 
 /// Set up the initial basic blocks for appending instructions.
 fn add_initial_bbs(module: &mut Module,
-                          main_fn: LLVMValueRef)
-                          -> (LLVMBasicBlockRef, LLVMBasicBlockRef) {
+                   main_fn: LLVMValueRef)
+                   -> (LLVMBasicBlockRef, LLVMBasicBlockRef) {
     unsafe {
         // This basic block is empty, but we will add a branch during
         // compilation according to InstrPosition.
@@ -560,6 +545,7 @@ unsafe fn compile_write(module: &mut Module,
 fn ptr_equal<T>(a: *const T, b: *const T) -> bool {
     a == b
 }
+
 unsafe fn compile_loop(loop_body: &[Instruction],
                        start_instr: &Instruction,
                        module: &mut Module,
@@ -761,7 +747,7 @@ pub fn optimise_ir(module: &mut Module, llvm_opt: i64) {
 
         let pass_manager = LLVMCreatePassManager();
         LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
-        
+
         LLVMPassManagerBuilderDispose(builder);
 
         // Run twice. This is a hack, we should really work out which
@@ -805,11 +791,14 @@ impl TargetMachine {
 
         let target_machine;
         unsafe {
-            target_machine = LLVMCreateTargetMachine(
-                target, target_triple.as_ptr(), cpu.as_ptr(), features.as_ptr(),
-                LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
-                LLVMRelocMode::LLVMRelocDefault,
-                LLVMCodeModel::LLVMCodeModelDefault);
+            target_machine =
+                LLVMCreateTargetMachine(target,
+                                        target_triple.as_ptr(),
+                                        cpu.as_ptr(),
+                                        features.as_ptr(),
+                                        LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
+                                        LLVMRelocMode::LLVMRelocDefault,
+                                        LLVMCodeModel::LLVMCodeModelDefault);
         }
 
         TargetMachine { tm: target_machine }
@@ -838,11 +827,11 @@ pub fn write_object_file(module: &mut Module, path: &str) {
         let target_machine = TargetMachine::new(target_triple);
 
         let mut obj_error = module.new_mut_string_ptr("Writing object file failed.");
-        let result = LLVMTargetMachineEmitToFile(
-            target_machine.tm, module.module,
-            module.new_string_ptr(path) as *mut i8,
-            LLVMCodeGenFileType::LLVMObjectFile,
-            &mut obj_error);
+        let result = LLVMTargetMachineEmitToFile(target_machine.tm,
+                                                 module.module,
+                                                 module.new_string_ptr(path) as *mut i8,
+                                                 LLVMCodeGenFileType::LLVMObjectFile,
+                                                 &mut obj_error);
 
         if result != 0 {
             println!("obj_error: {:?}", CStr::from_ptr(obj_error));
