@@ -245,7 +245,7 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
     }
 }
 
-fn create_module(module_name: &str) -> Module {
+fn create_module(module_name: &str, target_triple: Option<String>) -> Module {
     let c_module_name = CString::new(module_name).unwrap();
     let module_name_char_ptr = c_module_name.to_bytes_with_nul().as_ptr() as *const _;
 
@@ -258,11 +258,16 @@ fn create_module(module_name: &str) -> Module {
         strings: vec![c_module_name],
     };
 
+    let target_triple_cstring = if let Some(target_triple) = target_triple {
+        CString::new(target_triple).unwrap()
+    } else {
+        get_default_target_triple()
+    };
+
     // This is necessary for maximum LLVM performance, see
     // http://llvm.org/docs/Frontend/PerformanceTips.html
-    let target_triple = get_default_target_triple();
     unsafe {
-        LLVMSetTarget(llvm_module, target_triple.as_ptr());
+        LLVMSetTarget(llvm_module, target_triple_cstring.as_ptr());
     }
     // TODO: add a function to the LLVM C API that gives us the
     // data layout from the target machine.
@@ -683,10 +688,11 @@ unsafe fn set_entry_point_after(module: &mut Module,
 
 // TODO: use init_values terminology consistently for names here.
 pub fn compile_to_module(module_name: &str,
+                         target_triple: Option<String>,
                          instrs: &[Instruction],
                          initial_state: &ExecutionState)
                          -> Module {
-    let mut module = create_module(module_name);
+    let mut module = create_module(module_name, target_triple);
     let main_fn = add_main_fn(&mut module);
 
     let (init_bb, mut bb) = add_initial_bbs(&mut module, main_fn);
@@ -813,7 +819,6 @@ impl Drop for TargetMachine {
     }
 }
 
-// TODO: take target_triple as an optional argument
 pub fn write_object_file(module: &mut Module, path: &str) {
     unsafe {
         let target_triple = LLVMGetTarget(module.module);
