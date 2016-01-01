@@ -776,11 +776,11 @@ struct TargetMachine {
 }
 
 impl TargetMachine {
-    fn new(target_triple: CString) -> Self {
+    fn new(target_triple: *const i8) -> Self {
         let mut target = null_mut();
         let mut err_msg = null_mut();
         unsafe {
-            LLVMGetTargetFromTriple(target_triple.as_ptr(), &mut target, &mut err_msg);
+            LLVMGetTargetFromTriple(target_triple, &mut target, &mut err_msg);
         }
 
         // TODO: do these strings live long enough?
@@ -793,7 +793,7 @@ impl TargetMachine {
         unsafe {
             target_machine =
                 LLVMCreateTargetMachine(target,
-                                        target_triple.as_ptr(),
+                                        target_triple,
                                         cpu.as_ptr(),
                                         features.as_ptr(),
                                         LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
@@ -815,8 +815,9 @@ impl Drop for TargetMachine {
 
 // TODO: take target_triple as an optional argument
 pub fn write_object_file(module: &mut Module, path: &str) {
-    let target_triple = get_default_target_triple();
     unsafe {
+        let target_triple = LLVMGetTarget(module.module);
+
         // TODO: are all these necessary? Are there docs?
         LLVM_InitializeAllTargetInfos();
         LLVM_InitializeAllTargets();
