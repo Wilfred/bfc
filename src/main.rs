@@ -87,7 +87,7 @@ fn executable_name(bf_file_name: &str) -> String {
 }
 
 fn print_usage(bin_name: &str, opts: Options) {
-    let brief = format!("Usage: {} <BF source file> [options]", bin_name);
+    let brief = format!("Usage: {} SOURCE_FILE [options]", bin_name);
     print!("{}", opts.usage(&brief));
 }
 
