@@ -208,22 +208,20 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         // TODO: warn on unrecognised input.
         llvm_opt = 3;
     }
-    
+
     llvm::optimise_ir(&mut llvm_module, llvm_opt);
 
     // Compile the LLVM IR to a temporary object file.
     let object_file = try!(convert_io_error(NamedTempFile::new()));
     let obj_file_path = object_file.path().to_str().expect("path not valid utf-8");
     llvm::write_object_file(&mut llvm_module, &obj_file_path);
-    
+
     // TODO: do path munging in executable_name().
     let bf_name = Path::new(path).file_name().unwrap();
     let output_name = executable_name(bf_name.to_str().unwrap());
 
     // Link the object file.
-    let clang_args = [obj_file_path,
-                      "-o",
-                      &output_name[..]];
+    let clang_args = [obj_file_path, "-o", &output_name[..]];
     // TODO: use cc instead of clang here.
     // TODO: factor out linking, writing to smaller functions.
     try!(shell_command("clang", &clang_args[..]));

@@ -24,12 +24,12 @@ pub fn optimize(instrs: Vec<Instruction>) -> (Vec<Instruction>, Vec<Warning>) {
     if let Some(warning) = warning {
         warnings.push(warning);
     }
-    
+
     while prev != result {
         prev = result.clone();
 
         let (new_result, new_warning) = optimize_once(result);
-        
+
         if let Some(warning) = new_warning {
             warnings.push(warning);
         }
@@ -45,7 +45,8 @@ fn optimize_once(instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>
     let annotated = annotate_known_zero(combined);
     let extracted = extract_multiply(annotated);
     let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
-    let (removed, warning) = remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
+    let (removed, warning) =
+        remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
     (sort_by_offset(removed), warning)
 }
 
@@ -500,7 +501,10 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
         None
     } else {
         get_position(&instrs[0]).map(|first_instr_pos| {
-            Position { start: first_instr_pos.start, end: first_instr_pos.start }
+            Position {
+                start: first_instr_pos.start,
+                end: first_instr_pos.start,
+            }
         })
     };
 
@@ -529,7 +533,10 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
                 });
                 // Treat this set as positioned at the ].
                 let set_pos = position.map(|loop_pos| {
-                    Position { start: loop_pos.end, end: loop_pos.end }
+                    Position {
+                        start: loop_pos.end,
+                        end: loop_pos.end,
+                    }
                 });
                 result.push(Set {
                     amount: Wrapping(0),
@@ -567,12 +574,11 @@ fn remove_pure_code(mut instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<W
     let warning = if pure_instrs.is_empty() {
         None
     } else {
-        let position = pure_instrs
-            .into_iter()
-            .map(|instr| { get_position (&instr) })
-            .filter(|pos| { pos.is_some() })
-            .fold1(|pos1, pos2| { pos1.combine(pos2) })
-            .unwrap();
+        let position = pure_instrs.into_iter()
+                                  .map(|instr| get_position(&instr))
+                                  .filter(|pos| pos.is_some())
+                                  .fold1(|pos1, pos2| pos1.combine(pos2))
+                                  .unwrap();
         Some(Warning {
             message: "These instructions have no effect.".to_owned(),
             position: position,
@@ -651,7 +657,10 @@ pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
                           // the cell we're moving from.
                           changes.remove(&0);
 
-                          MultiplyMove { changes: changes, position: position }
+                          MultiplyMove {
+                              changes: changes,
+                              position: position,
+                          }
                       } else {
                           Loop {
                               body: extract_multiply(body),
