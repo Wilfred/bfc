@@ -10,20 +10,23 @@ use execution::ExecutionState;
 #[test]
 fn compile_loop() {
     let instrs = vec![Loop {
-        body: vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 })}],
-        position: Some(Position { start: 0, end: 0 }),
-    }];
-    
-    let result = compile_to_module(
-        "foo",
-        Some("i686-pc-linux-gnu".to_owned()),
-        &instrs,
-        &ExecutionState {
-            start_instr: Some(&instrs[0]),
-            cells: vec![Wrapping(0)],
-            cell_ptr: 0,
-            outputs: vec![]
-        });
+                          body: vec![Increment {
+                                         amount: Wrapping(1),
+                                         offset: 0,
+                                         position: Some(Position { start: 0, end: 0 }),
+                                     }],
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0)],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -85,7 +88,7 @@ fn compile_empty_program() {
                                        start_instr: None,
                                        cells: vec![Wrapping(0)],
                                        cell_ptr: 0,
-                                       outputs: vec![]
+                                       outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
@@ -113,65 +116,21 @@ attributes #0 = { nounwind }
 }
 
 #[test]
-fn compile_set() {
-    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
+fn compile_set_with_offset() {
+    let instrs = vec![Set {
+                          amount: Wrapping(1),
+                          offset: 42,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
     let result = compile_to_module("foo",
                                    Some("i686-pc-linux-gnu".to_owned()),
                                    &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(0)],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
-    let expected = "; ModuleID = \'foo\'
-target triple = \"i686-pc-linux-gnu\"
-
-; Function Attrs: nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
-
-declare i32 @write(i32, i8*, i32)
-
-declare i32 @putchar(i32)
-
-declare i32 @getchar()
-
-define i32 @main() {
-init:
-  %cells = alloca i8
-  %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
-  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
-  br label %after_init
-
-beginning:                                        ; No predecessors!
-  br label %after_init
-
-after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
-  %offset_cell_index = add i32 %cell_index, 0
-  %current_cell_ptr = getelementptr i8, i8* %cells, i32 %offset_cell_index
-  store i8 1, i8* %current_cell_ptr
-  ret i32 0
-}
-
-attributes #0 = { nounwind }
-";
-
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
-}
-
-#[test]
-fn compile_set_with_offset() {
-    let instrs = vec![Set { amount: Wrapping(1), offset: 42, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(0); 50],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0); 50],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -212,14 +171,19 @@ attributes #0 = { nounwind }
 
 #[test]
 fn respect_initial_cell_ptr() {
-    let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(0); 10],
-                                   cell_ptr: 8,
-                                   outputs: vec![]
-                               });
+    let instrs = vec![PointerIncrement {
+                          amount: 1,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0); 10],
+                                       cell_ptr: 8,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -262,15 +226,20 @@ fn compile_multiply_move() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(2));
     changes.insert(2, Wrapping(3));
-    let instrs = vec![MultiplyMove { changes: changes, position: Some(Position { start: 0, end: 0 }) }];
-    
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(0); 3],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
+    let instrs = vec![MultiplyMove {
+                          changes: changes,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0); 3],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -321,19 +290,24 @@ attributes #0 = { nounwind }
 
 #[test]
 fn set_initial_cell_values() {
-    let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(1),
-                                               Wrapping(1),
-                                               Wrapping(2),
-                                               Wrapping(0),
-                                               Wrapping(0),
-                                               Wrapping(0)],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
+    let instrs = vec![PointerIncrement {
+                          amount: 1,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(1),
+                                                   Wrapping(1),
+                                                   Wrapping(2),
+                                                   Wrapping(0),
+                                                   Wrapping(0),
+                                                   Wrapping(0)],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -377,13 +351,15 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_static_outputs() {
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &vec![],
-                               &ExecutionState {
-                                   start_instr: None,
-                                   cells: vec![],
-                                   cell_ptr: 0,
-                                   outputs: vec![5, 10]
-                               });
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &vec![],
+                                   &ExecutionState {
+                                       start_instr: None,
+                                       cells: vec![],
+                                       cell_ptr: 0,
+                                       outputs: vec![5, 10],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -415,14 +391,19 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_ptr_increment() {
-    let instrs = vec![PointerIncrement { amount: 1, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(0); 2],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
+    let instrs = vec![PointerIncrement {
+                          amount: 1,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0); 2],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -462,14 +443,20 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment() {
-    let instrs = vec![Increment { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 })}];
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(0)],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
+    let instrs = vec![Increment {
+                          amount: Wrapping(1),
+                          offset: 0,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0)],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -512,14 +499,20 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_increment_with_offset() {
-    let instrs = vec![Increment { amount: Wrapping(1), offset: 3, position: Some(Position { start: 0, end: 0 })}];
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[0]),
-                                   cells: vec![Wrapping(0); 4],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
+    let instrs = vec![Increment {
+                          amount: Wrapping(1),
+                          offset: 3,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0); 4],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -561,15 +554,25 @@ attributes #0 = { nounwind }
 
 #[test]
 fn compile_start_instr_midway() {
-    let instrs = vec![Set { amount: Wrapping(1), offset: 0, position: Some(Position { start: 0, end: 0 }) },
-                      Set { amount: Wrapping(2), offset: 0, position: Some(Position { start: 0, end: 0 }) }];
-    let result = compile_to_module("foo", Some("i686-pc-linux-gnu".to_owned()), &instrs,
-                               &ExecutionState {
-                                   start_instr: Some(&instrs[1]),
-                                   cells: vec![Wrapping(0)],
-                                   cell_ptr: 0,
-                                   outputs: vec![]
-                               });
+    let instrs = vec![Set {
+                          amount: Wrapping(1),
+                          offset: 0,
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      Set {
+                          amount: Wrapping(2),
+                          offset: 0,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[1]),
+                                       cells: vec![Wrapping(0)],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
     let expected = "; ModuleID = \'foo\'
 target triple = \"i686-pc-linux-gnu\"
 
@@ -611,4 +614,3 @@ attributes #0 = { nounwind }
 
     assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
-

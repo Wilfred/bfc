@@ -193,8 +193,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         println!("{}", info);
     }
 
-    let mut llvm_module = llvm::compile_to_module(
-        path, None, &instrs, &state);
+    let mut llvm_module = llvm::compile_to_module(path, None, &instrs, &state);
 
     if matches.opt_present("dump-llvm") {
         let llvm_ir_cstr = llvm_module.to_cstring();
