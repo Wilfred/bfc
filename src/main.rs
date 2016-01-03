@@ -221,22 +221,30 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let bf_name = Path::new(path).file_name().unwrap();
     let output_name = executable_name(bf_name.to_str().unwrap());
 
-    // Link the object file.
-    let clang_args = if let Some(ref target_triple) = target_triple {
-        vec![obj_file_path, "-target", &target_triple, "-o", &output_name[..]]
-    } else {
-        vec![obj_file_path, "-o", &output_name[..]]
-    };
-
-    // TODO: use cc instead of clang here.
-    // TODO: factor out linking, writing to smaller functions.
-    try!(shell_command("clang", &clang_args[..]));
+    try!(link_object_file(&obj_file_path, &output_name, target_triple));
 
     // Strip the executable.
     let strip_args = ["-s", &output_name[..]];
     try!(shell_command("strip", &strip_args[..]));
 
     Ok(())
+}
+
+fn link_object_file(object_file_path: &str,
+                    executable_path: &str,
+                    target_triple: Option<String>)
+                    -> Result<(), String> {
+    // Link the object file.
+    let clang_args = if let Some(ref target_triple) = target_triple {
+        vec![object_file_path, "-target", &target_triple, "-o", &executable_path[..]]
+    } else {
+        vec![object_file_path, "-o", &executable_path[..]]
+    };
+
+    match shell_command("clang", &clang_args[..]) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
+    }
 }
 
 fn main() {
