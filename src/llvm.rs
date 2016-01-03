@@ -6,8 +6,7 @@ use llvm_sys::prelude::*;
 use llvm_sys::target::*;
 use llvm_sys::target_machine::*;
 
-use libc::types::os::arch::c99::c_ulonglong;
-use libc::types::os::arch::c95::c_uint;
+use std::os::raw::{c_ulonglong, c_uint};
 use std::ffi::{CString, CStr};
 use std::ptr::null_mut;
 
