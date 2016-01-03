@@ -32,6 +32,7 @@ and
         - [Running tests](#running-tests)
         - [Portability](#portability)
         - [Test programs](#test-programs)
+    - [Diagnostics](#diagnostics)
     - [Optimisations](#optimisations)
         - [Peephole optimisations](#peephole-optimisations)
             - [Combining Instructions](#combining-instructions)
