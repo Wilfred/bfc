@@ -75,7 +75,6 @@ fn slurp(path: &str) -> Result<String, Info> {
 }
 
 /// Convert "foo.bf" to "foo".
-#[allow(deprecated)] // .connect is in stable 1.2, but beta has deprecated it.
 fn executable_name(bf_file_name: &str) -> String {
     let mut name_parts: Vec<_> = bf_file_name.split('.').collect();
     let parts_len = name_parts.len();
@@ -83,7 +82,7 @@ fn executable_name(bf_file_name: &str) -> String {
         name_parts.pop();
     }
 
-    name_parts.connect(".")
+    name_parts.join(".")
 }
 
 fn print_usage(bin_name: &str, opts: Options) {
