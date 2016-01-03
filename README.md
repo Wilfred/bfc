@@ -1,6 +1,7 @@
 # An optimising compiler for BF
 
 [![Build Status](https://travis-ci.org/Wilfred/bfc.svg?branch=master)](https://travis-ci.org/Wilfred/bfc)
+[![Coverage Status](https://coveralls.io/repos/Wilfred/bfc/badge.svg?branch=master&service=github)](https://coveralls.io/github/Wilfred/bfc?branch=master)
 
 bfc is an industrial grade compiler for
 [BF](https://en.wikipedia.org/wiki/Brainfuck). It can:
