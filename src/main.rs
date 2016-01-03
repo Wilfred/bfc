@@ -85,6 +85,16 @@ fn executable_name(bf_file_name: &str) -> String {
     name_parts.join(".")
 }
 
+#[test]
+fn executable_name_bf() {
+    assert_eq!(executable_name("foo.bf"), "foo");
+}
+
+#[test]
+fn executable_name_b() {
+    assert_eq!(executable_name("foo_bar.b"), "foo_bar");
+}
+
 fn print_usage(bin_name: &str, opts: Options) {
     let brief = format!("Usage: {} SOURCE_FILE [options]", bin_name);
     print!("{}", opts.usage(&brief));
