@@ -25,7 +25,6 @@ use std::fs::File;
 use std::io::prelude::Read;
 use std::num::Wrapping;
 use std::path::Path;
-use std::process::Command;
 use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
 use diagnostics::{Info, Level};
@@ -36,6 +35,7 @@ mod peephole;
 mod bounds;
 mod execution;
 mod diagnostics;
+mod shell;
 
 #[cfg(test)]
 mod peephole_tests;
@@ -95,28 +95,6 @@ fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
     match result {
         Ok(value) => Ok(value),
         Err(e) => Err(format!("{}", e)),
-    }
-}
-
-/// Execute the CLI command specified. Return Err if the command isn't
-/// on $PATH, or if the command returned a non-zero exit code.
-fn shell_command(command: &str, args: &[&str]) -> Result<String, String> {
-    let mut c = Command::new(command);
-    for arg in args {
-        c.arg(arg);
-    }
-
-    match c.output() {
-        Ok(result) => {
-            if result.status.success() {
-                let stdout = String::from_utf8_lossy(&result.stdout);
-                Ok((*stdout).to_owned())
-            } else {
-                let stderr = String::from_utf8_lossy(&result.stderr);
-                Err((*stderr).to_owned())
-            }
-        }
-        Err(_) => Err(format!("Could not execute '{}'. Is it on $PATH?", command)),
     }
 }
 
@@ -225,7 +203,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
 
     // Strip the executable.
     let strip_args = ["-s", &output_name[..]];
-    try!(shell_command("strip", &strip_args[..]));
+    try!(shell::run_shell_command("strip", &strip_args[..]));
 
     Ok(())
 }
@@ -241,10 +219,7 @@ fn link_object_file(object_file_path: &str,
         vec![object_file_path, "-o", &executable_path[..]]
     };
 
-    match shell_command("clang", &clang_args[..]) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e),
-    }
+    shell::run_shell_command("clang", &clang_args[..])
 }
 
 fn main() {
