@@ -1,9 +1,23 @@
-# v1.4.0 (unreleased)
+# v1.5.0 (unreleased)
+
+No changes yet.
+
+# v1.4.0
 
 Portability:
 
 * bfc now supports cross-compilation, so you can compile for any
   architecture that LLVM supports.
+
+Performance:
+
+* LLVM's default optimisation levels are tuned for C. We now run LLVM
+  optimisation passes twice, to fully leverage LLVM. Many programs now
+  execute in less than half the time.
+
+* We now run optimisations using LLVM's API directly rather than
+  shelling out to `opt` and `llc`. This provides a modest improvement
+  to compile time.
 
 # v1.3.0
 
