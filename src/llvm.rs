@@ -587,7 +587,6 @@ unsafe fn compile_loop(loop_body: &[Instruction],
     // Recursively compile instructions in the loop body.
     for instr in loop_body {
         if ptr_equal(instr, start_instr) {
-            // println!("in body: {:?}", instr);
             // This is the point we want to start execution from.
             loop_body_bb = set_entry_point_after(module, main_fn, loop_body_bb);
         }
