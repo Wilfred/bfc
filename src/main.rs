@@ -201,11 +201,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
 
     try!(link_object_file(&obj_file_path, &output_name, target_triple));
 
-    // Strip the executable.
-    let strip_args = ["-s", &output_name[..]];
-    try!(shell::run_shell_command("strip", &strip_args[..]));
-
-    Ok(())
+    strip_executable(&output_name)
 }
 
 fn link_object_file(object_file_path: &str,
@@ -220,6 +216,11 @@ fn link_object_file(object_file_path: &str,
     };
 
     shell::run_shell_command("clang", &clang_args[..])
+}
+
+fn strip_executable(executable_path: &str) -> Result<(), String> {
+    let strip_args = ["-s", &executable_path[..]];
+    shell::run_shell_command("strip", &strip_args[..])
 }
 
 fn main() {
