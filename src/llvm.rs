@@ -113,6 +113,7 @@ unsafe fn int8(val: c_ulonglong) -> LLVMValueRef {
 }
 /// Convert this integer to LLVM's representation of a constant
 /// integer.
+// TODO: this should be a machine word size rather than hard-coding 32-bits.
 unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
     LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
 }
