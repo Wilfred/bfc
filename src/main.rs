@@ -75,7 +75,9 @@ fn slurp(path: &str) -> Result<String, Info> {
 }
 
 /// Convert "foo.bf" to "foo".
-fn executable_name(bf_file_name: &str) -> String {
+fn executable_name(bf_path: &str) -> String {
+    let bf_file_name = Path::new(bf_path).file_name().unwrap().to_str().unwrap();
+
     let mut name_parts: Vec<_> = bf_file_name.split('.').collect();
     let parts_len = name_parts.len();
     if parts_len > 1 {
@@ -93,6 +95,11 @@ fn executable_name_bf() {
 #[test]
 fn executable_name_b() {
     assert_eq!(executable_name("foo_bar.b"), "foo_bar");
+}
+
+#[test]
+fn executable_name_relative_path() {
+    assert_eq!(executable_name("bar/baz.bf"), "baz");
 }
 
 fn print_usage(bin_name: &str, opts: Options) {
@@ -204,12 +211,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let obj_file_path = object_file.path().to_str().expect("path not valid utf-8");
     llvm::write_object_file(&mut llvm_module, &obj_file_path);
 
-    // TODO: do path munging in executable_name().
-    let bf_name = Path::new(path).file_name().unwrap();
-    let output_name = executable_name(bf_name.to_str().unwrap());
-
+    let output_name = executable_name(path);
     try!(link_object_file(&obj_file_path, &output_name, target_triple));
-
     strip_executable(&output_name)
 }
 
