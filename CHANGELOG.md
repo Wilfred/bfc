@@ -9,6 +9,8 @@ Portability:
 * bfc now supports cross-compilation, so you can compile for any
   architecture that LLVM supports.
 
+* Fixed an issue compiling bfc on ARM.
+
 Performance:
 
 * LLVM's default optimisation levels are tuned for C. We now run LLVM
