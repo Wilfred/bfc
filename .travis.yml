@@ -39,6 +39,8 @@ script:
       travis-cargo bench &&
       travis-cargo doc
 
+after_success:
+  - travis-cargo coveralls
 
 notifications:
   email: false
