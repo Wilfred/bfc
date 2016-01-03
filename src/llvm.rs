@@ -49,7 +49,7 @@ impl Module {
             // LLVM gives us a *char pointer, so wrap it in a CStr to mark it
             // as borrowed.
             let llvm_ir_ptr = LLVMPrintModuleToString(self.module);
-            let llvm_ir = CStr::from_ptr(llvm_ir_ptr);
+            let llvm_ir = CStr::from_ptr(llvm_ir_ptr as *const _);
 
             // Make an owned copy of the string in our memory space.
             let module_string = CString::new(llvm_ir.to_bytes().clone()).unwrap();
@@ -266,7 +266,7 @@ fn create_module(module_name: &str, target_triple: Option<String>) -> Module {
     // This is necessary for maximum LLVM performance, see
     // http://llvm.org/docs/Frontend/PerformanceTips.html
     unsafe {
-        LLVMSetTarget(llvm_module, target_triple_cstring.as_ptr());
+        LLVMSetTarget(llvm_module, target_triple_cstring.as_ptr() as *const _);
     }
     // TODO: add a function to the LLVM C API that gives us the
     // data layout from the target machine.
@@ -769,7 +769,7 @@ pub fn get_default_target_triple() -> CString {
     let target_triple;
     unsafe {
         let target_triple_ptr = LLVMGetDefaultTargetTriple();
-        target_triple = CStr::from_ptr(target_triple_ptr).to_owned();
+        target_triple = CStr::from_ptr(target_triple_ptr as *const _).to_owned();
         LLVMDisposeMessage(target_triple_ptr);
     }
 
@@ -799,8 +799,8 @@ impl TargetMachine {
             target_machine =
                 LLVMCreateTargetMachine(target,
                                         target_triple,
-                                        cpu.as_ptr(),
-                                        features.as_ptr(),
+                                        cpu.as_ptr() as *const _,
+                                        features.as_ptr() as *const _,
                                         LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
                                         LLVMRelocMode::LLVMRelocDefault,
                                         LLVMCodeModel::LLVMCodeModelDefault);
@@ -839,7 +839,7 @@ pub fn write_object_file(module: &mut Module, path: &str) {
                                                  &mut obj_error);
 
         if result != 0 {
-            println!("obj_error: {:?}", CStr::from_ptr(obj_error));
+            println!("obj_error: {:?}", CStr::from_ptr(obj_error as *const _));
             assert!(false);
         }
     }
