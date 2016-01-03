@@ -4,6 +4,13 @@ rust:
   - beta
   - nightly
 
+# Install travis-cargo.
+before_script:
+  - |
+      pip install 'travis-cargo<0.2' --user &&
+      export PATH=$HOME/.local/bin:$PATH
+
+# Install LLVM.
 install:
  - sudo sh -c "echo 'deb http://archive.ubuntu.com/ubuntu/ precise-proposed restricted main multiverse universe' >> /etc/apt/sources.list"
 
@@ -24,12 +31,20 @@ install:
  - sudo ln -s /usr/bin/llvm-config-3.7 /usr/local/bin/llvm-config
  - llvm-config --version
 
+# Build and test.
+script:
+  - |
+      travis-cargo build &&
+      travis-cargo test &&
+      travis-cargo bench &&
+      travis-cargo --only stable doc
+
 notifications:
   email: false
 
 matrix:
   allow_failures:
-    # These segfault (signal 11). I can't reproduce locally, I suspect
-    # we're picking up the wrong LLVM version somehow.
+    # These have segfault (signal 11) in the past. I could't reproduce locally, but
+    # only passing on stable is sufficient.
     - rust: beta
     - rust: nightly
