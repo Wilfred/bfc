@@ -1,6 +1,9 @@
 # v1.4.0 (unreleased)
 
-No changes yet.
+Portability:
+
+* bfc now supports cross-compilation, so you can compile for any
+  architecture that LLVM supports.
 
 # v1.3.0
 

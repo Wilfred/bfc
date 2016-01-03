@@ -193,7 +193,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         println!("{}", info);
     }
 
-    let mut llvm_module = llvm::compile_to_module(path, None, &instrs, &state);
+    let target_triple = matches.opt_str("target");
+    let mut llvm_module = llvm::compile_to_module(path, target_triple.clone(), &instrs, &state);
 
     if matches.opt_present("dump-llvm") {
         let llvm_ir_cstr = llvm_module.to_cstring();
@@ -221,7 +222,12 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let output_name = executable_name(bf_name.to_str().unwrap());
 
     // Link the object file.
-    let clang_args = [obj_file_path, "-o", &output_name[..]];
+    let clang_args = if let Some(ref target_triple) = target_triple {
+        vec![obj_file_path, "-target", &target_triple, "-o", &output_name[..]]
+    } else {
+        vec![obj_file_path, "-o", &output_name[..]]
+    };
+
     // TODO: use cc instead of clang here.
     // TODO: factor out linking, writing to smaller functions.
     try!(shell_command("clang", &clang_args[..]));
@@ -244,6 +250,14 @@ fn main() {
 
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
     opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
+
+    let default_triple_cstring = llvm::get_default_target_triple();
+    let default_triple = default_triple_cstring.to_str().unwrap();
+
+    opts.optopt("",
+                "target",
+                &format!("LLVM target triple (default: {})", default_triple),
+                "TARGET");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,

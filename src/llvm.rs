@@ -766,7 +766,7 @@ pub fn optimise_ir(module: &mut Module, llvm_opt: i64) {
     }
 }
 
-fn get_default_target_triple() -> CString {
+pub fn get_default_target_triple() -> CString {
     let target_triple;
     unsafe {
         let target_triple_ptr = LLVMGetDefaultTargetTriple();

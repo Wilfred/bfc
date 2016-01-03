@@ -5,7 +5,7 @@
 bfc is an industrial grade compiler for
 [BF](https://en.wikipedia.org/wiki/Brainfuck). It can:
 
-* compile BF programs to executables
+* compile (and cross-compile) BF programs to executables
 * optimise runtime speed
 * optimise runtime memory usage
 * optimise executable size
@@ -61,6 +61,14 @@ can disable this by passing `--opt=0` or `--opt=1` when running bfc.
 $ target/release/bfc sample_programs/hello_world.bf
 $ ./hello_world
 Hello World!
+```
+
+By default, bfc compiles programs to executables that run on the
+current machine. You can explicitly specify architecture using LLVM
+target triples:
+
+```
+$ target/release/bfc sample_programs/hello_world.bf --target=x86_64-pc-linux-gnu
 ```
 
 ### Running tests
