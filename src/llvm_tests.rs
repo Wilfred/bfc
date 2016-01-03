@@ -170,6 +170,113 @@ attributes #0 = { nounwind }
 }
 
 #[test]
+fn compile_read() {
+    let instrs = vec![Read { position: None }];
+
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0)],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
+
+    let expected = "; ModuleID = 'foo'
+target triple = \"i686-pc-linux-gnu\"
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+init:
+  %cells = alloca i8
+  %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
+  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  br label %after_init
+
+beginning:                                        ; No predecessors!
+  br label %after_init
+
+after_init:                                       ; preds = %init, %beginning
+  %cell_index = load i32, i32* %cell_index_ptr
+  %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
+  %input_char = call i32 @getchar()
+  %input_byte = trunc i32 %input_char to i8
+  store i8 %input_byte, i8* %current_cell_ptr
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+
+    println!("actual: {}", result.to_cstring().to_str().unwrap());
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+}
+
+#[test]
+fn compile_write() {
+    let instrs = vec![Write { position: None }];
+
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0)],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
+
+    let expected = "; ModuleID = 'foo'
+target triple = \"i686-pc-linux-gnu\"
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+init:
+  %cells = alloca i8
+  %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
+  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  br label %after_init
+
+beginning:                                        ; No predecessors!
+  br label %after_init
+
+after_init:                                       ; preds = %init, %beginning
+  %cell_index = load i32, i32* %cell_index_ptr
+  %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
+  %cell_value = load i8, i8* %current_cell_ptr
+  %cell_val_as_char = sext i8 %cell_value to i32
+  %0 = call i32 @putchar(i32 %cell_val_as_char)
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+}
+
+#[test]
 fn respect_initial_cell_ptr() {
     let instrs = vec![PointerIncrement {
                           amount: 1,
