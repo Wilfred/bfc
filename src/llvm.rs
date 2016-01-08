@@ -9,6 +9,7 @@ use llvm_sys::target_machine::*;
 use std::os::raw::{c_ulonglong, c_uint};
 use std::ffi::{CString, CStr};
 use std::ptr::null_mut;
+use std::str;
 
 use std::collections::HashMap;
 use std::num::Wrapping;
@@ -781,11 +782,20 @@ struct TargetMachine {
 }
 
 impl TargetMachine {
-    fn new(target_triple: *const i8) -> Self {
+    fn new(target_triple: *const i8) -> Result<Self, String> {
         let mut target = null_mut();
-        let mut err_msg = null_mut();
+        let mut err_msg_ptr = null_mut();
         unsafe {
-            LLVMGetTargetFromTriple(target_triple, &mut target, &mut err_msg);
+            LLVMGetTargetFromTriple(target_triple, &mut target, &mut err_msg_ptr);
+            if target.is_null() {
+                // LLVM couldn't find a target triple with this name,
+                // so it should have given us an error message.
+                assert!(!err_msg_ptr.is_null());
+
+                let err_msg_cstr = CStr::from_ptr(err_msg_ptr);
+                let err_msg = str::from_utf8(err_msg_cstr.to_bytes()).unwrap();
+                return Err(err_msg.to_owned());
+            }
         }
 
         // TODO: do these strings live long enough?
@@ -806,7 +816,7 @@ impl TargetMachine {
                                         LLVMCodeModel::LLVMCodeModelDefault);
         }
 
-        TargetMachine { tm: target_machine }
+        Ok(TargetMachine { tm: target_machine })
     }
 }
 
@@ -818,7 +828,7 @@ impl Drop for TargetMachine {
     }
 }
 
-pub fn write_object_file(module: &mut Module, path: &str) {
+pub fn write_object_file(module: &mut Module, path: &str) -> Result<(), String> {
     unsafe {
         let target_triple = LLVMGetTarget(module.module);
 
@@ -829,7 +839,7 @@ pub fn write_object_file(module: &mut Module, path: &str) {
         LLVM_InitializeAllAsmParsers();
         LLVM_InitializeAllAsmPrinters();
 
-        let target_machine = TargetMachine::new(target_triple);
+        let target_machine = try!(TargetMachine::new(target_triple));
 
         let mut obj_error = module.new_mut_string_ptr("Writing object file failed.");
         let result = LLVMTargetMachineEmitToFile(target_machine.tm,
@@ -843,4 +853,5 @@ pub fn write_object_file(module: &mut Module, path: &str) {
             assert!(false);
         }
     }
+    Ok(())
 }

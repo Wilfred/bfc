@@ -209,7 +209,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     // Compile the LLVM IR to a temporary object file.
     let object_file = try!(convert_io_error(NamedTempFile::new()));
     let obj_file_path = object_file.path().to_str().expect("path not valid utf-8");
-    llvm::write_object_file(&mut llvm_module, &obj_file_path);
+    try!(llvm::write_object_file(&mut llvm_module, &obj_file_path));
 
     let output_name = executable_name(path);
     try!(link_object_file(&obj_file_path, &output_name, target_triple));
