@@ -127,10 +127,16 @@ fn execute_inner<'a>(instrs: &'a [Instruction],
                     if dest_ptr < 0 {
                         // Tried to access a cell before cell #0.
                         state.start_instr = Some(&instrs[instr_idx]);
+
+                        // TODO: would be nice to have a Hint: message too in compiler warnings.
+                        let message = format!("This multiply loop tried to access cell {} \
+                                               (offset {} from current cell {})",
+                                              dest_ptr,
+                                              *cell_offset,
+                                              cell_ptr);
+
                         return Outcome::RuntimeError(Warning {
-                            message: format!("This multiply loop tried to access cell {}.",
-                                             dest_ptr)
-                                         .to_owned(),
+                            message: message.to_owned(),
                             position: position,
                         });
                     }
