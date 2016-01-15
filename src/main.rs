@@ -8,7 +8,6 @@
 // TODO: enable this warning and cleanup.
 #![allow(option_unwrap_used)]
 
-extern crate libc;
 extern crate llvm_sys;
 extern crate itertools;
 extern crate quickcheck;
