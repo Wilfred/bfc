@@ -555,7 +555,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Remove code at the end of the program that has no side
 /// effects. This means we have no write commands afterwards, nor
 /// loops (which may not terminate so we should not remove).
-fn remove_pure_code(mut instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>) {
+pub fn remove_pure_code(mut instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>) {
     let mut pure_instrs = vec![];
     while !instrs.is_empty() {
         let last_instr = instrs.pop().unwrap();

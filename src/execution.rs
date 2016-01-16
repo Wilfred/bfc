@@ -29,7 +29,7 @@ pub struct ExecutionState<'a> {
 }
 
 #[derive(Debug,PartialEq,Eq)]
-enum Outcome {
+pub enum Outcome {
     // Return the number of steps remaining at completion.
     Completed(u64),
     ReachedRuntimeValue,
@@ -68,7 +68,7 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
     }
 }
 
-fn execute_inner<'a>(instrs: &'a [Instruction],
+pub fn execute_inner<'a>(instrs: &'a [Instruction],
                      state: &mut ExecutionState<'a>,
                      steps: u64)
                      -> Outcome {
