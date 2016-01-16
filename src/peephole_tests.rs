@@ -86,7 +86,7 @@ impl Arbitrary for Instruction {
             }
             10 => {
                 Loop {
-                    body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
+                    body: vec![Write { position: Some(Position { start: 0, end: 0 }) }],
                     position: Some(Position { start: 0, end: 0 }),
                 }
             }
