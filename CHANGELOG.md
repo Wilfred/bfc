@@ -5,6 +5,12 @@ Bug fixes:
 * Fixed an optimisation that incorrectly removed instructions when
   both `.` and `,` instructions were present.
 
+Usability:
+
+* bfc now reports a helpful error on nonexistent targets.
+* Improved wording of the warning message on multiply loops that
+  access out-of-bounds cells.
+
 No changes yet.
 
 # v1.4.0
