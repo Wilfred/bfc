@@ -226,16 +226,34 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map_loops(combine_ptr_increments)
 }
 
+// TODO: rename, this isn't really a combine, this really a dead code
+// removal.
 pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut redundant_instr_positions = HashSet::new();
+    let mut last_write_index = None;
 
     for (index, instr) in instrs.iter().enumerate() {
-        if let Read {..} = *instr {
-            // If we modified this cell before the read, just
-            // discard that instruction, because it's redundant.
-            if let Some(prev_index) = previous_cell_change(&instrs, index) {
-                redundant_instr_positions.insert(prev_index);
+        match *instr {
+            Read {..} => {
+                // If we can find the time this cell was modified:
+                if let Some(prev_modify_index) = previous_cell_change(&instrs, index) {
+
+                    let mut write_after_modify = false;
+                    if let Some(write_index) = last_write_index {
+                        if write_index > prev_modify_index {
+                            write_after_modify = true;
+                        }
+                    }
+
+                    if !write_after_modify {
+                        redundant_instr_positions.insert(prev_modify_index);
+                    }
+                }
             }
+            Write {..} => {
+                last_write_index = Some(index);
+            }
+            _ => {}
         }
     }
 
