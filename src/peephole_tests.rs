@@ -267,6 +267,19 @@ fn combine_before_read_not_consecutive() {
 }
 
 #[test]
+fn no_combine_before_read_after_write() {
+    let initial = vec![Set {
+                           amount: Wrapping(1),
+                           offset: 0,
+                           position: None,
+                       },
+                       Write { position: None },
+                       Read { position: None }];
+    let expected = initial.clone();
+    assert_eq!(combine_before_read(initial), expected);
+}
+
+#[test]
 fn simplify_zeroing_loop() {
     let initial = parse("[-]").unwrap();
     let expected = vec![Set {

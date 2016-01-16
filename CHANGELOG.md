@@ -1,5 +1,10 @@
 # v1.5.0 (unreleased)
 
+Bug fixes:
+
+* Fixed an optimisation that incorrectly removed instructions when
+  both `.` and `,` instructions were present.
+
 No changes yet.
 
 # v1.4.0
