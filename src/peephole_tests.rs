@@ -14,101 +14,75 @@ use quickcheck::{Arbitrary, Gen, TestResult};
 
 impl Arbitrary for Instruction {
     fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
-        let i = g.next_u32();
-        match i % 13 {
-            // TODO: use arbitrary offsets.
-            0 => {
-                Increment {
-                    amount: Wrapping(Arbitrary::arbitrary(g)),
-                    offset: 0,
-                    position: Some(Position { start: 0, end: 0 }),
-                }
+        arbitrary_instr(g, 5)
+    }
+}
+
+// We define a separate function so we can recurse on max_depth.
+// See https://github.com/BurntSushi/quickcheck/issues/23
+fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> Instruction {
+    let modulus = if max_depth == 0 {
+        7
+    } else {
+        8
+    };
+
+    // If max_depth is zero, don't create loops.
+    match g.next_u32() % modulus {
+        // TODO: use arbitrary offsets.
+        0 => {
+            Increment {
+                amount: Wrapping(Arbitrary::arbitrary(g)),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
             }
-            1 => {
-                PointerIncrement {
-                    amount: Arbitrary::arbitrary(g),
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            // TODO: use arbitrary offsets.
-            2 => {
-                Set {
-                    amount: Wrapping(Arbitrary::arbitrary(g)),
-                    offset: 0,
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            3 => Read { position: Some(Position { start: 0, end: 0 }) },
-            4 => Write { position: Some(Position { start: 0, end: 0 }) },
-            // TODO: we should be able to generate arbitrary nested
-            // instructions, instead of this limited range. See
-            // https://github.com/BurntSushi/quickcheck/issues/23
-            5 => {
-                Loop {
-                    body: vec![],
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            6 => {
-                Loop {
-                    body: vec![Increment {
-                                   amount: Wrapping(Arbitrary::arbitrary(g)),
-                                   offset: 0,
-                                   position: Some(Position { start: 0, end: 0 }),
-                               }],
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            7 => {
-                Loop {
-                    body: vec![PointerIncrement {
-                                   amount: Arbitrary::arbitrary(g),
-                                   position: Some(Position { start: 1, end: 1 }),
-                               }],
-                    position: Some(Position { start: 0, end: 2 }),
-                }
-            }
-            8 => {
-                Loop {
-                    body: vec![Set {
-                                   amount: Wrapping(Arbitrary::arbitrary(g)),
-                                   offset: 0,
-                                   position: Some(Position { start: 0, end: 0 }),
-                               }],
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            9 => {
-                Loop {
-                    body: vec![Read { position: Some(Position { start: 0, end: 0 }) }],
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            10 => {
-                Loop {
-                    body: vec![Write { position: Some(Position { start: 0, end: 0 }) }],
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            11 => {
-                let mut changes = HashMap::new();
-                changes.insert(1, Wrapping(-1));
-                MultiplyMove {
-                    changes: changes,
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            12 => {
-                let mut changes = HashMap::new();
-                changes.insert(1, Wrapping(2));
-                changes.insert(4, Wrapping(10));
-                MultiplyMove {
-                    changes: changes,
-                    position: Some(Position { start: 0, end: 0 }),
-                }
-            }
-            _ => unreachable!(),
         }
+        1 => {
+            PointerIncrement {
+                amount: Arbitrary::arbitrary(g),
+                position: Some(Position { start: 0, end: 0 }),
+            }
+        }
+        // TODO: use arbitrary offsets.
+        2 => {
+            Set {
+                amount: Wrapping(Arbitrary::arbitrary(g)),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            }
+        }
+        3 => Read { position: Some(Position { start: 0, end: 0 }) },
+        4 => Write { position: Some(Position { start: 0, end: 0 }) },
+        5 => {
+            let mut changes = HashMap::new();
+            changes.insert(1, Wrapping(-1));
+            MultiplyMove {
+                changes: changes,
+                position: Some(Position { start: 0, end: 0 }),
+            }
+        }
+        6 => {
+            let mut changes = HashMap::new();
+            changes.insert(1, Wrapping(2));
+            changes.insert(4, Wrapping(10));
+            MultiplyMove {
+                changes: changes,
+                position: Some(Position { start: 0, end: 0 }),
+            }
+        }
+        7 => {
+            assert!(max_depth > 0);
+            let loop_length = g.next_u32() % 10;
+            let mut body: Vec<_> = vec![];
+            for _ in 0..loop_length {
+                body.push(arbitrary_instr(g, max_depth - 1));
+            }
+            Loop {
+                body: body,
+                position: Some(Position { start: 0, end: 0 }),
+            }
+        }
+        _ => unreachable!(),
     }
 }
 
