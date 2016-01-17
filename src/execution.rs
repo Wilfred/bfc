@@ -34,7 +34,7 @@ impl<'a> ExecutionState<'a> {
             start_instr: None,
             cells: vec![Wrapping(0); highest_cell_index(instrs) + 1],
             cell_ptr: 0,
-            outputs: vec![]
+            outputs: vec![],
         }
     }
 }
@@ -74,9 +74,9 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
 }
 
 pub fn execute_inner<'a>(instrs: &'a [Instruction],
-                     state: &mut ExecutionState<'a>,
-                     steps: u64)
-                     -> Outcome {
+                         state: &mut ExecutionState<'a>,
+                         steps: u64)
+                         -> Outcome {
     let mut steps_left = steps;
     let mut state = state;
 
