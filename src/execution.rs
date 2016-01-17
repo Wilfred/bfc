@@ -62,7 +62,7 @@ pub const MAX_STEPS: u64 = 10000000;
 /// the code we reached.
 pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Warning>) {
     let mut state = ExecutionState::initial(instrs);
-    let outcome = execute_with_state(instrs, &mut state, steps);
+    let outcome = execute_with_state(instrs, &mut state, steps, None);
 
     // Sanity check: if we have a start instruction we
     // can't have executed the entire program at compile time.
@@ -80,9 +80,12 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
 /// Execute the instructions given, updating the state as we go.
 /// To avoid infinite loops, stop execution after `steps` steps.
 ///
+/// Execution also stops if we encounter a read instruction.  Users may
+/// alternatively pass in a dummy value for the read (used in testing).
 pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                               state: &mut ExecutionState<'a>,
-                              steps: u64)
+                              steps: u64,
+                              dummy_read_value: Option<i8>)
                               -> Outcome {
     let mut steps_left = steps;
     let mut state = state;
@@ -179,8 +182,17 @@ pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                 instr_idx += 1;
             }
             Read {..} => {
-                state.start_instr = Some(&instrs[instr_idx]);
-                return Outcome::ReachedRuntimeValue;
+                if let Some(read_value) = dummy_read_value {
+                    // If we're given a dummy value to use for the
+                    // read, pretend that we've read that value.
+                    state.cells[state.cell_ptr as usize] = Wrapping(read_value);
+                    instr_idx += 1
+                } else {
+                    // Otherwise, we cannot proceed at compile time,
+                    // so ensure runtime execution starts from here.
+                    state.start_instr = Some(&instrs[instr_idx]);
+                    return Outcome::ReachedRuntimeValue;
+                }
             }
             Loop { ref body, .. } => {
                 if state.cells[state.cell_ptr as usize].0 == 0 {
@@ -189,7 +201,7 @@ pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_outcome = execute_with_state(body, state, steps_left);
+                    let loop_outcome = execute_with_state(body, state, steps_left, None);
                     match loop_outcome {
                         Outcome::Completed(remaining_steps) => {
                             // We've run several steps during the loop
@@ -538,6 +550,16 @@ fn partially_execute_up_to_runtime_value() {
                    cell_ptr: 0,
                    outputs: vec![],
                });
+}
+
+#[test]
+fn execute_read_with_dummy_value() {
+    let instrs = parse(",").unwrap();
+
+    let mut state = ExecutionState::initial(&instrs[..]);
+    execute_with_state(&instrs[..], &mut state, 5, Some(1));
+
+    assert_eq!(state.cells[0], Wrapping(1));
 }
 
 /// Ensure that we have the correct InstrPosition when we finish
