@@ -1,3 +1,5 @@
+//! Human-readable warnings and errors for the CLI.
+
 use std::fmt;
 use ansi_term::Colour::{Red, Purple};
 use ansi_term::Style;

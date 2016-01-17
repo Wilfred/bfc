@@ -1,5 +1,7 @@
 #![warn(trivial_numeric_casts)]
 
+//! Compile time execution of BF programs.
+
 #[cfg(test)]
 use std::collections::HashMap;
 use std::num::Wrapping;

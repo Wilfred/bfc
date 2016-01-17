@@ -1,5 +1,7 @@
 #![warn(trivial_numeric_casts)]
 
+//! Calculate the maximum cell accessed by a BF program.
+
 #[cfg(test)]
 use quickcheck::quickcheck;
 #[cfg(test)]

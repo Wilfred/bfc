@@ -1,3 +1,5 @@
+//! The LLVM module handles converting a BF AST to LLVM IR.
+
 use itertools::Itertools;
 use llvm_sys::core::*;
 use llvm_sys::{LLVMModule, LLVMIntPredicate, LLVMBuilder};

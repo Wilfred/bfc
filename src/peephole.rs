@@ -1,3 +1,6 @@
+//! Optimisations that replace parts of the BF AST with faster
+//! equivalents.
+
 use std::hash::Hash;
 use std::collections::{HashMap, HashSet};
 use std::num::Wrapping;
