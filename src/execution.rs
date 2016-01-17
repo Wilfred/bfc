@@ -28,6 +28,17 @@ pub struct ExecutionState<'a> {
     pub outputs: Vec<i8>,
 }
 
+impl<'a> ExecutionState<'a> {
+    pub fn initial(instrs: &[Instruction]) -> Self {
+        ExecutionState {
+            start_instr: None,
+            cells: vec![Wrapping(0); highest_cell_index(instrs) + 1],
+            cell_ptr: 0,
+            outputs: vec![]
+        }
+    }
+}
+
 #[derive(Debug,PartialEq,Eq)]
 pub enum Outcome {
     // Return the number of steps remaining at completion.
@@ -46,13 +57,7 @@ pub const MAX_STEPS: u64 = 10000000;
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
 pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Warning>) {
-    let cells = vec![Wrapping(0); highest_cell_index(instrs) + 1];
-    let mut state = ExecutionState {
-        start_instr: None,
-        cells: cells,
-        cell_ptr: 0,
-        outputs: vec![],
-    };
+    let mut state = ExecutionState::initial(instrs);
     let outcome = execute_inner(instrs, &mut state, steps);
 
     // Sanity check: if we have a start instruction we

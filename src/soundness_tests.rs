@@ -1,4 +1,3 @@
-use std::num::Wrapping;
 use quickcheck::{quickcheck, TestResult};
 
 use bfir::Instruction;
@@ -11,15 +10,9 @@ fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bo
     where F: Fn(Vec<Instruction>) -> Vec<Instruction>
 {
     let max_steps = 1000;
-    let max_cells = 1000;
 
     // First, we execute the program given.
-    let mut state = ExecutionState {
-        start_instr: None,
-        cells: vec![Wrapping(0); max_cells],
-        cell_ptr: 0,
-        outputs: vec![],
-    };
+    let mut state = ExecutionState::initial(&instrs[..]);
     let result = execute_inner(&instrs[..], &mut state, max_steps);
 
     // Optimisations may change malformed programs to well-formed
@@ -31,12 +24,11 @@ fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bo
 
     // Next, we execute the program after transformation.
     let optimised_instrs = transform(instrs.clone());
-    let mut state2 = ExecutionState {
-        start_instr: None,
-        cells: vec![Wrapping(0); max_cells],
-        cell_ptr: 0,
-        outputs: vec![],
-    };
+    // Deliberately start our state from the original instrs, so we
+    // get the same number of cells. Otherwise we could get in messy
+    // situations where a dead loop that makes us think we use
+    // MAX_CELLS so state2 has fewer cells.
+    let mut state2 = ExecutionState::initial(&instrs[..]);
     let result2 = execute_inner(&optimised_instrs[..], &mut state2, max_steps);
 
     // Compare the outcomes: they should be the same.

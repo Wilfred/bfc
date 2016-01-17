@@ -22,7 +22,6 @@ extern crate matches;
 use std::env;
 use std::fs::File;
 use std::io::prelude::Read;
-use std::num::Wrapping;
 use std::path::Path;
 use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
@@ -168,13 +167,10 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let (state, warning) = if opt_level == "2" {
         execution::execute(&instrs, execution::MAX_STEPS)
     } else {
-        (execution::ExecutionState {
-            start_instr: Some(&instrs[0]),
-            cells: vec![Wrapping(0); bounds::highest_cell_index(&instrs) + 1],
-            cell_ptr: 0,
-            outputs: vec![],
-        },
-         None)
+        let mut init_state = execution::ExecutionState::initial(&instrs[..]);
+        // TODO: this will crash on the empty program.
+        init_state.start_instr = Some(&instrs[0]);
+        (init_state, None)
     };
 
     if let Some(warning) = warning {
