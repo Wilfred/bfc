@@ -8,6 +8,8 @@
 // TODO: enable this warning and cleanup.
 #![allow(option_unwrap_used)]
 
+//! bfc is a highly optimising compiler for BF.
+
 extern crate llvm_sys;
 extern crate itertools;
 extern crate quickcheck;
@@ -27,13 +29,13 @@ use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
 use diagnostics::{Info, Level};
 
-mod bfir;
-mod llvm;
-mod peephole;
-mod bounds;
-mod execution;
-mod diagnostics;
-mod shell;
+pub mod bfir;
+pub mod llvm;
+pub mod peephole;
+pub mod bounds;
+pub mod execution;
+pub mod diagnostics;
+pub mod shell;
 
 #[cfg(test)]
 mod peephole_tests;
