@@ -73,6 +73,9 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
     }
 }
 
+/// Execute the instructions given, updating the state as we go.
+/// To avoid infinite loops, stop execution after `steps` steps.
+///
 pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                               state: &mut ExecutionState<'a>,
                               steps: u64)
