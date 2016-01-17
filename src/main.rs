@@ -144,7 +144,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
 
     let opt_level = matches.opt_str("opt").unwrap_or(String::from("2"));
     if opt_level != "0" {
-        let (opt_instrs, warnings) = peephole::optimize(instrs);
+        let pass_specification = matches.opt_str("passes");
+        let (opt_instrs, warnings) = peephole::optimize(instrs, &pass_specification);
         instrs = opt_instrs;
 
         for warning in warnings {
@@ -245,6 +246,7 @@ fn main() {
 
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
     opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
+    opts.optopt("", "passes", "limit bfc optimisations to those specified", "PASS-SPECIFICATION");
 
     let default_triple_cstring = llvm::get_default_target_triple();
     let default_triple = default_triple_cstring.to_str().unwrap();

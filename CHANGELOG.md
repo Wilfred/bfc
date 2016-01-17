@@ -10,6 +10,8 @@ Usability:
 * bfc now reports a helpful error on nonexistent targets.
 * Improved wording of the warning message on multiply loops that
   access out-of-bounds cells.
+* Added a `--passes` CLI argument to customise which bfc optimisation
+  passes are run.
 
 No changes yet.
 

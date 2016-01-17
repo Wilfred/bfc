@@ -14,7 +14,9 @@ use bfir::Instruction::*;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
 /// (repeatedly if necessary).
-pub fn optimize(instrs: Vec<Instruction>) -> (Vec<Instruction>, Vec<Warning>) {
+pub fn optimize(instrs: Vec<Instruction>,
+                pass_specification: &Option<String>)
+                -> (Vec<Instruction>, Vec<Warning>) {
     // Many of our individual peephole optimisations remove
     // instructions, creating new opportunities to combine. We run
     // until we've found a fixed-point where no further optimisations
@@ -22,7 +24,7 @@ pub fn optimize(instrs: Vec<Instruction>) -> (Vec<Instruction>, Vec<Warning>) {
     let mut prev = instrs.clone();
     let mut warnings = vec![];
 
-    let (mut result, warning) = optimize_once(instrs);
+    let (mut result, warning) = optimize_once(instrs, pass_specification);
 
     if let Some(warning) = warning {
         warnings.push(warning);
@@ -31,7 +33,7 @@ pub fn optimize(instrs: Vec<Instruction>) -> (Vec<Instruction>, Vec<Warning>) {
     while prev != result {
         prev = result.clone();
 
-        let (new_result, new_warning) = optimize_once(result);
+        let (new_result, new_warning) = optimize_once(result, pass_specification);
 
         if let Some(warning) = new_warning {
             warnings.push(warning);
@@ -43,14 +45,60 @@ pub fn optimize(instrs: Vec<Instruction>) -> (Vec<Instruction>, Vec<Warning>) {
 }
 
 /// Apply all our peephole optimisations once and return the result.
-fn optimize_once(instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>) {
-    let combined = combine_ptr_increments(combine_increments(instrs));
-    let annotated = annotate_known_zero(combined);
-    let extracted = extract_multiply(annotated);
-    let simplified = remove_dead_loops(combine_set_and_increments(simplify_loops(extracted)));
-    let (removed, warning) =
-        remove_pure_code(combine_before_read(remove_redundant_sets(simplified)));
-    (sort_by_offset(removed), warning)
+fn optimize_once(instrs: Vec<Instruction>,
+                 pass_specification: &Option<String>)
+                 -> (Vec<Instruction>, Option<Warning>) {
+    let pass_specification = pass_specification.clone()
+                                               .unwrap_or("combine_inc,combine_ptr,known_zero,\
+                                                           multiply,zeroing_loop,combine_set,\
+                                                           dead_loop,redundant_set,read_clobber,\
+                                                           pure_removal,offset_sort"
+                                                              .to_owned());
+    let passes: Vec<_> = pass_specification.split(",").collect();
+
+    let mut instrs = instrs;
+
+    if passes.contains(&"combine_inc") {
+        instrs = combine_increments(instrs);
+    }
+    if passes.contains(&"combine_ptr") {
+        instrs = combine_ptr_increments(instrs);
+    }
+    if passes.contains(&"known_zero") {
+        instrs = annotate_known_zero(instrs);
+    }
+    if passes.contains(&"multiply") {
+        instrs = extract_multiply(instrs);
+    }
+    if passes.contains(&"zeroing_loop") {
+        instrs = simplify_loops(instrs);
+    }
+    if passes.contains(&"combine_set") {
+        instrs = combine_set_and_increments(instrs);
+    }
+    if passes.contains(&"dead_loop") {
+        instrs = remove_dead_loops(instrs);
+    }
+    if passes.contains(&"redundant_set") {
+        instrs = remove_redundant_sets(instrs);
+    }
+    if passes.contains(&"read_clobber") {
+        instrs = combine_before_read(instrs);
+    }
+    let warning;
+    if passes.contains(&"pure_removal") {
+        let (removed, pure_warning) = remove_pure_code(instrs);
+        instrs = removed;
+        warning = pure_warning;
+    } else {
+        warning = None;
+    }
+
+    if passes.contains(&"offset_sort") {
+        instrs = sort_by_offset(instrs);
+    }
+
+    (instrs, warning)
 }
 
 /// Defines a method on iterators to map a function over all loop bodies.
@@ -73,7 +121,8 @@ trait MapLoopsExt: Iterator<Item=Instruction> {
     }
 }
 
-impl<I> MapLoopsExt for I where I: Iterator<Item=Instruction> { }
+impl<I> MapLoopsExt for I where I: Iterator<Item = Instruction>
+{}
 
 /// Given an index into a vector of instructions, find the index of
 /// the previous instruction that modified the current cell. If we're
@@ -182,7 +231,8 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // Collapse consecutive increments.
-              if let Increment { amount: prev_amount, offset: prev_offset, position: prev_pos } = prev_instr {
+              if let Increment { amount: prev_amount, offset: prev_offset, position: prev_pos } =
+                     prev_instr {
                   if let Increment { amount, offset, position } = instr {
                       if prev_offset == offset {
                           return Ok(Increment {
@@ -231,6 +281,7 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 // TODO: rename, this isn't really a combine, this really a dead code
 // removal.
+// TODO: this should generate a warning too.
 pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut redundant_instr_positions = HashSet::new();
     let mut last_write_index = None;
@@ -267,6 +318,7 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map_loops(combine_before_read)
 }
 
+// TODO: rename this to zeroing_loop.
 pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .map(|instr| {
@@ -431,7 +483,8 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
               // TODO: Set, Write, Increment -> Set, Write, Set
               // Inc x, Set y -> Set y
               if let (&Increment { offset: inc_offset, position: inc_pos, .. },
-                      &Set { amount: set_amount, offset: set_offset, position: set_pos }) = (&prev_instr, &instr) {
+                      &Set { amount: set_amount, offset: set_offset, position: set_pos }) =
+                     (&prev_instr, &instr) {
                   if inc_offset == set_offset {
                       return Ok(Set {
                           amount: set_amount,
@@ -446,8 +499,10 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
           })
           .coalesce(|prev_instr, instr| {
               // Set x, Inc y -> Set x+y
-              if let Set { amount: set_amount, offset: set_offset, position: set_pos } = prev_instr {
-                  if let Increment { amount: inc_amount, offset: inc_offset, position: inc_pos } = instr {
+              if let Set { amount: set_amount, offset: set_offset, position: set_pos } =
+                     prev_instr {
+                  if let Increment { amount: inc_amount, offset: inc_offset, position: inc_pos } =
+                         instr {
                       if inc_offset == set_offset {
                           return Ok(Set {
                               amount: set_amount + inc_amount,
@@ -462,7 +517,8 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
           .coalesce(|prev_instr, instr| {
               // Set x, Set y -> Set y
               if let (&Set { offset: offset1, position: position1, .. },
-                      &Set { amount, offset: offset2, position: position2 }) = (&prev_instr, &instr) {
+                      &Set { amount, offset: offset2, position: position2 }) = (&prev_instr,
+                                                                                &instr) {
                   if offset1 == offset2 {
                       return Ok(Set {
                           amount: amount,
