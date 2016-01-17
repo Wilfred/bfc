@@ -1,3 +1,9 @@
+//! bfir defines an AST for BF. This datastructure represents the
+//! original BF source code with position data so we can find the
+//! source lines from a portion of AST.
+//!
+//! It also provides functions for generating ASTs from source code,
+//! producing good error messages on malformed inputs.
 
 use std::fmt;
 use std::num::Wrapping;
@@ -5,9 +11,12 @@ use std::collections::HashMap;
 
 use self::Instruction::*;
 
+/// A cell is the fundamental BF datatype that we work with. BF
+/// requires this to be at least one byte, we provide a cell of
+/// exactly one byte.
 pub type Cell = Wrapping<i8>;
 
-// An inclusive range used for tracking positions in source code.
+/// An inclusive range used for tracking positions in source code.
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Position {
     pub start: usize,
@@ -44,6 +53,7 @@ impl Combine<Option<Position>> for Option<Position> {
     }
 }
 
+/// Instruction represents a node in our BF AST.
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Instruction {
     Increment {

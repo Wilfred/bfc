@@ -1,3 +1,6 @@
+//! This module defines a convenient API for shelling out to commands,
+//! handling stderr when they fail.
+
 use std::process::Command;
 
 // TODO: release this as a simple rust package.

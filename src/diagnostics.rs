@@ -11,6 +11,7 @@ pub struct Warning {
     pub position: Option<Position>,
 }
 
+/// The severity of the Info.
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum Level {
@@ -18,6 +19,8 @@ pub enum Level {
     Error,
 }
 
+/// Info represents a message to the user, a warning or an error with
+/// an optional reference to a position in the BF source.
 #[derive(Debug)]
 pub struct Info {
     pub level: Level,
