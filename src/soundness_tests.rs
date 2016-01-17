@@ -1,7 +1,7 @@
 use quickcheck::{quickcheck, TestResult};
 
 use bfir::Instruction;
-use execution::{execute_inner, ExecutionState};
+use execution::{execute_with_state, ExecutionState};
 use execution::Outcome::*;
 use peephole::*;
 
@@ -13,7 +13,7 @@ fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bo
 
     // First, we execute the program given.
     let mut state = ExecutionState::initial(&instrs[..]);
-    let result = execute_inner(&instrs[..], &mut state, max_steps);
+    let result = execute_with_state(&instrs[..], &mut state, max_steps);
 
     // Optimisations may change malformed programs to well-formed
     // programs, so we ignore programs that don't terminate nicely.
@@ -29,7 +29,7 @@ fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bo
     // situations where a dead loop that makes us think we use
     // MAX_CELLS so state2 has fewer cells.
     let mut state2 = ExecutionState::initial(&instrs[..]);
-    let result2 = execute_inner(&optimised_instrs[..], &mut state2, max_steps);
+    let result2 = execute_with_state(&optimised_instrs[..], &mut state2, max_steps);
 
     // Compare the outcomes: they should be the same.
     match (result, result2) {

@@ -58,7 +58,7 @@ pub const MAX_STEPS: u64 = 10000000;
 /// the code we reached.
 pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Warning>) {
     let mut state = ExecutionState::initial(instrs);
-    let outcome = execute_inner(instrs, &mut state, steps);
+    let outcome = execute_with_state(instrs, &mut state, steps);
 
     // Sanity check: if we have a start instruction we
     // can't have executed the entire program at compile time.
@@ -73,10 +73,10 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
     }
 }
 
-pub fn execute_inner<'a>(instrs: &'a [Instruction],
-                         state: &mut ExecutionState<'a>,
-                         steps: u64)
-                         -> Outcome {
+pub fn execute_with_state<'a>(instrs: &'a [Instruction],
+                              state: &mut ExecutionState<'a>,
+                              steps: u64)
+                              -> Outcome {
     let mut steps_left = steps;
     let mut state = state;
 
@@ -182,7 +182,7 @@ pub fn execute_inner<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_outcome = execute_inner(body, state, steps_left);
+                    let loop_outcome = execute_with_state(body, state, steps_left);
                     match loop_outcome {
                         Outcome::Completed(remaining_steps) => {
                             // We've run several steps during the loop
