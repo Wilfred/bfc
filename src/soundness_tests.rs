@@ -165,7 +165,7 @@ fn sort_by_offset_is_sound() {
 #[test]
 fn test_overall_optimize_is_sound() {
     fn optimize_ignore_warnings(instrs: Vec<Instruction>) -> Vec<Instruction> {
-        optimize(instrs).0
+        optimize(instrs, &None).0
     }
 
     fn optimizations_sound_together(instrs: Vec<Instruction>, read_value: Option<i8>) -> TestResult {

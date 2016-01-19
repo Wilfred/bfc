@@ -188,7 +188,7 @@ fn should_combine_before_read() {
     let initial = parse("+,.").unwrap();
     let expected = vec![Read { position: Some(Position { start: 1, end: 1 }) },
                         Write { position: Some(Position { start: 2, end: 2 }) }];
-    assert_eq!(optimize(initial).0, expected);
+    assert_eq!(optimize(initial, &None).0, expected);
 }
 
 #[test]
@@ -216,7 +216,7 @@ fn should_combine_before_read_nested() {
                             body: vec![Read { position: Some(Position { start: 3, end: 3 }) }],
                             position: Some(Position { start: 1, end: 4 }),
                         }];
-    assert_eq!(optimize(initial).0, expected);
+    assert_eq!(optimize(initial, &None).0, expected);
 }
 
 #[test]
@@ -311,7 +311,7 @@ fn remove_repeated_loops() {
                             body: vec![],
                             position: Some(Position { start: 0, end: 0 }),
                         }];
-    assert_eq!(optimize(initial).0, expected);
+    assert_eq!(optimize(initial, &None).0, expected);
 }
 
 #[test]
@@ -724,7 +724,7 @@ fn should_annotate_known_zero_nested() {
 #[test]
 fn should_annotate_known_zero_cleaned_up() {
     let initial = vec![Write { position: Some(Position { start: 0, end: 0 }) }];
-    assert_eq!(optimize(initial.clone()).0, initial);
+    assert_eq!(optimize(initial.clone(), &None).0, initial);
 }
 
 #[test]
@@ -739,7 +739,7 @@ fn should_preserve_set_0_in_loop() {
                                       }],
                            position: Some(Position { start: 0, end: 0 }),
                        }];
-    assert_eq!(optimize(initial.clone()).0, initial);
+    assert_eq!(optimize(initial.clone(), &None).0, initial);
 }
 
 #[test]
@@ -754,7 +754,7 @@ fn should_remove_pure_code() {
                         },
                         Write { position: Some(Position { start: 1, end: 1 }) }];
 
-    let (result, warnings) = optimize(initial);
+    let (result, warnings) = optimize(initial, &None);
 
     assert_eq!(result, expected);
     assert_eq!(warnings,
@@ -770,7 +770,7 @@ fn quickcheck_should_remove_dead_pure_code() {
         if !is_pure(&instrs) {
             return TestResult::discard();
         }
-        TestResult::from_bool(optimize(instrs).0 == vec![])
+        TestResult::from_bool(optimize(instrs, &None).0 == vec![])
     }
     quickcheck(should_remove_dead_pure_code as fn(Vec<Instruction>) -> TestResult);
 }
@@ -781,8 +781,8 @@ fn quickcheck_optimize_should_be_idempotent() {
         // Once we've optimized once, running again shouldn't reduce the
         // instructions further. If it does, we're probably running our
         // optimisations in the wrong order.
-        let minimal = optimize(instrs.clone()).0;
-        optimize(minimal.clone()).0 == minimal
+        let minimal = optimize(instrs.clone(), &None).0;
+        optimize(minimal.clone(), &None).0 == minimal
     }
     quickcheck(optimize_should_be_idempotent as fn(Vec<Instruction>) -> bool);
 }
@@ -831,7 +831,7 @@ fn pathological_optimisation_opportunity() {
     let expected = vec![Read { position: Some(Position { start: 0, end: 0 }) },
                         Write { position: Some(Position { start: 0, end: 0 }) }];
 
-    assert_eq!(optimize(instrs).0, expected);
+    assert_eq!(optimize(instrs, &None).0, expected);
 }
 
 fn count_instrs(instrs: &[Instruction]) -> u64 {
@@ -850,7 +850,7 @@ fn quickcheck_optimize_should_decrease_size() {
     fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
         // The result of optimize() should never increase the number of
         // instructions.
-        let result = optimize(instrs.clone()).0;
+        let result = optimize(instrs.clone(), &None).0;
         count_instrs(&result) <= count_instrs(&instrs)
     }
     quickcheck(optimize_should_decrease_size as fn(Vec<Instruction>) -> bool);
@@ -1152,7 +1152,7 @@ fn combine_increments_after_sort() {
                             position: Some(Position { start: 3, end: 3 }),
                         },
                         Write { position: Some(Position { start: 6, end: 6 }) }];
-    assert_eq!(optimize(instrs).0, expected);
+    assert_eq!(optimize(instrs, &None).0, expected);
 }
 
 #[test]
