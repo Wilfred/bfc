@@ -12,6 +12,8 @@ use diagnostics::Warning;
 use bfir::{Instruction, Position, Combine, Cell, get_position};
 use bfir::Instruction::*;
 
+const MAX_OPT_ITERATIONS: u64 = 40;
+
 /// Given a sequence of BF instructions, apply peephole optimisations
 /// (repeatedly if necessary).
 pub fn optimize(instrs: Vec<Instruction>,
@@ -30,16 +32,24 @@ pub fn optimize(instrs: Vec<Instruction>,
         warnings.push(warning);
     }
 
-    while prev != result {
-        prev = result.clone();
+    for _ in 0..MAX_OPT_ITERATIONS {
+        if prev == result {
+            return (result, warnings);
+        } else {
+            prev = result.clone();
 
-        let (new_result, new_warning) = optimize_once(result, pass_specification);
+            let (new_result, new_warning) = optimize_once(result, pass_specification);
 
-        if let Some(warning) = new_warning {
-            warnings.push(warning);
+            if let Some(warning) = new_warning {
+                warnings.push(warning);
+            }
+            result = new_result;
         }
-        result = new_result;
     }
+
+    // TODO: use proper Info here.
+    println!("Warning: ran peephole optimisations {} times but did not reach a fixed point!",
+             MAX_OPT_ITERATIONS);
 
     (result, warnings)
 }
