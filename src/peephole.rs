@@ -597,11 +597,15 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     // Cells in BF are initialised to zero, so we know the current
     // cell is zero at the start of execution.
-    result.push(Set {
+    let set_instr = Set {
         amount: Wrapping(0),
         offset: 0,
         position: position,
-    });
+    };
+    // Insert the set instruction unless there is one already present.
+    if instrs.first() != Some(&set_instr) {
+        result.push(set_instr);
+    }
 
     result.extend(annotate_known_zero_inner(instrs));
     result
@@ -610,7 +614,9 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
 
-    for instr in instrs {
+    for i in 0..instrs.len() {
+        let instr = instrs[i].clone();
+
         match instr {
             // After a loop, we know the cell is currently zero.
             Loop { body, position } => {
@@ -625,17 +631,22 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
                         end: loop_pos.end,
                     }
                 });
-                result.push(Set {
+
+                let set_instr = Set {
                     amount: Wrapping(0),
                     offset: 0,
                     position: set_pos,
-                })
+                };
+                if instrs.get(i + 1) != Some(&set_instr) {
+                    result.push(set_instr.clone());
+                }
             }
             i => {
                 result.push(i);
             }
         }
     }
+
     result
 }
 

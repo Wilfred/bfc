@@ -666,6 +666,22 @@ fn quickcheck_should_annotate_known_zero_at_start() {
 }
 
 #[test]
+fn annotate_known_zero_idempotent() {
+    fn is_idempotent(instrs: Vec<Instruction>) -> bool {
+        let annotated = annotate_known_zero(instrs);
+        let annotated_again = annotate_known_zero(annotated.clone());
+        if annotated == annotated_again {
+            true
+        } else {
+            println!("intermediate: {:?}", annotated);
+            println!("final: {:?}", annotated_again);
+            false
+        }
+    }
+    quickcheck(is_idempotent as fn(Vec<Instruction>) -> bool);
+}
+
+#[test]
 fn should_annotate_known_zero() {
     let initial = parse("+[]").unwrap();
     let expected = vec![Set {
