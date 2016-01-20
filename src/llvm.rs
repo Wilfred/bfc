@@ -461,7 +461,7 @@ unsafe fn compile_multiply_move(changes: &HashMap<isize, Cell>,
                                            indices.len() as c_uint,
                                            module.new_string_ptr("target_cell_ptr"));
 
-        // Get the current value of the current cell.
+        // Get the current value of the target cell.
         let target_cell_val = LLVMBuildLoad(builder.builder,
                                             target_cell_ptr,
                                             module.new_string_ptr("target_cell_val"));
