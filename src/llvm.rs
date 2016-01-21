@@ -794,7 +794,7 @@ impl TargetMachine {
                 // so it should have given us an error message.
                 assert!(!err_msg_ptr.is_null());
 
-                let err_msg_cstr = CStr::from_ptr(err_msg_ptr);
+                let err_msg_cstr = CStr::from_ptr(err_msg_ptr as *const _);
                 let err_msg = str::from_utf8(err_msg_cstr.to_bytes()).unwrap();
                 return Err(err_msg.to_owned());
             }
