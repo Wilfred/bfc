@@ -9,7 +9,7 @@ use itertools::Itertools;
 
 use diagnostics::Warning;
 
-use bfir::{Instruction, Position, Combine, Cell, get_position};
+use bfir::{Instruction, Position, Combine, get_position};
 use bfir::Instruction::*;
 
 const MAX_OPT_ITERATIONS: u64 = 40;
@@ -60,7 +60,7 @@ fn optimize_once(instrs: Vec<Instruction>,
                  -> (Vec<Instruction>, Option<Warning>) {
     let pass_specification = pass_specification.clone()
                                                .unwrap_or("combine_inc,combine_ptr,known_zero,\
-                                                           multiply,zeroing_loop,combine_set,\
+                                                           zeroing_loop,combine_set,\
                                                            dead_loop,redundant_set,read_clobber,\
                                                            pure_removal,offset_sort"
                                                               .to_owned());
@@ -76,9 +76,6 @@ fn optimize_once(instrs: Vec<Instruction>,
     }
     if passes.contains(&"known_zero") {
         instrs = annotate_known_zero(instrs);
-    }
-    if passes.contains(&"multiply") {
-        instrs = extract_multiply(instrs);
     }
     if passes.contains(&"zeroing_loop") {
         instrs = simplify_loops(instrs);
@@ -684,90 +681,4 @@ pub fn remove_pure_code(mut instrs: Vec<Instruction>) -> (Vec<Instruction>, Opti
     };
 
     (instrs, warning)
-}
-
-/// Does this loop body represent a multiplication operation?
-/// E.g. "[->>>++<<<]" sets cell #3 to 2*cell #0.
-fn is_multiply_loop_body(body: &[Instruction]) -> bool {
-    // A multiply loop may only contain increments and pointer increments.
-    for body_instr in body {
-        match *body_instr {
-            Increment {..} => {}
-            PointerIncrement {..} => {}
-            _ => return false,
-        }
-    }
-
-    // A multiply loop must have a net pointer movement of
-    // zero.
-    let mut net_movement = 0;
-    for body_instr in body {
-        if let PointerIncrement { amount, .. } = *body_instr {
-            net_movement += amount;
-        }
-    }
-    if net_movement != 0 {
-        return false;
-    }
-
-    let changes = cell_changes(body);
-    // A multiply loop must decrement cell #0.
-    if let Some(&Wrapping(-1)) = changes.get(&0) {
-    } else {
-        return false;
-    }
-
-    changes.len() >= 2
-}
-
-/// Return a hashmap of all the cells that are affected by this
-/// sequence of instructions, and how much they change.
-/// E.g. "->>+++>+" -> {0: -1, 2: 3, 3: 1}
-fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
-    let mut changes = HashMap::new();
-    let mut cell_index: isize = 0;
-
-    for instr in instrs {
-        match *instr {
-            Increment { amount, offset, .. } => {
-                let current_amount = *changes.get(&(cell_index + offset)).unwrap_or(&Wrapping(0));
-                changes.insert(cell_index, current_amount + amount);
-            }
-            PointerIncrement { amount, .. } => {
-                cell_index += amount;
-            }
-            // We assume this is only called from is_multiply_loop.
-            _ => unreachable!(),
-        }
-    }
-
-    changes
-}
-
-pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    instrs.into_iter()
-          .map(|instr| {
-              match instr {
-                  Loop { body, position } => {
-                      if is_multiply_loop_body(&body) {
-                          let mut changes = cell_changes(&body);
-                          // MultiplyMove is for where we move to, so ignore
-                          // the cell we're moving from.
-                          changes.remove(&0);
-
-                          MultiplyMove {
-                              changes: changes,
-                              position: position,
-                          }
-                      } else {
-                          Loop {
-                              body: extract_multiply(body),
-                              position: position,
-                          }
-                      }
-                  }
-                  i => i,
-              }
-          })
-          .collect()
 }
