@@ -4,6 +4,7 @@ Bug fixes:
 
 * Fixed an optimisation that incorrectly removed instructions when
   both `.` and `,` instructions were present.
+* Moved to LLVM 3.8, as LLVM 3.7 misoptimised some programs (see #8).
 
 Usability:
 
