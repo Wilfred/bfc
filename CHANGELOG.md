@@ -1,4 +1,8 @@
-# v1.5.0 (unreleased)
+# v1.6.0 (unreleased)
+
+No changes yet.
+
+# v1.5.0
 
 Bug fixes:
 
@@ -13,8 +17,6 @@ Usability:
   access out-of-bounds cells.
 * Added a `--passes` CLI argument to customise which bfc optimisation
   passes are run.
-
-No changes yet.
 
 # v1.4.0
 
