@@ -39,13 +39,7 @@ script:
       travis-cargo bench &&
       travis-cargo doc
   - cargo build --release
-  # Ensure we can build our sample programs in a release build.
-  - ./target/release/bfc sample_programs/bangbang.bf
-  - ./target/release/bfc sample_programs/hello_world.bf
-  - ./target/release/bfc sample_programs/bottles.bf
-  - ./target/release/bfc sample_programs/factor.bf
-  - ./target/release/bfc sample_programs/life.bf
-  - ./target/release/bfc sample_programs/mandelbrot.bf
+  - ./integration_tests.sh
 
 after_success:
   - travis-cargo coveralls
