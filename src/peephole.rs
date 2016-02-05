@@ -611,8 +611,8 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
 
-    for (i, item) in instrs.iter().enumerate() {
-        let instr = item.clone();
+    for (i, instr) in instrs.iter().enumerate() {
+        let instr = instr.clone();
 
         match instr {
             // After a loop, we know the cell is currently zero.
@@ -638,8 +638,8 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
                     result.push(set_instr.clone());
                 }
             }
-            i => {
-                result.push(i);
+            _ => {
+                result.push(instr);
             }
         }
     }
