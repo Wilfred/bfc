@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::num::Wrapping;
 
 use quickcheck::quickcheck;
@@ -583,6 +584,27 @@ fn should_remove_redundant_set() {
     assert_eq!(remove_redundant_sets(initial), expected);
 }
 
+#[test]
+fn should_remove_redundant_set_multiply() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(1));
+
+    let initial = vec![MultiplyMove {
+                           changes: changes.clone(),
+                           position: Some(Position { start: 0, end: 0 }),
+                       },
+                       Set {
+                           amount: Wrapping(0),
+                           offset: 0,
+                           position: Some(Position { start: 0, end: 0 }),
+                       }];
+    let expected = vec![MultiplyMove {
+                            changes: changes,
+                            position: Some(Position { start: 0, end: 0 }),
+                        }];
+    assert_eq!(remove_redundant_sets(initial), expected);
+}
+
 /// After a loop, if we set to a value other than zero, we shouldn't
 /// remove it.
 #[test]
@@ -834,6 +856,107 @@ fn quickcheck_optimize_should_decrease_size() {
 }
 
 #[test]
+fn should_extract_multiply_simple() {
+    let instrs = parse("[->+++<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(3));
+    let expected = vec![MultiplyMove {
+                            changes: dest_cells,
+                            position: Some(Position { start: 0, end: 7 }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_nested() {
+    let instrs = parse("[[->+<]]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(1));
+    let expected = vec![Loop {
+                            body: vec![MultiplyMove {
+                                           changes: dest_cells,
+                                           position: Some(Position { start: 1, end: 6 }),
+                                       }],
+                            position: Some(Position { start: 0, end: 7 }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_negative_number() {
+    let instrs = parse("[->--<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(-2));
+    let expected = vec![MultiplyMove {
+                            changes: dest_cells,
+                            position: Some(Position { start: 0, end: 6 }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_multiple_cells() {
+    let instrs = parse("[->+++>>>+<<<<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(3));
+    dest_cells.insert(4, Wrapping(1));
+    let expected = vec![MultiplyMove {
+                            changes: dest_cells,
+                            position: Some(Position {
+                                start: 0,
+                                end: 14,
+                            }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_not_extract_multiply_net_movement() {
+    let instrs = parse("[->+++<<]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_from_clear_loop() {
+    let instrs = parse("[-]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_with_inner_loop() {
+    let instrs = parse("[->+++<[]]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+/// We need to decrement the initial cell in order for this to be a
+/// multiply.
+#[test]
+fn should_not_extract_multiply_without_decrement() {
+    let instrs = parse("[+>++<]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_with_read() {
+    let instrs = parse("[+>++<,]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_with_write() {
+    let instrs = parse("[+>++<.]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
 fn sort_by_offset_increment() {
     let instrs = parse("+>+>").unwrap();
     let expected = vec![Increment {
@@ -1067,6 +1190,55 @@ fn prev_mutate_ignores_offset_at_index() {
                           offset: 1,
                           position: Some(Position { start: 0, end: 0 }),
                       }];
+    assert_eq!(previous_cell_change(&instrs, 1), Some(0));
+}
+
+#[test]
+fn prev_mutate_multiply_offset_matches() {
+    let mut changes = HashMap::new();
+    changes.insert(-1, Wrapping(-1));
+
+    let instrs = vec![MultiplyMove {
+                          changes: changes.clone(),
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      PointerIncrement {
+                          amount: -1,
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      Read { position: Some(Position { start: 0, end: 0 }) }];
+    assert_eq!(previous_cell_change(&instrs, 2), Some(0));
+}
+
+#[test]
+fn prev_mutate_multiply_offset_doesnt_match() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(2));
+
+    let instrs = vec![MultiplyMove {
+                          changes: changes.clone(),
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      PointerIncrement {
+                          amount: 2,
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      Read { position: Some(Position { start: 0, end: 0 }) }];
+    assert_eq!(previous_cell_change(&instrs, 2), None);
+}
+
+/// MultiplyMove zeroes the current cell, so it counts as a mutation
+/// of the current value.
+#[test]
+fn prev_mutate_multiply_ignore_offset() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(-1));
+
+    let instrs = vec![MultiplyMove {
+                          changes: changes.clone(),
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 1), Some(0));
 }
 

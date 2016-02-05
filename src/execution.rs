@@ -2,6 +2,8 @@
 
 //! Compile time execution of BF programs.
 
+#[cfg(test)]
+use std::collections::HashMap;
 use std::num::Wrapping;
 
 #[cfg(test)]
@@ -14,6 +16,9 @@ use bfir::{Instruction, Cell};
 use bfir::Instruction::*;
 
 use diagnostics::Warning;
+
+#[cfg(test)]
+use bounds::MAX_CELL_INDEX;
 
 use bounds::highest_cell_index;
 

@@ -7,6 +7,7 @@
 
 use std::fmt;
 use std::num::Wrapping;
+use std::collections::HashMap;
 
 use self::Instruction::*;
 
@@ -81,6 +82,10 @@ pub enum Instruction {
         offset: isize,
         position: Option<Position>,
     },
+    MultiplyMove {
+        changes: HashMap<isize, Cell>,
+        position: Option<Position>,
+    },
 }
 
 fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
@@ -118,6 +123,7 @@ pub fn get_position(instr: &Instruction) -> Option<Position> {
         Write { position } => position,
         Loop { position, .. } => position,
         Set { position, .. } => position,
+        MultiplyMove { position, .. } => position,
     }
 }
 

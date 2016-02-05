@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ffi::CString;
 use std::num::Wrapping;
 
@@ -318,6 +319,73 @@ after_init:                                       ; preds = %init, %beginning
   %cell_index = load i32, i32* %cell_index_ptr
   %new_cell_index = add i32 %cell_index, 1
   store i32 %new_cell_index, i32* %cell_index_ptr
+  ret i32 0
+}
+
+attributes #0 = { nounwind }
+";
+
+    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+}
+
+#[test]
+fn compile_multiply_move() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(2));
+    changes.insert(2, Wrapping(3));
+    let instrs = vec![MultiplyMove {
+                          changes: changes,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+
+    let result = compile_to_module("foo",
+                                   Some("i686-pc-linux-gnu".to_owned()),
+                                   &instrs,
+                                   &ExecutionState {
+                                       start_instr: Some(&instrs[0]),
+                                       cells: vec![Wrapping(0); 3],
+                                       cell_ptr: 0,
+                                       outputs: vec![],
+                                   });
+    let expected = "; ModuleID = \'foo\'
+target triple = \"i686-pc-linux-gnu\"
+
+; Function Attrs: nounwind
+declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+
+declare i32 @write(i32, i8*, i32)
+
+declare i32 @putchar(i32)
+
+declare i32 @getchar()
+
+define i32 @main() {
+init:
+  %cells = alloca i8, i32 3
+  %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
+  call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 3, i32 1, i1 true)
+  %cell_index_ptr = alloca i32
+  store i32 0, i32* %cell_index_ptr
+  br label %after_init
+
+beginning:                                        ; No predecessors!
+  br label %after_init
+
+after_init:                                       ; preds = %init, %beginning
+  %cell_index = load i32, i32* %cell_index_ptr
+  %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
+  %cell_value = load i8, i8* %current_cell_ptr
+  store i8 0, i8* %current_cell_ptr
+  %target_cell_ptr = getelementptr i8, i8* %current_cell_ptr, i32 1
+  %target_cell_val = load i8, i8* %target_cell_ptr
+  %additional_val = mul i8 %cell_value, 2
+  %new_target_val = add i8 %target_cell_val, %additional_val
+  store i8 %new_target_val, i8* %target_cell_ptr
+  %target_cell_ptr1 = getelementptr i8, i8* %current_cell_ptr, i32 2
+  %target_cell_val2 = load i8, i8* %target_cell_ptr1
+  %additional_val3 = mul i8 %cell_value, 3
+  %new_target_val4 = add i8 %target_cell_val2, %additional_val3
+  store i8 %new_target_val4, i8* %target_cell_ptr1
   ret i32 0
 }
 

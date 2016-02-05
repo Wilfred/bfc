@@ -5,6 +5,8 @@
 #[cfg(test)]
 use quickcheck::quickcheck;
 #[cfg(test)]
+use std::collections::HashMap;
+#[cfg(test)]
 use std::num::Wrapping;
 
 use std::ops::Add;
@@ -108,6 +110,16 @@ fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
             (SaturatingInt::Number(offset as i64),
              SaturatingInt::Number(0))
         }
+        MultiplyMove { ref changes, .. } => {
+            let mut highest_affected = 0;
+            for cell in changes.keys() {
+                if *cell > highest_affected {
+                    highest_affected = *cell;
+                }
+            }
+            (SaturatingInt::Number(highest_affected as i64),
+             SaturatingInt::Number(0))
+        }
         Loop { ref body, .. } => {
             let (max_in_body, net_in_body) = overall_movement(body);
 
@@ -164,6 +176,62 @@ fn multiple_ptr_increment_bounds() {
                           position: Some(Position { start: 0, end: 0 }),
                       }];
     assert_eq!(highest_cell_index(&instrs), 2);
+}
+
+#[test]
+fn multiply_move_bounds() {
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(3));
+    dest_cells.insert(4, Wrapping(1));
+    let instrs = vec![MultiplyMove {
+                          changes: dest_cells,
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      // Multiply move should have increased the highest cell
+                      // reached, but not the current cell. This instruction
+                      // should not affect the output:
+                      PointerIncrement {
+                          amount: 2,
+                          position: Some(Position { start: 1, end: 1 }),
+                      }];
+
+    assert_eq!(highest_cell_index(&instrs), 4);
+}
+
+/// Multiply move uses offsets to the current pointer value.
+/// Verify we add to the current pointer value.
+#[test]
+fn multiply_move_bounds_are_relative() {
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(5));
+    let instrs = vec![// Move to cell #2.
+                      PointerIncrement {
+                          amount: 2,
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      // Move (with multiply) to cell #3 (#2 offset 1).
+                      MultiplyMove {
+                          changes: dest_cells,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+
+    assert_eq!(highest_cell_index(&instrs), 3);
+}
+
+#[test]
+fn multiply_move_backwards_bounds() {
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(-1, Wrapping(2));
+    let instrs = vec![PointerIncrement {
+                          amount: 1,
+                          position: Some(Position { start: 0, end: 0 }),
+                      },
+                      MultiplyMove {
+                          changes: dest_cells,
+                          position: Some(Position { start: 0, end: 0 }),
+                      }];
+
+    assert_eq!(highest_cell_index(&instrs), 1);
 }
 
 #[test]
