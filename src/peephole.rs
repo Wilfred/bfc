@@ -193,8 +193,8 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
 
     let mut needed_offset = 0;
     // Unlike previous_cell_change, we iterate forward.
-    for i in (index + 1)..instrs.len() {
-        match instrs[i] {
+    for (i, instr) in instrs.iter().enumerate().skip(index + 1) {
+        match *instr {
             Increment { offset, .. } => {
                 if offset == needed_offset {
                     return Some(i);
