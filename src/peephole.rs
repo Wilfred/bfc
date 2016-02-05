@@ -434,7 +434,7 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
         match instr {
             Increment { amount, offset, position } => {
                 let new_offset = offset + current_offset;
-                let same_offset_instrs = instrs_by_offset.entry(new_offset).or_insert(vec![]);
+                let same_offset_instrs = instrs_by_offset.entry(new_offset).or_insert_with(|| vec![]);
                 same_offset_instrs.push(Increment {
                     amount: amount,
                     offset: new_offset,
@@ -443,7 +443,7 @@ pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
             }
             Set { amount, offset, position } => {
                 let new_offset = offset + current_offset;
-                let same_offset_instrs = instrs_by_offset.entry(new_offset).or_insert(vec![]);
+                let same_offset_instrs = instrs_by_offset.entry(new_offset).or_insert_with(|| vec![]);
                 same_offset_instrs.push(Set {
                     amount: amount,
                     offset: new_offset,
@@ -611,8 +611,8 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
 fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut result = vec![];
 
-    for i in 0..instrs.len() {
-        let instr = instrs[i].clone();
+    for (i, item) in instrs.iter().enumerate() {
+        let instr = item.clone();
 
         match instr {
             // After a loop, we know the cell is currently zero.

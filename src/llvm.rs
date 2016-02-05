@@ -55,7 +55,7 @@ impl Module {
             let llvm_ir = CStr::from_ptr(llvm_ir_ptr as *const _);
 
             // Make an owned copy of the string in our memory space.
-            let module_string = CString::new(llvm_ir.to_bytes().clone()).unwrap();
+            let module_string = CString::new(llvm_ir.to_bytes()).unwrap();
 
             // Cleanup borrowed string.
             LLVMDisposeMessage(llvm_ir_ptr);
@@ -155,17 +155,17 @@ fn add_c_declarations(module: &mut Module) {
 
     add_function(module,
                  "llvm.memset.p0i8.i32",
-                 &mut vec![int8_ptr_type(), int8_type(), int32_type(), int32_type(), int1_type()],
+                 &mut [int8_ptr_type(), int8_type(), int32_type(), int32_type(), int1_type()],
                  void);
 
     add_function(module,
                  "write",
-                 &mut vec![int32_type(), int8_ptr_type(), int32_type()],
+                 &mut [int32_type(), int8_ptr_type(), int32_type()],
                  int32_type());
 
-    add_function(module, "putchar", &mut vec![int32_type()], int32_type());
+    add_function(module, "putchar", &mut [int32_type()], int32_type());
 
-    add_function(module, "getchar", &mut vec![], int32_type());
+    add_function(module, "getchar", &mut [], int32_type());
 }
 
 unsafe fn add_function_call(module: &mut Module,
@@ -663,7 +663,7 @@ fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, outputs: &
         add_function_call(module,
                           bb,
                           "write",
-                          &mut vec![stdout_fd, known_outputs_ptr, llvm_num_outputs],
+                          &mut [stdout_fd, known_outputs_ptr, llvm_num_outputs],
                           "");
     }
 }
