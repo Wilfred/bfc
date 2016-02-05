@@ -91,6 +91,14 @@ fn annotate_known_zero_is_sound() {
 }
 
 #[test]
+fn extract_multiply_is_sound() {
+    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+        transform_is_sound(instrs, extract_multiply, true, None)
+    }
+    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+}
+
+#[test]
 fn simplify_loops_is_sound() {
     fn is_sound(instrs: Vec<Instruction>) -> TestResult {
         transform_is_sound(instrs, zeroing_loops, true, None)

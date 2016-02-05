@@ -873,6 +873,107 @@ fn quickcheck_optimize_should_decrease_size() {
 }
 
 #[test]
+fn should_extract_multiply_simple() {
+    let instrs = parse("[->+++<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(3));
+    let expected = vec![MultiplyMove {
+                            changes: dest_cells,
+                            position: Some(Position { start: 0, end: 7 }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_nested() {
+    let instrs = parse("[[->+<]]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(1));
+    let expected = vec![Loop {
+                            body: vec![MultiplyMove {
+                                           changes: dest_cells,
+                                           position: Some(Position { start: 1, end: 6 }),
+                                       }],
+                            position: Some(Position { start: 0, end: 7 }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_negative_number() {
+    let instrs = parse("[->--<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(-2));
+    let expected = vec![MultiplyMove {
+                            changes: dest_cells,
+                            position: Some(Position { start: 0, end: 6 }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_extract_multiply_multiple_cells() {
+    let instrs = parse("[->+++>>>+<<<<]").unwrap();
+
+    let mut dest_cells = HashMap::new();
+    dest_cells.insert(1, Wrapping(3));
+    dest_cells.insert(4, Wrapping(1));
+    let expected = vec![MultiplyMove {
+                            changes: dest_cells,
+                            position: Some(Position {
+                                start: 0,
+                                end: 14,
+                            }),
+                        }];
+
+    assert_eq!(extract_multiply(instrs), expected);
+}
+
+#[test]
+fn should_not_extract_multiply_net_movement() {
+    let instrs = parse("[->+++<<]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_from_clear_loop() {
+    let instrs = parse("[-]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_with_inner_loop() {
+    let instrs = parse("[->+++<[]]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+/// We need to decrement the initial cell in order for this to be a
+/// multiply.
+#[test]
+fn should_not_extract_multiply_without_decrement() {
+    let instrs = parse("[+>++<]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_with_read() {
+    let instrs = parse("[+>++<,]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
+fn should_not_extract_multiply_with_write() {
+    let instrs = parse("[+>++<.]").unwrap();
+    assert_eq!(extract_multiply(instrs.clone()), instrs);
+}
+
+#[test]
 fn sort_by_offset_increment() {
     let instrs = parse("+>+>").unwrap();
     let expected = vec![Increment {
