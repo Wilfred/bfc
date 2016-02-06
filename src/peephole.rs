@@ -78,7 +78,7 @@ fn optimize_once(instrs: Vec<Instruction>,
         instrs = annotate_known_zero(instrs);
     }
     if passes.contains(&"zeroing_loop") {
-        instrs = simplify_loops(instrs);
+        instrs = zeroing_loops(instrs);
     }
     if passes.contains(&"combine_set") {
         instrs = combine_set_and_increments(instrs);
@@ -325,8 +325,8 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map_loops(combine_before_read)
 }
 
-// TODO: rename this to zeroing_loop.
-pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+/// Convert [-] to Set 0.
+pub fn zeroing_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
     instrs.into_iter()
           .map(|instr| {
               if let Loop { ref body, position } = instr {
@@ -343,7 +343,7 @@ pub fn simplify_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
               }
               instr
           })
-          .map_loops(simplify_loops)
+          .map_loops(zeroing_loops)
 }
 
 /// Remove any loops where we know the current cell is zero.

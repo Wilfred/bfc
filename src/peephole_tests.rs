@@ -261,7 +261,7 @@ fn simplify_zeroing_loop() {
                             offset: 0,
                             position: Some(Position { start: 0, end: 2 }),
                         }];
-    assert_eq!(simplify_loops(initial), expected);
+    assert_eq!(zeroing_loops(initial), expected);
 }
 
 #[test]
@@ -275,7 +275,7 @@ fn simplify_nested_zeroing_loop() {
                                        }],
                             position: Some(Position { start: 0, end: 4 }),
                         }];
-    assert_eq!(simplify_loops(initial), expected);
+    assert_eq!(zeroing_loops(initial), expected);
 }
 
 #[test]
@@ -284,7 +284,7 @@ fn dont_simplify_multiple_decrement_loop() {
     // current cell has the value 3, we would actually wrap around
     // (although BF does not specify this).
     let initial = parse("[--]").unwrap();
-    assert_eq!(simplify_loops(initial.clone()), initial);
+    assert_eq!(zeroing_loops(initial.clone()), initial);
 }
 
 #[test]

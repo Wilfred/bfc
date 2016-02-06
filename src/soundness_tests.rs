@@ -93,7 +93,7 @@ fn annotate_known_zero_is_sound() {
 #[test]
 fn simplify_loops_is_sound() {
     fn is_sound(instrs: Vec<Instruction>) -> TestResult {
-        transform_is_sound(instrs, simplify_loops, true, None)
+        transform_is_sound(instrs, zeroing_loops, true, None)
     }
     quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
 }
