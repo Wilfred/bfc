@@ -1,12 +1,28 @@
 #!/bin/bash
 
+BLACK=$(tput setaf 0)
+BLUE=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+CYAN=$(tput setaf 3)
+RED=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+YELLOW=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+
+BOLD=$(tput bold)
+RESET=$(tput sgr0)
+
 # Die on first error.
 set -e
 
+function summary {
+    echo -e "$BOLD$GREEN==>$WHITE ${1}$RESET"
+}
+
 function compile_and_run {
     local test_program=$1
-    echo -n "Testing $test_program"
-    
+    summary "Testing $test_program"
+
     # Compile the file.
     ./target/release/bfc sample_programs/$test_program
 
