@@ -201,7 +201,7 @@ pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_outcome = execute_with_state(body, state, steps_left, None);
+                    let loop_outcome = execute_with_state(body, state, steps_left, dummy_read_value);
                     match loop_outcome {
                         Outcome::Completed(remaining_steps) => {
                             // We've run several steps during the loop
@@ -560,6 +560,17 @@ fn execute_read_with_dummy_value() {
     execute_with_state(&instrs[..], &mut state, 5, Some(1));
 
     assert_eq!(state.cells[0], Wrapping(1));
+}
+
+#[test]
+fn execute_read_with_dummy_value_nested_loop() {
+    // Regression test.
+    let instrs = parse("+[[,]]").unwrap();
+
+    let mut state = ExecutionState::initial(&instrs[..]);
+    let outcome = execute_with_state(&instrs[..], &mut state, 20, Some(0));
+
+    assert!(matches!(outcome, Outcome::Completed(_)));
 }
 
 /// Ensure that we have the correct InstrPosition when we finish
