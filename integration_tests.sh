@@ -12,19 +12,22 @@ WHITE=$(tput setaf 7)
 BOLD=$(tput bold)
 RESET=$(tput sgr0)
 
-# Die on first error.
-set -e
-
 function summary {
     echo -e "$BOLD$GREEN==>$WHITE ${1}$RESET"
 }
 
+failed=0
+
 function compile_and_run {
     local test_program=$1
-    summary "Testing $test_program"
 
     # Compile the file.
     ./target/release/bfc sample_programs/$test_program
+    if [[ $? -ne 0 ]]; then
+        echo "Compilation failed!"
+        failed=1
+        return
+    fi
 
     # Run it, saving output.
     local executable="${test_program%.*}"
@@ -35,23 +38,37 @@ function compile_and_run {
     else
         ./$executable > output.txt
     fi
+    if [[ $? -ne 0 ]]; then
+        echo "Program crashed!"
+        failed=1
+        return
+    fi
 
     # Compare output.
     local expected_output=sample_programs/${test_program}.out
     if [ -f $expected_output ]; then
-        echo -n " (checked output)"
-        diff output.txt $expected_output
+        diff output.txt $expected_output > /dev/null
+        if [[ $? -ne 0 ]]; then
+            echo "Output differs!"
+            failed=1
+            return
+        fi
     fi
-
-    # Cleanup.
-    rm $executable output.txt
-
-    echo
 }
 
-compile_and_run bangbang.bf
-compile_and_run hello_world.bf
-compile_and_run bottles.bf
-compile_and_run factor.bf
-compile_and_run mandelbrot.bf
-compile_and_run life.bf
+function check_program {
+    summary "Testing $1"
+    compile_and_run $1
+
+    # Cleanup.
+    rm -f ${1%.*} output.txt
+}
+
+check_program bangbang.bf
+check_program hello_world.bf
+check_program bottles.bf
+check_program factor.bf
+check_program mandelbrot.bf
+check_program life.bf
+
+exit $failed
