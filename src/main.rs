@@ -29,13 +29,13 @@ use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
 use diagnostics::{Info, Level};
 
-pub mod bfir;
-pub mod llvm;
-pub mod peephole;
-pub mod bounds;
-pub mod execution;
-pub mod diagnostics;
-pub mod shell;
+mod bfir;
+mod llvm;
+mod peephole;
+mod bounds;
+mod execution;
+mod diagnostics;
+mod shell;
 
 #[cfg(test)]
 mod peephole_tests;

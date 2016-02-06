@@ -425,7 +425,7 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 
 /// Given a BF program, combine sets/increments using offsets so we
 /// have single PointerIncrement at the end.
-pub fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
+fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     let mut instrs_by_offset: HashMap<isize, Vec<Instruction>> = HashMap::new();
     let mut current_offset = 0;
     let mut last_ptr_inc_pos = None;
