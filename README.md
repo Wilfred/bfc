@@ -148,9 +148,6 @@ bfc provides a range of peephole optimisations. We use quickcheck to
 ensure our optimisations are in the optimal order (by verifying that
 our optimiser is idempotent).
 
-There's also a roadmap in [optimisations.md](optimisations.md) of
-optimisations we haven't yet implemented.
-
 #### Combining Instructions
 
 We combine successive increments/decrements:
