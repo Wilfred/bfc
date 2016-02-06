@@ -48,8 +48,8 @@ fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bo
 
     // Likewise we should have written the same outputs.
     if state.outputs != state2.outputs {
-        println!("Different outputs! Optimised program: {:?}",
-                 optimised_instrs);
+        println!("Different outputs! Original outputs: {:?} Optimised: {:?}",
+                 state.outputs, state2.outputs);
         return TestResult::failed();
     }
 
@@ -57,8 +57,8 @@ fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bo
     // too. This is true of most, but not all, of our optimisations.
     if check_cells {
         if state.cells != state2.cells {
-            println!("Different cell states! Optimised program: {:?}",
-                     optimised_instrs);
+            println!("Different cell states! Optimised state: {:?} Optimised: {:?}",
+                     state.cells, state2.cells);
             return TestResult::failed();
         }
     }
