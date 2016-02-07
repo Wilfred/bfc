@@ -1,6 +1,8 @@
-# v1.6.0 (unreleased)
+# v1.6.0
 
-No changes yet.
+Extracting multiply loops was causing a variety of soundness failures
+and segfaults. This peephole optimisation has been moved to a branch
+until it's more robust.
 
 # v1.5.0
 
