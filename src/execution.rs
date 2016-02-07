@@ -133,49 +133,6 @@ pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 }
             }
-            MultiplyMove { ref changes, position, .. } => {
-                // We will multiply by the current cell value.
-                let cell_value = state.cells[cell_ptr];
-
-                for (cell_offset, factor) in changes {
-                    let dest_ptr = cell_ptr as isize + *cell_offset;
-                    if dest_ptr < 0 {
-                        // Tried to access a cell before cell #0.
-                        state.start_instr = Some(&instrs[instr_idx]);
-
-                        // TODO: would be nice to have a Hint: message too in compiler warnings.
-                        let message = format!("This multiply loop tried to access cell {} \
-                                               (offset {} from current cell {})",
-                                              dest_ptr,
-                                              *cell_offset,
-                                              cell_ptr);
-
-                        return Outcome::RuntimeError(Warning {
-                            message: message.to_owned(),
-                            position: position,
-                        });
-                    }
-                    if dest_ptr as usize >= state.cells.len() {
-                        state.start_instr = Some(&instrs[instr_idx]);
-                        return Outcome::RuntimeError(Warning {
-                            message: format!("This multiply loop tried to access cell {} (the \
-                                              highest cell is {})",
-                                             dest_ptr,
-                                             state.cells.len() - 1)
-                                         .to_owned(),
-                            position: position,
-                        });
-                    }
-
-                    let current_val = state.cells[dest_ptr as usize];
-                    state.cells[dest_ptr as usize] = current_val + cell_value * (*factor);
-                }
-
-                // Finally, zero the cell we used.
-                state.cells[cell_ptr] = Wrapping(0);
-
-                instr_idx += 1;
-            }
             Write {..} => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value.0);

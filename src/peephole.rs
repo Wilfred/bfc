@@ -158,19 +158,6 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
             PointerIncrement { amount, .. } => {
                 needed_offset += amount;
             }
-            MultiplyMove { ref changes, .. } => {
-                // These cells are written to.
-                let mut offsets: Vec<isize> = changes.keys()
-                                                     .into_iter()
-                                                     .cloned()
-                                                     .collect();
-                // This cell is zeroed.
-                offsets.push(0);
-
-                if offsets.contains(&needed_offset) {
-                    return Some(i);
-                }
-            }
             // No cells changed, so just keep working backwards.
             Write {..} => {}
             // These instructions may have modified the cell, so
@@ -208,19 +195,6 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
             PointerIncrement { amount, .. } => {
                 // Unlike previous_cell_change we must subtract the desired amount.
                 needed_offset -= amount;
-            }
-            MultiplyMove { ref changes, .. } => {
-                // These cells are written to.
-                let mut offsets: Vec<isize> = changes.keys()
-                                                     .into_iter()
-                                                     .cloned()
-                                                     .collect();
-                // This cell is zeroed.
-                offsets.push(0);
-
-                if offsets.contains(&needed_offset) {
-                    return Some(i);
-                }
             }
             // No cells changed, so just keep working backwards.
             Write {..} => {}
@@ -558,7 +532,7 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
     for (index, instr) in instrs.iter().enumerate() {
         match *instr {
-            Loop {..} | MultiplyMove {..} => {
+            Loop {..} => {
                 // There's no point setting to zero after a loop, as
                 // the cell is already zero.
                 if let Some(next_index) = next_cell_change(&instrs, index) {
