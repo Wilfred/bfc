@@ -20,9 +20,10 @@ BF source -> BF IR -> LLVM IR -> x86_32 Binary
 ```
 
 Interested readers may enjoy my blog posts:
-[An Optimising BF Compiler](http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/)
-and
-[Even More BF Optimisations](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/).
+
+* [An Optimising BF Compiler](http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/)
+* [Even More BF Optimisations](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/)
+* [An Industrial Grade BF Compiler](http://www.wilfred.me.uk/blog/2016/02/07/an-industrial-grade-bf-compiler)
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
