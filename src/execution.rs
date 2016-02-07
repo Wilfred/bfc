@@ -2,8 +2,6 @@
 
 //! Compile time execution of BF programs.
 
-#[cfg(test)]
-use std::collections::HashMap;
 use std::num::Wrapping;
 
 #[cfg(test)]
@@ -16,9 +14,6 @@ use bfir::{Instruction, Cell};
 use bfir::Instruction::*;
 
 use diagnostics::Warning;
-
-#[cfg(test)]
-use bounds::MAX_CELL_INDEX;
 
 use bounds::highest_cell_index;
 
@@ -226,110 +221,6 @@ fn increment_executed() {
                ExecutionState {
                    start_instr: None,
                    cells: vec![Wrapping(1)],
-                   cell_ptr: 0,
-                   outputs: vec![],
-               });
-}
-
-#[test]
-fn multiply_move_executed() {
-    let mut changes = HashMap::new();
-    changes.insert(1, Wrapping(2));
-    changes.insert(3, Wrapping(3));
-
-    let instrs = [// Initial cells: [2, 1, 0, 0]
-                  Increment {
-                      amount: Wrapping(2),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-                  PointerIncrement {
-                      amount: 1,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-                  Increment {
-                      amount: Wrapping(1),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-                  PointerIncrement {
-                      amount: -1,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-
-                  MultiplyMove {
-                      changes: changes,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
-
-    let final_state = execute(&instrs, MAX_STEPS).0;
-    assert_eq!(final_state,
-               ExecutionState {
-                   start_instr: None,
-                   cells: vec![Wrapping(0), Wrapping(5), Wrapping(0), Wrapping(6)],
-                   cell_ptr: 0,
-                   outputs: vec![],
-               });
-}
-
-#[test]
-fn multiply_move_wrapping() {
-    let mut changes = HashMap::new();
-    changes.insert(1, Wrapping(3));
-    let instrs = [Increment {
-                      amount: Wrapping(100),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-                  MultiplyMove {
-                      changes: changes,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
-
-    let final_state = execute(&instrs, MAX_STEPS).0;
-    assert_eq!(final_state,
-               ExecutionState {
-                   start_instr: None,
-                   // 100 * 3 mod 256 == 44
-                   cells: vec![Wrapping(0), Wrapping(44)],
-                   cell_ptr: 0,
-                   outputs: vec![],
-               });
-}
-
-#[test]
-fn multiply_move_offset_too_high() {
-    let mut changes: HashMap<isize, Cell> = HashMap::new();
-    changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
-    let instrs = [MultiplyMove {
-                      changes: changes,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
-
-    let final_state = execute(&instrs, MAX_STEPS).0;
-    assert_eq!(final_state,
-               ExecutionState {
-                   start_instr: Some(&instrs[0]),
-                   cells: vec![Wrapping(0); MAX_CELL_INDEX + 1],
-                   cell_ptr: 0,
-                   outputs: vec![],
-               });
-}
-
-#[test]
-fn multiply_move_offset_too_low() {
-    let mut changes = HashMap::new();
-    changes.insert(-1, Wrapping(1));
-    let instrs = [MultiplyMove {
-                      changes: changes,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
-
-    let final_state = execute(&instrs, MAX_STEPS).0;
-    assert_eq!(final_state,
-               ExecutionState {
-                   start_instr: Some(&instrs[0]),
-                   cells: vec![Wrapping(0)],
                    cell_ptr: 0,
                    outputs: vec![],
                });

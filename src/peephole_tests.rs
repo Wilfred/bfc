@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::num::Wrapping;
 
 use quickcheck::quickcheck;
@@ -22,9 +21,9 @@ impl Arbitrary for Instruction {
 // See https://github.com/BurntSushi/quickcheck/issues/23
 fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> Instruction {
     let modulus = if max_depth == 0 {
-        7
+        5
     } else {
-        8
+        6
     };
 
     // If max_depth is zero, don't create loops.
@@ -54,23 +53,6 @@ fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> Instruction {
         3 => Read { position: Some(Position { start: 0, end: 0 }) },
         4 => Write { position: Some(Position { start: 0, end: 0 }) },
         5 => {
-            let mut changes = HashMap::new();
-            changes.insert(1, Wrapping(-1));
-            MultiplyMove {
-                changes: changes,
-                position: Some(Position { start: 0, end: 0 }),
-            }
-        }
-        6 => {
-            let mut changes = HashMap::new();
-            changes.insert(1, Wrapping(2));
-            changes.insert(4, Wrapping(10));
-            MultiplyMove {
-                changes: changes,
-                position: Some(Position { start: 0, end: 0 }),
-            }
-        }
-        7 => {
             assert!(max_depth > 0);
             let loop_length = g.next_u32() % 10;
             let mut body: Vec<_> = vec![];
@@ -601,27 +583,6 @@ fn should_remove_redundant_set() {
     assert_eq!(remove_redundant_sets(initial), expected);
 }
 
-#[test]
-fn should_remove_redundant_set_multiply() {
-    let mut changes = HashMap::new();
-    changes.insert(1, Wrapping(1));
-
-    let initial = vec![MultiplyMove {
-                           changes: changes.clone(),
-                           position: Some(Position { start: 0, end: 0 }),
-                       },
-                       Set {
-                           amount: Wrapping(0),
-                           offset: 0,
-                           position: Some(Position { start: 0, end: 0 }),
-                       }];
-    let expected = vec![MultiplyMove {
-                            changes: changes,
-                            position: Some(Position { start: 0, end: 0 }),
-                        }];
-    assert_eq!(remove_redundant_sets(initial), expected);
-}
-
 /// After a loop, if we set to a value other than zero, we shouldn't
 /// remove it.
 #[test]
@@ -1106,55 +1067,6 @@ fn prev_mutate_ignores_offset_at_index() {
                           offset: 1,
                           position: Some(Position { start: 0, end: 0 }),
                       }];
-    assert_eq!(previous_cell_change(&instrs, 1), Some(0));
-}
-
-#[test]
-fn prev_mutate_multiply_offset_matches() {
-    let mut changes = HashMap::new();
-    changes.insert(-1, Wrapping(-1));
-
-    let instrs = vec![MultiplyMove {
-                          changes: changes.clone(),
-                          position: Some(Position { start: 0, end: 0 }),
-                      },
-                      PointerIncrement {
-                          amount: -1,
-                          position: Some(Position { start: 0, end: 0 }),
-                      },
-                      Read { position: Some(Position { start: 0, end: 0 }) }];
-    assert_eq!(previous_cell_change(&instrs, 2), Some(0));
-}
-
-#[test]
-fn prev_mutate_multiply_offset_doesnt_match() {
-    let mut changes = HashMap::new();
-    changes.insert(1, Wrapping(2));
-
-    let instrs = vec![MultiplyMove {
-                          changes: changes.clone(),
-                          position: Some(Position { start: 0, end: 0 }),
-                      },
-                      PointerIncrement {
-                          amount: 2,
-                          position: Some(Position { start: 0, end: 0 }),
-                      },
-                      Read { position: Some(Position { start: 0, end: 0 }) }];
-    assert_eq!(previous_cell_change(&instrs, 2), None);
-}
-
-/// MultiplyMove zeroes the current cell, so it counts as a mutation
-/// of the current value.
-#[test]
-fn prev_mutate_multiply_ignore_offset() {
-    let mut changes = HashMap::new();
-    changes.insert(1, Wrapping(-1));
-
-    let instrs = vec![MultiplyMove {
-                          changes: changes.clone(),
-                          position: Some(Position { start: 0, end: 0 }),
-                      },
-                      Read { position: Some(Position { start: 0, end: 0 }) }];
     assert_eq!(previous_cell_change(&instrs, 1), Some(0));
 }
 
