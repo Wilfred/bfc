@@ -302,16 +302,21 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
                 // If we can find the time this cell was modified:
                 if let Some(prev_modify_index) = previous_cell_change(&instrs, index) {
 
-                    let mut write_after_modify = false;
+                    // This modify instruction is not redundant if we
+                    // wrote anything afterwards.
                     if let Some(write_index) = last_write_index {
                         if write_index > prev_modify_index {
-                            write_after_modify = true;
+                            continue;
                         }
                     }
 
-                    if !write_after_modify {
-                        redundant_instr_positions.insert(prev_modify_index);
+                    // MultiplyMove instructions are not redundant,
+                    // because they affect other cells too.
+                    if matches!(instrs[prev_modify_index], MultiplyMove { ..}) {
+                        continue;
                     }
+
+                    redundant_instr_positions.insert(prev_modify_index);
                 }
             }
             Write {..} => {
