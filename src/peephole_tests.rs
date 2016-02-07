@@ -232,6 +232,16 @@ fn no_combine_before_read_after_write() {
                        },
                        Write { position: None },
                        Read { position: None }];
+    // TODO: write an assert_unchanged! macro.
+    let expected = initial.clone();
+    assert_eq!(combine_before_read(initial), expected);
+}
+
+#[test]
+fn no_combine_before_read_after_multiply() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(-1));
+    let initial = vec![MultiplyMove { changes: changes, position: None}, Read { position: None }];
     let expected = initial.clone();
     assert_eq!(combine_before_read(initial), expected);
 }
