@@ -116,8 +116,10 @@ unsafe fn int8(val: c_ulonglong) -> LLVMValueRef {
 /// Convert this integer to LLVM's representation of a constant
 /// integer.
 // TODO: this should be a machine word size rather than hard-coding 32-bits.
-unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
-    LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
+fn int32(val: c_ulonglong) -> LLVMValueRef {
+    unsafe {
+        LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
+    }
 }
 
 fn int1_type() -> LLVMTypeRef {
@@ -209,9 +211,9 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
     let builder = Builder::new();
     builder.position_at_end(bb);
 
+    let num_cells = int32(init_values.len() as c_ulonglong);
     unsafe {
         // Allocate stack memory for our cells.
-        let num_cells = int32(init_values.len() as c_ulonglong);
         let cells_ptr = LLVMBuildArrayAlloca(builder.builder,
                                              int8_type(),
                                              num_cells,
