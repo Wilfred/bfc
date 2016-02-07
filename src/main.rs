@@ -235,12 +235,15 @@ fn strip_executable(executable_path: &str) -> Result<(), String> {
     shell::run_shell_command("strip", &strip_args[..])
 }
 
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 fn main() {
     let args: Vec<_> = env::args().collect();
 
     let mut opts = Options::new();
 
-    opts.optflag("h", "help", "show usage");
+    opts.optflag("h", "help", "print usage");
+    opts.optflag("v", "version", "print bfc version");
     opts.optflag("", "dump-llvm", "print LLVM IR generated");
     opts.optflag("", "dump-ir", "print BF IR generated");
 
@@ -267,6 +270,11 @@ fn main() {
     if matches.opt_present("h") {
         print_usage(&args[0], opts);
         return;
+    }
+
+    if matches.opt_present("v") {
+        println!("bfc {}", VERSION);
+        return
     }
 
     if matches.free.len() != 1 {

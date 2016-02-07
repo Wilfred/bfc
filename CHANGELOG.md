@@ -1,6 +1,8 @@
 # v1.7.0 (unreleased)
 
-Nothing yet.
+Usability:
+
+* Added a `--version` CLI argument.
 
 # v1.6.0
 
