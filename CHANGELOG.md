@@ -1,3 +1,7 @@
+# v1.7.0 (unreleased)
+
+Nothing yet.
+
 # v1.6.0
 
 Extracting multiply loops was causing a variety of soundness failures
