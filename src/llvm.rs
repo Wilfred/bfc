@@ -114,9 +114,13 @@ struct CompileContext {
 unsafe fn int8(val: c_ulonglong) -> LLVMValueRef {
     LLVMConstInt(LLVMInt8Type(), val, LLVM_FALSE)
 }
+
+unsafe fn int64(val: c_ulonglong) -> LLVMValueRef {
+    LLVMConstInt(LLVMInt64Type(), val, LLVM_FALSE)
+}
+
 /// Convert this integer to LLVM's representation of a constant
 /// integer.
-// TODO: this should be a machine word size rather than hard-coding 32-bits.
 unsafe fn int32(val: c_ulonglong) -> LLVMValueRef {
     LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
 }
@@ -131,6 +135,10 @@ fn int8_type() -> LLVMTypeRef {
 
 fn int32_type() -> LLVMTypeRef {
     unsafe { LLVMInt32Type() }
+}
+
+fn int64_type() -> LLVMTypeRef {
+    unsafe { LLVMInt64Type() }
 }
 
 fn int8_ptr_type() -> LLVMTypeRef {
@@ -154,14 +162,14 @@ fn add_c_declarations(module: &mut Module) {
     }
 
     add_function(module,
-                 "llvm.memset.p0i8.i32",
-                 &mut [int8_ptr_type(), int8_type(), int32_type(), int32_type(), int1_type()],
+                 "llvm.memset.p0i8.i64",
+                 &mut [int8_ptr_type(), int8_type(), int64_type(), int32_type(), int1_type()],
                  void);
 
     add_function(module,
                  "write",
-                 &mut [int32_type(), int8_ptr_type(), int32_type()],
-                 int32_type());
+                 &mut [int32_type(), int8_ptr_type(), int64_type()],
+                 int64_type());
 
     add_function(module, "putchar", &mut [int32_type()], int32_type());
 
@@ -224,7 +232,7 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
         let mut offset = 0;
         for (cell_val, cell_count) in run_length_encode(init_values) {
             let llvm_cell_val = int8(cell_val.0 as c_ulonglong);
-            let llvm_cell_count = int32(cell_count as c_ulonglong);
+            let llvm_cell_count = int64(cell_count as c_ulonglong);
 
             // TODO: factor out a build_gep function.
             let mut offset_vec = vec![int32(offset as c_ulonglong)];
@@ -239,7 +247,7 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
                                        llvm_cell_count,
                                        one,
                                        false_];
-            add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
+            add_function_call(module, bb, "llvm.memset.p0i8.i64", &mut memset_args, "");
 
             offset += cell_count;
         }
@@ -653,7 +661,7 @@ fn compile_static_outputs(module: &mut Module, bb: LLVMBasicBlockRef, outputs: &
         LLVMSetGlobalConstant(known_outputs, LLVM_TRUE);
 
         let stdout_fd = int32(1);
-        let llvm_num_outputs = int32(outputs.len() as c_ulonglong);
+        let llvm_num_outputs = int64(outputs.len() as c_ulonglong);
 
         let known_outputs_ptr = LLVMBuildPointerCast(builder.builder,
                                                      known_outputs,
