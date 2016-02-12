@@ -142,6 +142,8 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         }
     };
 
+    let orig_instrs = instrs.clone();
+
     let opt_level = matches.opt_str("opt").unwrap_or_else(|| String::from("2"));
     if opt_level != "0" {
         let pass_specification = matches.opt_str("passes");
@@ -166,6 +168,9 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         }
         return Ok(());
     }
+
+    execution::execute_compare(orig_instrs, instrs);
+    return Ok(());
 
     let (state, warning) = if opt_level == "2" {
         execution::execute(&instrs, execution::MAX_STEPS)

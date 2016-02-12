@@ -77,6 +77,184 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
     }
 }
 
+pub fn execute_compare(instrs1: Vec<Instruction>, instrs2: Vec<Instruction>) {
+    let outputs = vec![];
+    let cells = vec![Wrapping(0); 100_000];
+    let cell_ptr = 0;
+    execute_comparing(instrs1, instrs2, outputs, cells, cell_ptr);
+}
+
+// Assumes that instrs2 has fewer loops than instrs1.
+fn execute_comparing(instrs1: Vec<Instruction>,
+                     instrs2: Vec<Instruction>,
+                     mut outputs: Vec<i8>,
+                     mut cells: Vec<Cell>,
+                     mut cell_ptr: isize) -> (Vec<i8>, Vec<Cell>, isize) {
+    debug_assert!(instrs1.len() == instrs2.len());
+    let mut instr_idx = 0;
+    while instr_idx < instrs1.len() {
+        let instr1 = instrs1[instr_idx].clone();
+        let instr2 = instrs2[instr_idx].clone();
+
+        match (instr1.clone(), instr2.clone()) {
+            (Loop { body: ref body1, .. }, _) if instr1 == instr2 => {
+                if cells[cell_ptr as usize].0 == 0 {
+                    // Step over the loop because the current cell is zero.
+                    instr_idx += 1;
+                } else {
+                    // Execute the whole loop body without bothering to recurse further.
+                    let (new_outputs, new_cells, new_cell_ptr) = execute_completely(body1.clone(), outputs, cells, cell_ptr);
+                    outputs = new_outputs;
+                    cells = new_cells;
+                    cell_ptr = new_cell_ptr;
+                }
+            }
+            (Loop { body: ref body1, .. }, Loop {body: ref body2, .. }) => {
+                // Differing instructions, but both are loops, so step over or recurse.
+                if cells[cell_ptr as usize].0 == 0 {
+                    // Step over the loop because the
+                    // current cell is zero.
+                    instr_idx += 1;
+                } else {
+                    // Recurse into the two loops, seeing if we get any differences.
+                    let (new_outputs, new_cells, new_cell_ptr) = execute_comparing(body1.clone(), body2.clone(), outputs, cells, cell_ptr);
+                    outputs = new_outputs;
+                    cells = new_cells;
+                    cell_ptr = new_cell_ptr;
+                }                    
+            }
+            (Loop { .. }, _) => {
+                // The left is a loop, but the right is not. Execute both, fully, and compare.
+
+                // Execute left
+                let (new_outputs1, new_cells1, new_cell_ptr1);
+                if cells[cell_ptr as usize].0 == 0 {
+                    // We don't execute the loop, so states are unchanged.
+                    new_outputs1 = outputs.clone();
+                    new_cells1 = cells.clone();
+                    new_cell_ptr1 = cell_ptr;
+                } else {
+                    // Execute this loop entirely.
+                    let (new_outputs, new_cells, new_cell_ptr) = execute_completely(vec![instr1.clone()], outputs.clone(), cells.clone(), cell_ptr);
+                    new_outputs1 = new_outputs;
+                    new_cells1 = new_cells;
+                    new_cell_ptr1 = new_cell_ptr;
+                }                    
+
+                // Execute right
+                let (new_outputs2, new_cells2, new_cell_ptr2) = execute_completely(vec![instr2.clone()], outputs, cells, cell_ptr);
+
+                // Compare
+                if new_outputs1 != new_outputs2 {
+                    println!("Outputs differ!");
+                    println!("instr1 {:?}", instr1);
+                    println!("instr2 {:?}", instr2);
+                    panic!();
+                }
+                if new_cells1 != new_cells2 {
+                    println!("Cells differ!");
+                    println!("instr1 {:?}", instr1);
+                    println!("instr2 {:?}", instr2);
+                    panic!();
+                }
+                if new_cell_ptr1 != new_cell_ptr2 {
+                    println!("Cell_ptrs differ!");
+                    println!("instr1 {:?}", instr1);
+                    println!("instr2 {:?}", instr2);
+                    panic!();
+                }
+
+                // They're the same, so carry on.
+                outputs = new_outputs1;
+                cells = new_cells1;
+                cell_ptr = new_cell_ptr1;
+
+                // We must have finished executing this loop now.
+                instr_idx += 1;
+            }
+            // Execute non-loop. Since our optimisation only replaces
+            // loops, the two instructions should be identical.
+            _ if instr1 == instr2 => {
+                let (new_outputs, new_cells, new_cell_ptr) = execute_completely(vec![instr1], outputs, cells, cell_ptr);
+                outputs = new_outputs;
+                cells = new_cells;
+                cell_ptr = new_cell_ptr;
+
+                instr_idx += 1;
+            }
+            _ => {
+                unreachable!();
+            }
+        }
+    }
+    (outputs, cells, cell_ptr)
+}
+
+fn execute_completely(instrs: Vec<Instruction>,
+                      mut outputs: Vec<i8>,
+                      mut cells: Vec<Cell>,
+                      mut cell_ptr: isize) -> (Vec<i8>, Vec<Cell>, isize) {
+    let mut instr_idx = 0;
+    while instr_idx < instrs.len() {
+        match instrs[instr_idx] {
+            Increment { amount, offset, .. } => {
+                let target_cell_ptr = (cell_ptr + offset) as usize;
+                cells[target_cell_ptr] = cells[target_cell_ptr] + amount;
+                instr_idx += 1;
+            }
+            Set { amount, offset, .. } => {
+                let target_cell_ptr = (cell_ptr + offset) as usize;
+                cells[target_cell_ptr] = amount;
+                instr_idx += 1;
+            }
+            PointerIncrement { amount, .. } => {
+                let new_cell_ptr = cell_ptr + amount;
+                cell_ptr = new_cell_ptr;
+                instr_idx += 1;
+            }
+            MultiplyMove { ref changes, .. } => {
+                // We will multiply by the current cell value.
+                debug_assert!(cell_ptr >= 0);
+                let cell_value = cells[cell_ptr as usize];
+
+                for (cell_offset, factor) in changes {
+                    let dest_ptr = cell_ptr + *cell_offset;
+                    let current_val = cells[dest_ptr as usize];
+                    cells[dest_ptr as usize] = current_val + cell_value * (*factor);
+                }
+
+                // Finally, zero the cell we used.
+                cells[cell_ptr as usize] = Wrapping(0);
+
+                instr_idx += 1;
+            }
+            Write {..} => {
+                let cell_value = cells[cell_ptr as usize];
+                outputs.push(cell_value.0);
+                instr_idx += 1;
+            }
+            Read {..} => {
+                unreachable!();
+            }
+            Loop { ref body, .. } => {
+                if cells[cell_ptr as usize].0 == 0 {
+                    // Step over the loop because the current cell is
+                    // zero.
+                    instr_idx += 1;
+                } else {
+                    // Execute the loop body.
+                    let (new_outputs, new_cells, new_cell_ptr) = execute_completely(body.clone(), outputs, cells, cell_ptr);
+                    outputs = new_outputs;
+                    cells = new_cells;
+                    cell_ptr = new_cell_ptr;
+                }
+            }
+        }
+    }
+
+    (outputs, cells, cell_ptr)
+}
+
 /// Execute the instructions given, updating the state as we go.
 /// To avoid infinite loops, stop execution after `steps` steps.
 ///
@@ -162,7 +340,7 @@ pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                                               highest cell is {})",
                                              dest_ptr,
                                              state.cells.len() - 1)
-                                         .to_owned(),
+                                .to_owned(),
                             position: position,
                         });
                     }
@@ -281,29 +459,29 @@ fn multiply_move_executed() {
     changes.insert(3, Wrapping(3));
 
     let instrs = [// Initial cells: [2, 1, 0, 0]
-                  Increment {
-                      amount: Wrapping(2),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-                  PointerIncrement {
-                      amount: 1,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-                  Increment {
-                      amount: Wrapping(1),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
-                  PointerIncrement {
-                      amount: -1,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
+        Increment {
+            amount: Wrapping(2),
+            offset: 0,
+            position: Some(Position { start: 0, end: 0 }),
+        },
+        PointerIncrement {
+            amount: 1,
+            position: Some(Position { start: 0, end: 0 }),
+        },
+        Increment {
+            amount: Wrapping(1),
+            offset: 0,
+            position: Some(Position { start: 0, end: 0 }),
+        },
+        PointerIncrement {
+            amount: -1,
+            position: Some(Position { start: 0, end: 0 }),
+        },
 
-                  MultiplyMove {
-                      changes: changes,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
+        MultiplyMove {
+            changes: changes,
+            position: Some(Position { start: 0, end: 0 }),
+        }];
 
     let final_state = execute(&instrs, MAX_STEPS).0;
     assert_eq!(final_state,
@@ -320,10 +498,10 @@ fn multiply_move_wrapping() {
     let mut changes = HashMap::new();
     changes.insert(1, Wrapping(3));
     let instrs = [Increment {
-                      amount: Wrapping(100),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
+        amount: Wrapping(100),
+        offset: 0,
+        position: Some(Position { start: 0, end: 0 }),
+    },
                   MultiplyMove {
                       changes: changes,
                       position: Some(Position { start: 0, end: 0 }),
@@ -345,9 +523,9 @@ fn multiply_move_offset_too_high() {
     let mut changes: HashMap<isize, Cell> = HashMap::new();
     changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
     let instrs = [MultiplyMove {
-                      changes: changes,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
+        changes: changes,
+        position: Some(Position { start: 0, end: 0 }),
+    }];
 
     let final_state = execute(&instrs, MAX_STEPS).0;
     assert_eq!(final_state,
@@ -364,9 +542,9 @@ fn multiply_move_offset_too_low() {
     let mut changes = HashMap::new();
     changes.insert(-1, Wrapping(1));
     let instrs = [MultiplyMove {
-                      changes: changes,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
+        changes: changes,
+        position: Some(Position { start: 0, end: 0 }),
+    }];
 
     let final_state = execute(&instrs, MAX_STEPS).0;
     assert_eq!(final_state,
@@ -381,10 +559,10 @@ fn multiply_move_offset_too_low() {
 #[test]
 fn set_executed() {
     let instrs = [Set {
-                      amount: Wrapping(2),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
+        amount: Wrapping(2),
+        offset: 0,
+        position: Some(Position { start: 0, end: 0 }),
+    }];
     let final_state = execute(&instrs, MAX_STEPS).0;
 
     assert_eq!(final_state,
@@ -399,10 +577,10 @@ fn set_executed() {
 #[test]
 fn set_wraps() {
     let instrs = [Set {
-                      amount: Wrapping(-1),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  }];
+        amount: Wrapping(-1),
+        offset: 0,
+        position: Some(Position { start: 0, end: 0 }),
+    }];
     let final_state = execute(&instrs, MAX_STEPS).0;
 
     assert_eq!(final_state,
@@ -431,10 +609,10 @@ fn decrement_executed() {
 #[test]
 fn increment_wraps() {
     let instrs = [Increment {
-                      amount: Wrapping(-1),
-                      offset: 0,
-                      position: Some(Position { start: 0, end: 0 }),
-                  },
+        amount: Wrapping(-1),
+        offset: 0,
+        position: Some(Position { start: 0, end: 0 }),
+    },
                   Increment {
                       amount: Wrapping(1),
                       offset: 0,
