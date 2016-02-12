@@ -125,6 +125,9 @@ fn execute_comparing(instrs1: Vec<Instruction>,
             }
             (Loop { .. }, _) => {
                 // The left is a loop, but the right is not. Execute both, fully, and compare.
+                println!("\nInstructions differ");
+                println!("Left {}", instr1);
+                println!("Right {}", instr2);
 
                 // Execute left
                 let (new_outputs1, new_cells1, new_cell_ptr1);
@@ -219,6 +222,12 @@ fn execute_completely(instrs: Vec<Instruction>,
 
                 for (cell_offset, factor) in changes {
                     let dest_ptr = cell_ptr + *cell_offset;
+                    if (dest_ptr as usize) > 100_000 {
+                        println!("current cell value {:?}", cell_value);
+                        println!("cell ptr {:?}", cell_ptr);
+                        println!("dest_ptr {:?}", dest_ptr);
+                        println!("instr {:?}", instrs[instr_idx]);
+                    }
                     let current_val = cells[dest_ptr as usize];
                     cells[dest_ptr as usize] = current_val + cell_value * (*factor);
                 }
