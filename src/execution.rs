@@ -133,6 +133,52 @@ pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 }
             }
+            MultiplyMove { ref changes, position, .. } => {
+                let cell_value = state.cells[cell_ptr];
+
+                if cell_value.0 != 0 {
+                    // We will multiply by the current cell value.
+
+                    for (cell_offset, factor) in changes {
+                        let dest_ptr = cell_ptr as isize + *cell_offset;
+                        if dest_ptr < 0 {
+                            // Tried to access a cell before cell #0.
+                            state.start_instr = Some(&instrs[instr_idx]);
+
+                            // TODO: would be nice to have a Hint: message too in compiler warnings.
+                            let message = format!("This multiply loop tried to access cell {} \
+                                                   (offset {} from current cell {})",
+                                                  dest_ptr,
+                                                  *cell_offset,
+                                                  cell_ptr);
+
+                            return Outcome::RuntimeError(Warning {
+                                message: message.to_owned(),
+                                position: position,
+                            });
+                        }
+                        if dest_ptr as usize >= state.cells.len() {
+                            state.start_instr = Some(&instrs[instr_idx]);
+                            return Outcome::RuntimeError(Warning {
+                                message: format!("This multiply loop tried to access cell {} (the \
+                                                  highest cell is {})",
+                                                 dest_ptr,
+                                                 state.cells.len() - 1)
+                                    .to_owned(),
+                                position: position,
+                            });
+                        }
+
+                        let current_val = state.cells[dest_ptr as usize];
+                        state.cells[dest_ptr as usize] = current_val + cell_value * (*factor);
+                    }
+
+                    // Finally, zero the cell we used.
+                    state.cells[cell_ptr] = Wrapping(0);
+                }
+
+                instr_idx += 1;
+            }
             Write {..} => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value.0);
@@ -225,6 +271,138 @@ fn increment_executed() {
     assert_eq!(final_state,
                ExecutionState {
                    start_instr: None,
+                   cells: vec![Wrapping(1)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
+#[test]
+fn multiply_move_executed() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(2));
+    changes.insert(3, Wrapping(3));
+
+    let instrs = [// Initial cells: [2, 1, 0, 0]
+                  Increment {
+                      amount: Wrapping(2),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  PointerIncrement {
+                      amount: 1,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  Increment {
+                      amount: Wrapping(1),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  PointerIncrement {
+                      amount: -1,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+
+                  MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
+
+    let final_state = execute(&instrs, MAX_STEPS).0;
+    assert_eq!(final_state,
+               ExecutionState {
+                   start_instr: None,
+                   cells: vec![Wrapping(0), Wrapping(5), Wrapping(0), Wrapping(6)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
+/// When the current cell is zero, we shouldn't execute a multiply move instruction.
+/// Otherwise, the BF program [-<+>] (which is well formed and does nothing) becomes
+/// undefined behaviour when we have a multiply move instruction.
+#[test]
+fn multiply_move_when_current_cell_is_zero() {
+    let mut changes = HashMap::new();
+    changes.insert(-1, Wrapping(2));
+
+    let instrs = [MultiplyMove {
+                      changes: changes,
+                      position: None,
+                  }];
+
+    let (final_state, warning) = execute(&instrs, MAX_STEPS);
+    assert_eq!(warning, None);
+    assert_eq!(final_state,
+               ExecutionState {
+                   start_instr: None,
+                   cells: vec![Wrapping(0)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
+#[test]
+fn multiply_move_wrapping() {
+    let mut changes = HashMap::new();
+    changes.insert(1, Wrapping(3));
+    let instrs = [Increment {
+                      amount: Wrapping(100),
+                      offset: 0,
+                      position: Some(Position { start: 0, end: 0 }),
+                  },
+                  MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
+
+    let final_state = execute(&instrs, MAX_STEPS).0;
+    assert_eq!(final_state,
+               ExecutionState {
+                   start_instr: None,
+                   // 100 * 3 mod 256 == 44
+                   cells: vec![Wrapping(0), Wrapping(44)],
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
+#[test]
+fn multiply_move_offset_too_high() {
+    let mut changes: HashMap<isize, Cell> = HashMap::new();
+    changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
+    let instrs = [Increment { amount: Wrapping(1), offset: 0, position: None },
+                  MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
+
+    let final_state = execute(&instrs, MAX_STEPS).0;
+    let mut expected_cells = vec![Wrapping(0); MAX_CELL_INDEX + 1];
+    expected_cells[0] = Wrapping(1);
+    assert_eq!(final_state,
+               ExecutionState {
+                   start_instr: Some(&instrs[1]),
+                   cells: expected_cells,
+                   cell_ptr: 0,
+                   outputs: vec![],
+               });
+}
+
+#[test]
+fn multiply_move_offset_too_low() {
+    let mut changes = HashMap::new();
+    changes.insert(-1, Wrapping(1));
+    let instrs = [Increment { amount: Wrapping(1), offset: 0, position: None },
+                  MultiplyMove {
+                      changes: changes,
+                      position: Some(Position { start: 0, end: 0 }),
+                  }];
+
+    let final_state = execute(&instrs, MAX_STEPS).0;
+    assert_eq!(final_state,
+               ExecutionState {
+                   start_instr: Some(&instrs[1]),
                    cells: vec![Wrapping(1)],
                    cell_ptr: 0,
                    outputs: vec![],
