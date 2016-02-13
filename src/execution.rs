@@ -204,7 +204,10 @@ pub fn execute_with_state<'a>(instrs: &'a [Instruction],
                     instr_idx += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_outcome = execute_with_state(body, state, steps_left, dummy_read_value);
+                    let loop_outcome = execute_with_state(body,
+                                                          state,
+                                                          steps_left,
+                                                          dummy_read_value);
                     match loop_outcome {
                         Outcome::Completed(remaining_steps) => {
                             // We've run several steps during the loop
