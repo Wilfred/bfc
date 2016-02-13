@@ -22,9 +22,9 @@ impl Arbitrary for Instruction {
 // See https://github.com/BurntSushi/quickcheck/issues/23
 fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> Instruction {
     let modulus = if max_depth == 0 {
-        7
-    } else {
         8
+    } else {
+        9
     };
 
     // If max_depth is zero, don't create loops.
@@ -71,6 +71,21 @@ fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> Instruction {
             }
         }
         7 => {
+            // A multiply by 2 loop that accesses a previous
+            // cell. Quickcheck doesn't seem to generate these by
+            // chance, but they often expose interesting bugs.
+            let body = vec![
+                Increment { amount: Wrapping(-1), offset: 0, position: None },
+                PointerIncrement { amount: -1, position: None },
+                Increment { amount: Wrapping(2), offset: 0, position: None },
+                PointerIncrement { amount: 1, position: None },
+            ];
+            Loop {
+                body: body,
+                position: None,
+            }
+        }
+        8 => {
             assert!(max_depth > 0);
             let loop_length = g.next_u32() % 10;
             let mut body: Vec<_> = vec![];
