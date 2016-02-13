@@ -1,5 +1,10 @@
 # v1.7.0 (unreleased)
 
+Bug fixes:
+
+* Fixed a rare crash on programs with a large number of instructions
+  had no effect.
+
 Usability:
 
 * Added a `--version` CLI argument.
