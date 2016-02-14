@@ -432,6 +432,77 @@ unsafe fn compile_set(amount: Cell,
     bb
 }
 
+unsafe fn compile_multiply_move(changes: &HashMap<isize, Cell>,
+                                module: &mut Module,
+                                bb: LLVMBasicBlockRef,
+                                ctx: CompileContext)
+                                -> LLVMBasicBlockRef {
+    let multiply_body = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("multiply_body"));
+    let multiply_after = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("loop_after"));
+
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+
+    // First, get the current cell value.
+    let (cell_val, cell_val_ptr) = add_current_cell_access(module,
+                                                           bb,
+                                                           ctx.cells,
+                                                           ctx.cell_index_ptr);
+
+    // Check if the current cell is zero, as we only do the multiply
+    // if it's non-zero.
+    let zero = int8(0);
+    let cell_val_is_zero = LLVMBuildICmp(builder.builder,
+                                         LLVMIntPredicate::LLVMIntEQ,
+                                         zero,
+                                         cell_val,
+                                         module.new_string_ptr("cell_value_is_zero"));
+    LLVMBuildCondBr(builder.builder, cell_val_is_zero, multiply_after, multiply_body);
+
+    // In the multiply body, do the mulitply
+    builder.position_at_end(multiply_body);
+
+    // Zero the current cell.
+    LLVMBuildStore(builder.builder, int8(0), cell_val_ptr);
+
+    let mut targets: Vec<_> = changes.keys().collect();
+    targets.sort();
+
+    // For each cell that we should change, multiply the current cell
+    // value then add it.
+    for target in targets {
+        // Calculate the position of this target cell.
+        let mut indices = vec![int32(*target as c_ulonglong)];
+        let target_cell_ptr = LLVMBuildGEP(builder.builder,
+                                           cell_val_ptr,
+                                           indices.as_mut_ptr(),
+                                           indices.len() as c_uint,
+                                           module.new_string_ptr("target_cell_ptr"));
+
+        // Get the current value of the target cell.
+        let target_cell_val = LLVMBuildLoad(builder.builder,
+                                            target_cell_ptr,
+                                            module.new_string_ptr("target_cell_val"));
+
+        // Calculate the new value.
+        let factor = *changes.get(target).unwrap();
+        let additional_val = LLVMBuildMul(builder.builder,
+                                          cell_val,
+                                          int8(factor.0 as c_ulonglong),
+                                          module.new_string_ptr("additional_val"));
+        let new_target_val = LLVMBuildAdd(builder.builder,
+                                          target_cell_val,
+                                          additional_val,
+                                          module.new_string_ptr("new_target_val"));
+        LLVMBuildStore(builder.builder, new_target_val, target_cell_ptr);
+    }
+
+    // Finally, continue execution from multiply after.
+    LLVMBuildBr(builder.builder, multiply_after);
+
+    multiply_after
+}
+
 unsafe fn compile_ptr_increment(amount: isize,
                                 module: &mut Module,
                                 bb: LLVMBasicBlockRef,
