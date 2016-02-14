@@ -7,6 +7,23 @@ use bfir::Instruction::*;
 use bfir::Position;
 use execution::ExecutionState;
 
+/// Assert that two CString values are equal. If they're not, print
+/// the strings nicely (e.g. '\n' as an actual newline).
+macro_rules! assert_cstring_eq {
+    ($actual:expr, $expected:expr) => {{
+        let expected = $expected;
+        let expected_str = expected.to_string_lossy();
+        let actual = $actual;
+        let actual_str = actual.to_string_lossy();
+
+        if expected_str != actual_str {
+            println!("Expected string:\n{}", expected_str);
+            println!("\nActual string:\n{}", actual_str);
+            assert!(false);
+        }
+    }}
+}
+
 #[test]
 fn compile_loop() {
     let instrs = vec![Loop {
@@ -76,7 +93,7 @@ loop_after:                                       ; preds = %loop_header
 
 attributes #0 = { nounwind }
 ";
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -112,7 +129,7 @@ beginning:                                        ; preds = %init
 
 attributes #0 = { nounwind }
 ";
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -166,7 +183,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -220,7 +237,7 @@ attributes #0 = { nounwind }
 ";
 
     println!("actual: {}", result.to_cstring().to_str().unwrap());
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -273,7 +290,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -325,7 +342,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -392,7 +409,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -453,7 +470,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -493,7 +510,7 @@ beginning:                                        ; preds = %init
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -545,7 +562,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -601,7 +618,7 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -656,7 +673,7 @@ after_init:                                       ; preds = %init, %beginning
 
 attributes #0 = { nounwind }
 ";
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
 
 #[test]
@@ -719,5 +736,5 @@ after_init:                                       ; preds = %init, %beginning
 attributes #0 = { nounwind }
 ";
 
-    assert_eq!(result.to_cstring(), CString::new(expected).unwrap());
+    assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
