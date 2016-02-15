@@ -221,7 +221,7 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
         // char* cells = malloc(num_cells);
         let num_cells = int32(init_values.len() as c_ulonglong);
         let mut malloc_args = vec![num_cells];
-        let cells_ptr = add_function_call(module, bb, "malloc", &mut malloc_args, "cell_ptr");
+        let cells_ptr = add_function_call(module, bb, "malloc", &mut malloc_args, "cells");
 
         let one = int32(1);
         let false_ = LLVMConstInt(int1_type(), 1, LLVM_FALSE);
