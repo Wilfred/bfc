@@ -5,6 +5,8 @@ use std::num::Wrapping;
 use llvm::compile_to_module;
 use bfir::Instruction::*;
 use bfir::Position;
+use itertools::Itertools;
+use itertools::EitherOrBoth::Both;
 use execution::ExecutionState;
 
 /// Assert that two CString values are equal. If they're not, print
@@ -17,8 +19,18 @@ macro_rules! assert_cstring_eq {
         let actual_str = actual.to_string_lossy();
 
         if expected_str != actual_str {
-            println!("Expected string:\n{}", expected_str);
-            println!("\nActual string:\n{}", actual_str);
+            let expected_lines = expected_str.split("\n");
+            let actual_lines = actual_str.split("\n");
+            println!("Lines do not match!");
+
+            for differing_line in expected_lines.zip_longest(actual_lines).filter(|pair| {
+                match *pair {
+                    Both(x, y) => x != y,
+                    _ => true
+                }
+            }) {
+                println!("{:?}", differing_line);
+            }
             assert!(false);
         }
     }}
