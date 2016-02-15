@@ -160,6 +160,10 @@ fn add_c_declarations(module: &mut Module) {
                  &mut [int8_ptr_type(), int8_type(), int32_type(), int32_type(), int1_type()],
                  void);
 
+    add_function(module, "malloc", &mut [int32_type()], int8_ptr_type());
+
+    add_function(module, "free", &mut [int8_ptr_type()], void);
+
     add_function(module,
                  "write",
                  &mut [int32_type(), int8_ptr_type(), int32_type()],
@@ -214,11 +218,10 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
 
     let num_cells = int32(init_values.len() as c_ulonglong);
     unsafe {
-        // Allocate stack memory for our cells.
-        let cells_ptr = LLVMBuildArrayAlloca(builder.builder,
-                                             int8_type(),
-                                             num_cells,
-                                             module.new_string_ptr("cells"));
+        // char* cells = malloc(num_cells);
+        let num_cells = int32(init_values.len() as c_ulonglong);
+        let mut malloc_args = vec![num_cells];
+        let cells_ptr = add_function_call(module, bb, "malloc", &mut malloc_args, "cell_ptr");
 
         let one = int32(1);
         let false_ = LLVMConstInt(int1_type(), 1, LLVM_FALSE);
@@ -247,6 +250,17 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
         }
 
         cells_ptr
+    }
+}
+
+fn add_cells_cleanup(module: &mut Module, bb: LLVMBasicBlockRef, cells: LLVMValueRef) {
+    let builder = Builder::new();
+    builder.position_at_end(bb);
+
+    unsafe {
+        // free(cells);
+        let mut free_args = vec![cells];
+        add_function_call(module, bb, "free", &mut free_args, "");
     }
 }
 
@@ -457,7 +471,10 @@ unsafe fn compile_multiply_move(changes: &HashMap<isize, Cell>,
                                          zero,
                                          cell_val,
                                          module.new_string_ptr("cell_value_is_zero"));
-    LLVMBuildCondBr(builder.builder, cell_val_is_zero, multiply_after, multiply_body);
+    LLVMBuildCondBr(builder.builder,
+                    cell_val_is_zero,
+                    multiply_after,
+                    multiply_body);
 
     // In the multiply body, do the mulitply
     builder.position_at_end(multiply_body);
@@ -599,7 +616,11 @@ unsafe fn compile_loop(loop_body: &[Instruction],
     //   br %cell_value_is_zero, %loop_after, %loop_body
     builder.position_at_end(loop_header_bb);
 
-    let cell_val = add_current_cell_access(module, &mut *loop_header_bb, ctx.cells, ctx.cell_index_ptr).0;
+    let cell_val = add_current_cell_access(module,
+                                           &mut *loop_header_bb,
+                                           ctx.cells,
+                                           ctx.cell_index_ptr)
+                       .0;
 
     let zero = int8(0);
     let cell_val_is_zero = LLVMBuildICmp(builder.builder,
@@ -751,6 +772,7 @@ pub fn compile_to_module(module_name: &str,
                     bb = compile_instr(instr, start_instr, &mut module, main_fn, bb, ctx.clone());
                 }
 
+                add_cells_cleanup(&mut module, bb, llvm_cells);
             }
             None => {
                 // We won't have called set_entry_point_after, so set
