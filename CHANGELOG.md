@@ -5,6 +5,11 @@ Bug fixes:
 * Fixed a rare crash on programs with a large number of instructions
   had no effect.
 
+Optimisations:
+
+* Stripping symbols from the output binary can now be controlled with
+  `--strip`.
+
 Usability:
 
 * Added a `--version` CLI argument.

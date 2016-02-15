@@ -213,7 +213,13 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
 
     let output_name = executable_name(path);
     try!(link_object_file(&obj_file_path, &output_name, target_triple));
-    strip_executable(&output_name)
+
+    let strip_opt = matches.opt_str("strip").unwrap_or("yes".to_owned());
+    if strip_opt == "yes" {
+        try!(strip_executable(&output_name))
+    }
+
+    Ok(())
 }
 
 fn link_object_file(object_file_path: &str,
@@ -250,6 +256,7 @@ fn main() {
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
     opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
     opts.optopt("", "passes", "limit bfc optimisations to those specified", "PASS-SPECIFICATION");
+    opts.optopt("", "strip", "strip symbols from the binary (default: yes)", "yes|no");
 
     let default_triple_cstring = llvm::get_default_target_triple();
     let default_triple = default_triple_cstring.to_str().unwrap();
