@@ -437,6 +437,10 @@ after_init:                                       ; preds = %init, %beginning
   %cell_index = load i32, i32* %cell_index_ptr
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
   %cell_value = load i8, i8* %current_cell_ptr
+  %cell_value_is_zero = icmp eq i8 0, %cell_value
+  br i1 %cell_value_is_zero, label %multiply_after, label %multiply_body
+
+multiply_body:                                    ; preds = %after_init
   store i8 0, i8* %current_cell_ptr
   %target_cell_ptr = getelementptr i8, i8* %current_cell_ptr, i32 1
   %target_cell_val = load i8, i8* %target_cell_ptr
@@ -448,6 +452,9 @@ after_init:                                       ; preds = %init, %beginning
   %additional_val3 = mul i8 %cell_value, 3
   %new_target_val4 = add i8 %target_cell_val2, %additional_val3
   store i8 %new_target_val4, i8* %target_cell_ptr1
+  br label %multiply_after
+
+multiply_after:                                   ; preds = %multiply_body, %after_init
   call void @free(i8* %cells)
   ret i32 0
 }
