@@ -452,7 +452,7 @@ unsafe fn compile_multiply_move(changes: &HashMap<isize, Cell>,
                                 ctx: CompileContext)
                                 -> LLVMBasicBlockRef {
     let multiply_body = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("multiply_body"));
-    let multiply_after = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("loop_after"));
+    let multiply_after = LLVMAppendBasicBlock(ctx.main_fn, module.new_string_ptr("multiply_after"));
 
     let builder = Builder::new();
     builder.position_at_end(bb);
