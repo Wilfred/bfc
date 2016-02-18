@@ -41,6 +41,7 @@ Interested readers may enjoy my blog posts:
             - [Loop Simplification](#loop-simplification)
             - [Dead Code Elimination](#dead-code-elimination)
             - [Reorder with offsets](#reorder-with-offsets)
+            - [Multiply-move loops](#multiply-move-loops)
         - [Cell Bounds Analysis](#cell-bounds-analysis)
         - [Speculative Execution](#speculative-execution)
             - [Infinite Loops](#infinite-loops)
@@ -169,6 +170,14 @@ If increments/decrements cancel out, we remove them entirely.
           Increment -1
 ```
 
+We combine pointer increments:
+
+```
+   Compile            Combine
++++  =>   PointerIncrement 1   =>   PointerIncrement 2
+          PointerIncrement 1
+```
+
 We do the same thing for successive sets:
 
 ```
@@ -288,6 +297,9 @@ Write         =>           Write
 Increment 1
 ```
 
+Finally, we remove cell modifications that are immediately overwritten
+by reads, e.g. `+,` is equivalent to `,`.
+
 #### Reorder with offsets
 
 Given a sequence of instructions without loops or I/O, we can safely
@@ -313,6 +325,13 @@ Increment 1 (offset 1)
 Increment 1 (offset 2)
 PointerIncrement 2
 ```
+
+#### Multiply-move loops
+
+bfc can detect loops that perform multiplication and converts them to
+multiply instructions. This works for simple cases like `[->++<]`
+(multiply by two into the next cell) as well as more complex cases
+like `[>-<->>+++<<]`.
 
 ### Cell Bounds Analysis
 
