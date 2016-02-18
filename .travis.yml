@@ -13,25 +13,19 @@ before_script:
       pip install 'travis-cargo<0.2' --user &&
       export PATH=$HOME/.local/bin:$PATH
 
-# Install LLVM.
+# Install LLVM 3.8.
 install:
- - sudo sh -c "echo 'deb http://archive.ubuntu.com/ubuntu/ precise-proposed restricted main multiverse universe' >> /etc/apt/sources.list"
+ - wget http://llvm.org/pre-releases/3.8.0/rc2/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+ - tar xf clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+ - export PATH="$PWD/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04/bin:$PATH"
+ - cc --version
 
-# based on instructions at http://llvm.org/apt/
- - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise main' >> /etc/apt/sources.list"
- - sudo sh -c "echo 'deb-src http://llvm.org/apt/precise/ llvm-toolchain-precise main' >> /etc/apt/sources.list"
- - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.7 main' >> /etc/apt/sources.list"
- - sudo sh -c "echo 'deb-src http://llvm.org/apt/precise/ llvm-toolchain-precise-3.7 main' >> /etc/apt/sources.list"
- - sudo sh -c "echo 'deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main' >> /etc/apt/sources.list"
- - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
- - sudo apt-get update
- - sudo apt-get install -y --force-yes libllvm3.7 llvm-3.7 llvm-3.7-dev llvm-3.7-runtime
- - sudo apt-get install libedit-dev
+ # llvm-config gives compiler arguments for the compiler it was
+ # compiled with. On ubuntu cc is gcc, so override that to avoid:
+ # 'unrecognized command line option ‘-Wcovered-switch-default’'
+ - alias cc=clang
+ - cc --version
 
-# llvm-config is old by default, see http://askubuntu.com/a/309787
-# TODO: there must be a nicer approach
- - sudo rm -f /usr/local/clang-3.4/bin/llvm-config
- - sudo ln -s /usr/bin/llvm-config-3.7 /usr/local/bin/llvm-config
  - llvm-config --version
 
 # Build and test.
