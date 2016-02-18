@@ -216,7 +216,6 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
     let builder = Builder::new();
     builder.position_at_end(bb);
 
-    let num_cells = int32(init_values.len() as c_ulonglong);
     unsafe {
         // char* cells = malloc(num_cells);
         let num_cells = int32(init_values.len() as c_ulonglong);
