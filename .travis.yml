@@ -13,8 +13,8 @@ before_script:
       pip install 'travis-cargo<0.2' --user &&
       export PATH=$HOME/.local/bin:$PATH
 
-# Install LLVM 3.8.
 install:
+ # Install LLVM 3.8.
  - wget http://llvm.org/pre-releases/3.8.0/rc2/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04.tar.xz
  - tar xf clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04.tar.xz
  - export PATH="$PWD/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04/bin:$PATH"
@@ -27,8 +27,10 @@ install:
  - sudo rm `which cc`
  - sudo ln -s $PWD/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04/bin/clang /usr/bin/cc
  - cc --version
-
  - llvm-config --version
+
+ # travis-coveralls dependencies
+ - sudo apt-get install -y --force-yes libcurl4-openssl-dev libdw-dev libdw1 libelf-dev
 
 # Build and test.
 script:
