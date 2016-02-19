@@ -23,7 +23,9 @@ install:
  # llvm-config gives compiler arguments for the compiler it was
  # compiled with. On ubuntu cc is gcc, so override that to avoid:
  # 'unrecognized command line option ‘-Wcovered-switch-default’'
- - alias cc=clang
+ - which cc
+ - sudo rm `which cc`
+ - sudo ln -s $PWD/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04/bin/clang /usr/bin/cc
  - cc --version
 
  - llvm-config --version
