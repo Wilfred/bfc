@@ -54,3 +54,8 @@ matrix:
     # only passing on stable is sufficient.
     - rust: beta
     - rust: nightly
+
+env:
+  global:
+    # Required for travis-cargo to work on nightly.
+    - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
