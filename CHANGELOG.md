@@ -1,14 +1,23 @@
-# v1.7.0 (unreleased)
+# v1.8.0
+
+Nothing here yet.
+
+# v1.7.0
 
 Bug fixes:
 
 * Fixed a rare crash on programs with a large number of instructions
   had no effect.
+* Fixed a memory issue where programs with a large number of cells
+  (which were stored on the stack) were misoptimised and
+  segfaulted. Cell storage is now on the heap.
 
 Optimisations:
 
 * Stripping symbols from the output binary can now be controlled with
   `--strip`.
+* Re-added a multiply loop optimisation. This was removed in 1.5.0 due to
+  soundness bugs.
 
 Usability:
 
