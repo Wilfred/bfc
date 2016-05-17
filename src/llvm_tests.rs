@@ -3,7 +3,7 @@ use std::ffi::CString;
 use std::num::Wrapping;
 
 use llvm::compile_to_module;
-use bfir::Instruction::*;
+use bfir::AstNode::*;
 use bfir::Position;
 use itertools::Itertools;
 use itertools::EitherOrBoth::Both;

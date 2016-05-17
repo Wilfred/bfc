@@ -9,16 +9,16 @@ use itertools::Itertools;
 
 use diagnostics::Warning;
 
-use bfir::{Instruction, Position, Combine, Cell, get_position};
-use bfir::Instruction::*;
+use bfir::{AstNode, Position, Combine, Cell, get_position};
+use bfir::AstNode::*;
 
 const MAX_OPT_ITERATIONS: u64 = 40;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
 /// (repeatedly if necessary).
-pub fn optimize(instrs: Vec<Instruction>,
+pub fn optimize(instrs: Vec<AstNode>,
                 pass_specification: &Option<String>)
-                -> (Vec<Instruction>, Vec<Warning>) {
+                -> (Vec<AstNode>, Vec<Warning>) {
     // Many of our individual peephole optimisations remove
     // instructions, creating new opportunities to combine. We run
     // until we've found a fixed-point where no further optimisations
@@ -55,9 +55,9 @@ pub fn optimize(instrs: Vec<Instruction>,
 }
 
 /// Apply all our peephole optimisations once and return the result.
-fn optimize_once(instrs: Vec<Instruction>,
+fn optimize_once(instrs: Vec<AstNode>,
                  pass_specification: &Option<String>)
-                 -> (Vec<Instruction>, Option<Warning>) {
+                 -> (Vec<AstNode>, Option<Warning>) {
     let pass_specification = pass_specification.clone()
                                                .unwrap_or("combine_inc,combine_ptr,known_zero,\
                                                            multiply,zeroing_loop,combine_set,\
@@ -112,9 +112,9 @@ fn optimize_once(instrs: Vec<Instruction>,
 }
 
 /// Defines a method on iterators to map a function over all loop bodies.
-trait MapLoopsExt: Iterator<Item=Instruction> {
-    fn map_loops<F>(&mut self, f: F) -> Vec<Instruction>
-        where F: Fn(Vec<Instruction>) -> Vec<Instruction>
+trait MapLoopsExt: Iterator<Item=AstNode> {
+    fn map_loops<F>(&mut self, f: F) -> Vec<AstNode>
+        where F: Fn(Vec<AstNode>) -> Vec<AstNode>
     {
         self.map(|instr| {
                 match instr {
@@ -131,7 +131,7 @@ trait MapLoopsExt: Iterator<Item=Instruction> {
     }
 }
 
-impl<I> MapLoopsExt for I where I: Iterator<Item = Instruction>
+impl<I> MapLoopsExt for I where I: Iterator<Item = AstNode>
 {}
 
 /// Given an index into a vector of instructions, find the index of
@@ -142,7 +142,7 @@ impl<I> MapLoopsExt for I where I: Iterator<Item = Instruction>
 /// if it has an offset. E.g. if the instruction is
 /// Set {amount:100, offset: 1}, we're still considering previous instructions that
 /// modify the current cell, not the (cell_index + 1)th cell.
-pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
+pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
@@ -191,7 +191,7 @@ pub fn previous_cell_change(instrs: &[Instruction], index: usize) -> Option<usiz
 /// vector. This proved extremely hard to reason about. Instead, we
 /// have copied the body of previous_cell_change and highlighted the
 /// differences.
-pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
+pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
@@ -237,7 +237,7 @@ pub fn next_cell_change(instrs: &[Instruction], index: usize) -> Option<usize> {
 
 /// Combine consecutive increments into a single increment
 /// instruction.
-pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // Collapse consecutive increments.
@@ -265,7 +265,7 @@ pub fn combine_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map_loops(combine_increments)
 }
 
-pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_ptr_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs.into_iter()
           .coalesce(|prev_instr, instr| {
               // Collapse consecutive increments.
@@ -292,7 +292,7 @@ pub fn combine_ptr_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
 // TODO: rename, this isn't really a combine, this really a dead code
 // removal.
 // TODO: this should generate a warning too.
-pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_before_read(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut redundant_instr_positions = HashSet::new();
     let mut last_write_index = None;
 
@@ -334,7 +334,7 @@ pub fn combine_before_read(instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 /// Convert [-] to Set 0.
-pub fn zeroing_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn zeroing_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs.into_iter()
           .map(|instr| {
               if let Loop { ref body, position } = instr {
@@ -355,7 +355,7 @@ pub fn zeroing_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 }
 
 /// Remove any loops where we know the current cell is zero.
-pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs.clone()
           .into_iter()
           .enumerate()
@@ -390,7 +390,7 @@ pub fn remove_dead_loops(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Increment { amount: 1, offset: 1 }
 /// Increment { amount: 2, offset: 2 }
 /// PointerIncrement(1)
-pub fn sort_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn sort_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut sequence = vec![];
     let mut result = vec![];
 
@@ -434,8 +434,8 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 
 /// Given a BF program, combine sets/increments using offsets so we
 /// have single PointerIncrement at the end.
-fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
-    let mut instrs_by_offset: HashMap<isize, Vec<Instruction>> = HashMap::new();
+fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
+    let mut instrs_by_offset: HashMap<isize, Vec<AstNode>> = HashMap::new();
     let mut current_offset = 0;
     let mut last_ptr_inc_pos = None;
 
@@ -472,7 +472,7 @@ fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
     }
 
     // Append the increment/set instructions, in offset order.
-    let mut results: Vec<Instruction> = vec![];
+    let mut results: Vec<AstNode> = vec![];
     for same_offset_instrs in ordered_values(instrs_by_offset) {
         results.extend(same_offset_instrs.into_iter());
     }
@@ -490,7 +490,7 @@ fn sort_sequence_by_offset(instrs: Vec<Instruction>) -> Vec<Instruction> {
 
 /// Combine set instructions with other set instructions or
 /// increments.
-pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
     // It's sufficient to consider immediately adjacent instructions
     // as sort_sequence_by_offset ensures that if the offset is the
     // same, the instruction is adjacent.
@@ -550,7 +550,7 @@ pub fn combine_set_and_increments(instrs: Vec<Instruction>) -> Vec<Instruction> 
           .map_loops(combine_set_and_increments)
 }
 
-pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn remove_redundant_sets(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut reduced = remove_redundant_sets_inner(instrs);
 
     // Remove a set zero at the beginning of the program, since cells
@@ -562,7 +562,7 @@ pub fn remove_redundant_sets(instrs: Vec<Instruction>) -> Vec<Instruction> {
     reduced
 }
 
-fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
+fn remove_redundant_sets_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut redundant_instr_positions = HashSet::new();
 
     for (index, instr) in instrs.iter().enumerate() {
@@ -587,7 +587,7 @@ fn remove_redundant_sets_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
           .map_loops(remove_redundant_sets_inner)
 }
 
-pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn annotate_known_zero(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut result = vec![];
 
     let position = if instrs.is_empty() {
@@ -617,7 +617,7 @@ pub fn annotate_known_zero(instrs: Vec<Instruction>) -> Vec<Instruction> {
     result
 }
 
-fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
+fn annotate_known_zero_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut result = vec![];
 
     for (i, instr) in instrs.iter().enumerate() {
@@ -659,7 +659,7 @@ fn annotate_known_zero_inner(instrs: Vec<Instruction>) -> Vec<Instruction> {
 /// Remove code at the end of the program that has no side
 /// effects. This means we have no write commands afterwards, nor
 /// loops (which may not terminate so we should not remove).
-pub fn remove_pure_code(mut instrs: Vec<Instruction>) -> (Vec<Instruction>, Option<Warning>) {
+pub fn remove_pure_code(mut instrs: Vec<AstNode>) -> (Vec<AstNode>, Option<Warning>) {
     let mut pure_instrs = vec![];
     while !instrs.is_empty() {
         let last_instr = instrs.pop().unwrap();
@@ -694,7 +694,7 @@ pub fn remove_pure_code(mut instrs: Vec<Instruction>) -> (Vec<Instruction>, Opti
 
 /// Does this loop body represent a multiplication operation?
 /// E.g. "[->>>++<<<]" sets cell #3 to 2*cell #0.
-fn is_multiply_loop_body(body: &[Instruction]) -> bool {
+fn is_multiply_loop_body(body: &[AstNode]) -> bool {
     // A multiply loop may only contain increments and pointer increments.
     for body_instr in body {
         match *body_instr {
@@ -729,7 +729,7 @@ fn is_multiply_loop_body(body: &[Instruction]) -> bool {
 /// Return a hashmap of all the cells that are affected by this
 /// sequence of instructions, and how much they change.
 /// E.g. "->>+++>+" -> {0: -1, 2: 3, 3: 1}
-fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
+fn cell_changes(instrs: &[AstNode]) -> HashMap<isize, Cell> {
     let mut changes = HashMap::new();
     let mut cell_index: isize = 0;
 
@@ -750,7 +750,7 @@ fn cell_changes(instrs: &[Instruction]) -> HashMap<isize, Cell> {
     changes
 }
 
-pub fn extract_multiply(instrs: Vec<Instruction>) -> Vec<Instruction> {
+pub fn extract_multiply(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs.into_iter()
           .map(|instr| {
               match instr {

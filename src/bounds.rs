@@ -12,8 +12,8 @@ use std::num::Wrapping;
 use std::ops::Add;
 use std::cmp::{Ord, Ordering, max};
 
-use bfir::Instruction;
-use bfir::Instruction::*;
+use bfir::AstNode;
+use bfir::AstNode::*;
 
 #[cfg(test)]
 use bfir::{parse, Position};
@@ -23,7 +23,7 @@ pub const MAX_CELL_INDEX: usize = 99999;
 
 /// Return the highest cell index that can be reached during program
 /// execution. Zero-indexed.
-pub fn highest_cell_index(instrs: &[Instruction]) -> usize {
+pub fn highest_cell_index(instrs: &[AstNode]) -> usize {
     let (highest_index, _) = overall_movement(instrs);
 
     match highest_index {
@@ -77,7 +77,7 @@ impl PartialOrd for SaturatingInt {
 
 /// Return a tuple (highest cell index reached, cell index at end).
 /// If movement is unbounded, return Max.
-fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
+fn overall_movement(instrs: &[AstNode]) -> (SaturatingInt, SaturatingInt) {
     let mut net_movement = SaturatingInt::Number(0);
     let mut max_index = SaturatingInt::Number(0);
 
@@ -91,7 +91,7 @@ fn overall_movement(instrs: &[Instruction]) -> (SaturatingInt, SaturatingInt) {
 
 /// Return a tuple (highest cell index reached, cell index at end).
 /// If movement is unbounded, return Max.
-fn movement(instr: &Instruction) -> (SaturatingInt, SaturatingInt) {
+fn movement(instr: &AstNode) -> (SaturatingInt, SaturatingInt) {
     match *instr {
         PointerIncrement { amount, .. } => {
             if amount < 0 {
@@ -270,11 +270,11 @@ fn loop_with_no_net_movement() {
 
 #[test]
 fn quickcheck_highest_cell_index_in_bounds() {
-    fn highest_cell_index_in_bounds(instrs: Vec<Instruction>) -> bool {
+    fn highest_cell_index_in_bounds(instrs: Vec<AstNode>) -> bool {
         let index = highest_cell_index(&instrs);
         index <= MAX_CELL_INDEX
     }
-    quickcheck(highest_cell_index_in_bounds as fn(Vec<Instruction>) -> bool);
+    quickcheck(highest_cell_index_in_bounds as fn(Vec<AstNode>) -> bool);
 }
 
 #[test]

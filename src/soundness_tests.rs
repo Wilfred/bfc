@@ -1,6 +1,6 @@
 use quickcheck::{quickcheck, TestResult};
 
-use bfir::Instruction;
+use bfir::AstNode;
 use execution::{execute_with_state, ExecutionState};
 use execution::Outcome::*;
 use peephole::*;
@@ -8,8 +8,8 @@ use peephole::*;
 
 // TODO: just take a boolean instead of an Option<i8>. We waste time
 // exploring lots of read values when it's unlikely they'll find bugs.
-fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bool, dummy_read_value: Option<i8>) -> TestResult
-    where F: Fn(Vec<Instruction>) -> Vec<Instruction>
+fn transform_is_sound<F>(instrs: Vec<AstNode>, transform: F, check_cells: bool, dummy_read_value: Option<i8>) -> TestResult
+    where F: Fn(Vec<AstNode>) -> Vec<AstNode>
 {
     let max_steps = 1000;
 
@@ -70,112 +70,112 @@ fn transform_is_sound<F>(instrs: Vec<Instruction>, transform: F, check_cells: bo
 
 #[test]
 fn combine_increments_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, combine_increments, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn combine_ptr_increments_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, combine_ptr_increments, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn annotate_known_zero_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, annotate_known_zero, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn extract_multiply_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, extract_multiply, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn simplify_loops_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, zeroing_loops, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn combine_set_and_increments_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, combine_set_and_increments, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn remove_dead_loops_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, remove_dead_loops, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn remove_redundant_sets_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, remove_redundant_sets, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn combine_before_read_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>, read_value: Option<i8>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>, read_value: Option<i8>) -> TestResult {
         // combine_before_read can change the value of cells when we
         // reach a runtime value. Conside `+,` to `,` -- the `,`
         // overwrites the cell, but when we reach the runtime value
         // the cells are different.
         transform_is_sound(instrs, combine_before_read, false, read_value)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>, Option<i8>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>, Option<i8>) -> TestResult)
 }
 
 
 #[test]
 fn remove_pure_code_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         // We can't compare cells after this pass. Consider `.+` to
         // `.` -- the outputs are the same, but the cell state is
         // different at termination.
         transform_is_sound(instrs, |instrs| remove_pure_code(instrs).0, false, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn sort_by_offset_is_sound() {
-    fn is_sound(instrs: Vec<Instruction>) -> TestResult {
+    fn is_sound(instrs: Vec<AstNode>) -> TestResult {
         transform_is_sound(instrs, sort_by_offset, true, None)
     }
-    quickcheck(is_sound as fn(Vec<Instruction>) -> TestResult)
+    quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
 }
 
 #[test]
 fn test_overall_optimize_is_sound() {
-    fn optimize_ignore_warnings(instrs: Vec<Instruction>) -> Vec<Instruction> {
+    fn optimize_ignore_warnings(instrs: Vec<AstNode>) -> Vec<AstNode> {
         optimize(instrs, &None).0
     }
 
-    fn optimizations_sound_together(instrs: Vec<Instruction>, read_value: Option<i8>) -> TestResult {
+    fn optimizations_sound_together(instrs: Vec<AstNode>, read_value: Option<i8>) -> TestResult {
         // Since sort_by_offset and combine_before_read can change
         // cell values at termination, the overall optimize can change
         // cells values at termination.
         transform_is_sound(instrs, optimize_ignore_warnings, false, read_value)
     }
 
-    quickcheck(optimizations_sound_together as fn(Vec<Instruction>, Option<i8>) -> TestResult);
+    quickcheck(optimizations_sound_together as fn(Vec<AstNode>, Option<i8>) -> TestResult);
 }

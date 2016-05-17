@@ -12,8 +12,8 @@ use quickcheck::quickcheck;
 #[cfg(test)]
 use bfir::{parse, Position};
 
-use bfir::{Instruction, Cell};
-use bfir::Instruction::*;
+use bfir::{AstNode, Cell};
+use bfir::AstNode::*;
 
 use diagnostics::Warning;
 
@@ -24,14 +24,14 @@ use bounds::highest_cell_index;
 
 #[derive(Debug,Clone,PartialEq,Eq)]
 pub struct ExecutionState<'a> {
-    pub start_instr: Option<&'a Instruction>,
+    pub start_instr: Option<&'a AstNode>,
     pub cells: Vec<Cell>,
     pub cell_ptr: isize,
     pub outputs: Vec<i8>,
 }
 
 impl<'a> ExecutionState<'a> {
-    pub fn initial(instrs: &[Instruction]) -> Self {
+    pub fn initial(instrs: &[AstNode]) -> Self {
         ExecutionState {
             start_instr: None,
             cells: vec![Wrapping(0); highest_cell_index(instrs) + 1],
@@ -60,7 +60,7 @@ pub const MAX_STEPS: u64 = 10000000;
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
-pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Warning>) {
+pub fn execute(instrs: &[AstNode], steps: u64) -> (ExecutionState, Option<Warning>) {
     let mut state = ExecutionState::initial(instrs);
     let outcome = execute_with_state(instrs, &mut state, steps, None);
 
@@ -82,7 +82,7 @@ pub fn execute(instrs: &[Instruction], steps: u64) -> (ExecutionState, Option<Wa
 ///
 /// Execution also stops if we encounter a read instruction.  Users may
 /// alternatively pass in a dummy value for the read (used in testing).
-pub fn execute_with_state<'a>(instrs: &'a [Instruction],
+pub fn execute_with_state<'a>(instrs: &'a [AstNode],
                               state: &mut ExecutionState<'a>,
                               steps: u64,
                               dummy_read_value: Option<i8>)
@@ -712,11 +712,11 @@ fn up_to_nonempty_infinite_loop() {
 
 #[test]
 fn quickcheck_cell_ptr_in_bounds() {
-    fn cell_ptr_in_bounds(instrs: Vec<Instruction>) -> bool {
+    fn cell_ptr_in_bounds(instrs: Vec<AstNode>) -> bool {
         let state = execute(&instrs, 100).0;
         (state.cell_ptr >= 0) && (state.cell_ptr < state.cells.len() as isize)
     }
-    quickcheck(cell_ptr_in_bounds as fn(Vec<Instruction>) -> bool);
+    quickcheck(cell_ptr_in_bounds as fn(Vec<AstNode>) -> bool);
 }
 
 #[test]

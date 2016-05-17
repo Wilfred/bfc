@@ -3,8 +3,8 @@ use std::num::Wrapping;
 
 use quickcheck::quickcheck;
 
-use bfir::{Instruction, Position};
-use bfir::Instruction::*;
+use bfir::{AstNode, Position};
+use bfir::AstNode::*;
 use diagnostics::Warning;
 
 use peephole::*;
@@ -12,15 +12,15 @@ use bfir::parse;
 use rand::Rng;
 use quickcheck::{Arbitrary, Gen, TestResult};
 
-impl Arbitrary for Instruction {
-    fn arbitrary<G: Gen>(g: &mut G) -> Instruction {
+impl Arbitrary for AstNode {
+    fn arbitrary<G: Gen>(g: &mut G) -> AstNode {
         arbitrary_instr(g, 5)
     }
 }
 
 // We define a separate function so we can recurse on max_depth.
 // See https://github.com/BurntSushi/quickcheck/issues/23
-fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> Instruction {
+fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> AstNode {
     let modulus = if max_depth == 0 {
         8
     } else {
@@ -663,7 +663,7 @@ fn not_redundant_set_when_nonzero() {
     assert_eq!(remove_redundant_sets(instrs.clone()), instrs);
 }
 
-fn is_pure(instrs: &[Instruction]) -> bool {
+fn is_pure(instrs: &[AstNode]) -> bool {
     for instr in instrs {
         match *instr {
             Loop {..} => {
@@ -683,16 +683,16 @@ fn is_pure(instrs: &[Instruction]) -> bool {
 
 #[test]
 fn quickcheck_should_annotate_known_zero_at_start() {
-    fn should_annotate_known_zero_at_start(instrs: Vec<Instruction>) -> bool {
+    fn should_annotate_known_zero_at_start(instrs: Vec<AstNode>) -> bool {
         let annotated = annotate_known_zero(instrs);
         matches!(annotated[0], Set { amount: Wrapping(0), offset: 0, .. })
     }
-    quickcheck(should_annotate_known_zero_at_start as fn(Vec<Instruction>) -> bool);
+    quickcheck(should_annotate_known_zero_at_start as fn(Vec<AstNode>) -> bool);
 }
 
 #[test]
 fn annotate_known_zero_idempotent() {
-    fn is_idempotent(instrs: Vec<Instruction>) -> bool {
+    fn is_idempotent(instrs: Vec<AstNode>) -> bool {
         let annotated = annotate_known_zero(instrs);
         let annotated_again = annotate_known_zero(annotated.clone());
         if annotated == annotated_again {
@@ -703,7 +703,7 @@ fn annotate_known_zero_idempotent() {
             false
         }
     }
-    quickcheck(is_idempotent as fn(Vec<Instruction>) -> bool);
+    quickcheck(is_idempotent as fn(Vec<AstNode>) -> bool);
 }
 
 #[test]
@@ -807,25 +807,25 @@ fn should_remove_pure_code() {
 
 #[test]
 fn quickcheck_should_remove_dead_pure_code() {
-    fn should_remove_dead_pure_code(instrs: Vec<Instruction>) -> TestResult {
+    fn should_remove_dead_pure_code(instrs: Vec<AstNode>) -> TestResult {
         if !is_pure(&instrs) {
             return TestResult::discard();
         }
         TestResult::from_bool(optimize(instrs, &None).0 == vec![])
     }
-    quickcheck(should_remove_dead_pure_code as fn(Vec<Instruction>) -> TestResult);
+    quickcheck(should_remove_dead_pure_code as fn(Vec<AstNode>) -> TestResult);
 }
 
 #[test]
 fn quickcheck_optimize_should_be_idempotent() {
-    fn optimize_should_be_idempotent(instrs: Vec<Instruction>) -> bool {
+    fn optimize_should_be_idempotent(instrs: Vec<AstNode>) -> bool {
         // Once we've optimized once, running again shouldn't reduce the
         // instructions further. If it does, we're probably running our
         // optimisations in the wrong order.
         let minimal = optimize(instrs.clone(), &None).0;
         optimize(minimal.clone(), &None).0 == minimal
     }
-    quickcheck(optimize_should_be_idempotent as fn(Vec<Instruction>) -> bool);
+    quickcheck(optimize_should_be_idempotent as fn(Vec<AstNode>) -> bool);
 }
 
 #[test]
@@ -875,7 +875,7 @@ fn pathological_optimisation_opportunity() {
     assert_eq!(optimize(instrs, &None).0, expected);
 }
 
-fn count_instrs(instrs: &[Instruction]) -> u64 {
+fn count_instrs(instrs: &[AstNode]) -> u64 {
     let mut count = 0;
     for instr in instrs {
         if let &Loop { ref body, .. } = instr {
@@ -888,13 +888,13 @@ fn count_instrs(instrs: &[Instruction]) -> u64 {
 
 #[test]
 fn quickcheck_optimize_should_decrease_size() {
-    fn optimize_should_decrease_size(instrs: Vec<Instruction>) -> bool {
+    fn optimize_should_decrease_size(instrs: Vec<AstNode>) -> bool {
         // The result of optimize() should never increase the number of
         // instructions.
         let result = optimize(instrs.clone(), &None).0;
         count_instrs(&result) <= count_instrs(&instrs)
     }
-    quickcheck(optimize_should_decrease_size as fn(Vec<Instruction>) -> bool);
+    quickcheck(optimize_should_decrease_size as fn(Vec<AstNode>) -> bool);
 }
 
 #[test]

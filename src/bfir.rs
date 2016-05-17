@@ -9,7 +9,7 @@ use std::fmt;
 use std::num::Wrapping;
 use std::collections::HashMap;
 
-use self::Instruction::*;
+use self::AstNode::*;
 
 /// A cell is the fundamental BF datatype that we work with. BF
 /// requires this to be at least one byte, we provide a cell of
@@ -53,9 +53,9 @@ impl Combine<Option<Position>> for Option<Position> {
     }
 }
 
-/// Instruction represents a node in our BF AST.
+/// AstNode represents a node in our BF AST.
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub enum Instruction {
+pub enum AstNode {
     Increment {
         amount: Cell,
         offset: isize,
@@ -72,7 +72,7 @@ pub enum Instruction {
         position: Option<Position>,
     },
     Loop {
-        body: Vec<Instruction>,
+        body: Vec<AstNode>,
         position: Option<Position>,
     },
     // These instruction have no direct equivalent in BF, but we
@@ -88,7 +88,7 @@ pub enum Instruction {
     },
 }
 
-fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
+fn fmt_with_indent(instr: &AstNode, indent: i32, f: &mut fmt::Formatter) {
     for _ in 0..indent {
         let _ = write!(f, "  ");
     }
@@ -108,14 +108,14 @@ fn fmt_with_indent(instr: &Instruction, indent: i32, f: &mut fmt::Formatter) {
     }
 }
 
-impl fmt::Display for Instruction {
+impl fmt::Display for AstNode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt_with_indent(self, 0, f);
         Ok(())
     }
 }
 
-pub fn get_position(instr: &Instruction) -> Option<Position> {
+pub fn get_position(instr: &AstNode) -> Option<Position> {
     match *instr {
         Increment { position, .. } => position,
         PointerIncrement { position, .. } => position,
@@ -136,8 +136,8 @@ pub struct ParseError {
 /// Given a string of BF source code, parse and return our BF IR
 /// representation. If parsing fails, return an Info describing what
 /// went wrong.
-pub fn parse(source: &str) -> Result<Vec<Instruction>, ParseError> {
-    // Instructions in the current loop (or toplevel).
+pub fn parse(source: &str) -> Result<Vec<AstNode>, ParseError> {
+    // AstNodes in the current loop (or toplevel).
     let mut instructions = vec![];
     // Contains the instructions of open parent loops (or toplevel),
     // and the starting indices of the loops.

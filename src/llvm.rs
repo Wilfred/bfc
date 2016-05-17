@@ -16,8 +16,8 @@ use std::str;
 use std::collections::HashMap;
 use std::num::Wrapping;
 
-use bfir::{Instruction, Cell};
-use bfir::Instruction::*;
+use bfir::{AstNode, Cell};
+use bfir::AstNode::*;
 
 use execution::ExecutionState;
 
@@ -591,8 +591,8 @@ fn ptr_equal<T>(a: *const T, b: *const T) -> bool {
     a == b
 }
 
-unsafe fn compile_loop(loop_body: &[Instruction],
-                       start_instr: &Instruction,
+unsafe fn compile_loop(loop_body: &[AstNode],
+                       start_instr: &AstNode,
                        module: &mut Module,
                        main_fn: LLVMValueRef,
                        bb: LLVMBasicBlockRef,
@@ -654,8 +654,8 @@ unsafe fn compile_loop(loop_body: &[Instruction],
 
 /// Append LLVM IR instructions to bb acording to the BF instruction
 /// passed in.
-unsafe fn compile_instr(instr: &Instruction,
-                        start_instr: &Instruction,
+unsafe fn compile_instr(instr: &AstNode,
+                        start_instr: &AstNode,
                         module: &mut Module,
                         main_fn: LLVMValueRef,
                         bb: LLVMBasicBlockRef,
@@ -732,7 +732,7 @@ unsafe fn set_entry_point_after(module: &mut Module,
 // TODO: use init_values terminology consistently for names here.
 pub fn compile_to_module(module_name: &str,
                          target_triple: Option<String>,
-                         instrs: &[Instruction],
+                         instrs: &[AstNode],
                          initial_state: &ExecutionState)
                          -> Module {
     let mut module = create_module(module_name, target_triple);
