@@ -79,9 +79,7 @@ $ target/release/bfc sample_programs/hello_world.bf --target=x86_64-pc-linux-gnu
 ### LLVM Version
 
 LLVM 3.8+ is recommended, as
-[there are known bugs with 3.7](https://github.com/Wilfred/bfc/issues/8). 3.8
-is not yet released, but you can use
-[the release candidate](http://llvm.org/pre-releases/3.8.0/). Either
+[there are known bugs with 3.7](https://github.com/Wilfred/bfc/issues/8). Either
 download a prebuilt LLVM, or build it as follows:
 
 ```
