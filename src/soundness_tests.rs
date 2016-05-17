@@ -6,8 +6,6 @@ use execution::Outcome::*;
 use peephole::*;
 
 
-// TODO: just take a boolean instead of an Option<i8>. We waste time
-// exploring lots of read values when it's unlikely they'll find bugs.
 fn transform_is_sound<F>(instrs: Vec<AstNode>, transform: F, check_cells: bool, dummy_read_value: Option<i8>) -> TestResult
     where F: Fn(Vec<AstNode>) -> Vec<AstNode>
 {
