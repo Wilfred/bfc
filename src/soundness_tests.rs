@@ -133,11 +133,11 @@ fn remove_redundant_sets_is_sound() {
 #[test]
 fn combine_before_read_is_sound() {
     fn is_sound(instrs: Vec<AstNode>, read_value: Option<i8>) -> TestResult {
-        // combine_before_read can change the value of cells when we
+        // remove_read_clobber can change the value of cells when we
         // reach a runtime value. Conside `+,` to `,` -- the `,`
         // overwrites the cell, but when we reach the runtime value
         // the cells are different.
-        transform_is_sound(instrs, combine_before_read, false, read_value)
+        transform_is_sound(instrs, remove_read_clobber, false, read_value)
     }
     quickcheck(is_sound as fn(Vec<AstNode>, Option<i8>) -> TestResult)
 }
@@ -169,7 +169,7 @@ fn test_overall_optimize_is_sound() {
     }
 
     fn optimizations_sound_together(instrs: Vec<AstNode>, read_value: Option<i8>) -> TestResult {
-        // Since sort_by_offset and combine_before_read can change
+        // Since sort_by_offset and remove_read_clobber can change
         // cell values at termination, the overall optimize can change
         // cells values at termination.
         transform_is_sound(instrs, optimize_ignore_warnings, false, read_value)

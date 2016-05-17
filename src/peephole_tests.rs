@@ -215,7 +215,7 @@ fn dont_combine_before_read_different_offset() {
                            position: Some(Position { start: 0, end: 0 }),
                        },
                        Read { position: Some(Position { start: 0, end: 0 }) }];
-    assert_eq!(combine_before_read(initial.clone()), initial);
+    assert_eq!(remove_read_clobber(initial.clone()), initial);
 }
 
 #[test]
@@ -252,7 +252,7 @@ fn combine_before_read_not_consecutive() {
                             position: Some(Position { start: 3, end: 3 }),
                         },
                         Read { position: Some(Position { start: 4, end: 4 }) }];
-    assert_eq!(combine_before_read(initial), expected);
+    assert_eq!(remove_read_clobber(initial), expected);
 }
 
 #[test]
@@ -266,7 +266,7 @@ fn no_combine_before_read_after_write() {
                        Read { position: None }];
     // TODO: write an assert_unchanged! macro.
     let expected = initial.clone();
-    assert_eq!(combine_before_read(initial), expected);
+    assert_eq!(remove_read_clobber(initial), expected);
 }
 
 #[test]
@@ -275,7 +275,7 @@ fn no_combine_before_read_after_multiply() {
     changes.insert(1, Wrapping(-1));
     let initial = vec![MultiplyMove { changes: changes, position: None}, Read { position: None }];
     let expected = initial.clone();
-    assert_eq!(combine_before_read(initial), expected);
+    assert_eq!(remove_read_clobber(initial), expected);
 }
 
 #[test]

@@ -93,7 +93,7 @@ fn optimize_once(instrs: Vec<AstNode>,
         instrs = remove_redundant_sets(instrs);
     }
     if passes.contains(&"read_clobber") {
-        instrs = combine_before_read(instrs);
+        instrs = remove_read_clobber(instrs);
     }
     let warning;
     if passes.contains(&"pure_removal") {
@@ -289,10 +289,10 @@ pub fn combine_ptr_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
           .map_loops(combine_ptr_increments)
 }
 
-// TODO: rename, this isn't really a combine, this really a dead code
-// removal.
+/// Don't bother updating cells if they're immediately overwritten
+/// by a value from stdin.
 // TODO: this should generate a warning too.
-pub fn combine_before_read(instrs: Vec<AstNode>) -> Vec<AstNode> {
+pub fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut redundant_instr_positions = HashSet::new();
     let mut last_write_index = None;
 
@@ -330,7 +330,7 @@ pub fn combine_before_read(instrs: Vec<AstNode>) -> Vec<AstNode> {
           .enumerate()
           .filter(|&(index, _)| !redundant_instr_positions.contains(&index))
           .map(|(_, instr)| instr)
-          .map_loops(combine_before_read)
+          .map_loops(remove_read_clobber)
 }
 
 /// Convert [-] to Set 0.
