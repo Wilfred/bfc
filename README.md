@@ -19,7 +19,7 @@ bfc is an industrial grade compiler for
 It is structured as follows:
 
 ```
-BF source -> BF IR -> LLVM IR -> x86_32 Binary
+BF source -> BF IR -> LLVM IR -> x86-64 Binary
 ```
 
 Interested readers may enjoy my blog posts:
