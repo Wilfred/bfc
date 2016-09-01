@@ -9,7 +9,6 @@ use diagnostics::Warning;
 
 use peephole::*;
 use bfir::parse;
-use rand::Rng;
 use quickcheck::{Arbitrary, Gen, TestResult};
 
 impl Arbitrary for AstNode {
