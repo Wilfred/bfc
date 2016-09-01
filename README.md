@@ -1,7 +1,7 @@
 # An optimising compiler for brainfuck
 
 [![Crate version](http://meritbadge.herokuapp.com/bfc)](https://crates.io/crates/bfc)
-[![docs](https://docs.rs/bfc/badge.svg)](https://docs.rs/bfc/)
+[![docs](https://docs.rs/bfc/badge.svg)](https://docs.rs/crate/bfc/)
 [![Build Status](https://travis-ci.org/Wilfred/bfc.svg?branch=master)](https://travis-ci.org/Wilfred/bfc)
 [![Coverage Status](https://coveralls.io/repos/Wilfred/bfc/badge.svg?branch=master&service=github)](https://coveralls.io/github/Wilfred/bfc?branch=master)
 
