@@ -83,7 +83,7 @@ impl fmt::Display for Info {
         if let (Some((line_idx, column_idx, width)), &Some(ref source)) = (offsets, &self.source) {
             // The faulty line of code.
             let line = source.split('\n').nth(line_idx).unwrap();
-            context_line = "\n".to_owned() + &line;
+            context_line = "\n".to_owned() + line;
 
             // Highlight the faulty characters on that line.
             caret_line = caret_line + "\n";

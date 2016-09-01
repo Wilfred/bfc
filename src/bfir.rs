@@ -53,7 +53,7 @@ impl Combine<Option<Position>> for Option<Position> {
     }
 }
 
-/// AstNode represents a node in our BF AST.
+/// `AstNode` represents a node in our BF AST.
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum AstNode {
     Increment {

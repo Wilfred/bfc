@@ -64,7 +64,7 @@ fn optimize_once(instrs: Vec<AstNode>,
                                                            dead_loop,redundant_set,read_clobber,\
                                                            pure_removal,offset_sort"
                                                               .to_owned());
-    let passes: Vec<_> = pass_specification.split(",").collect();
+    let passes: Vec<_> = pass_specification.split(',').collect();
 
     let mut instrs = instrs;
 
@@ -95,14 +95,13 @@ fn optimize_once(instrs: Vec<AstNode>,
     if passes.contains(&"read_clobber") {
         instrs = remove_read_clobber(instrs);
     }
-    let warning;
-    if passes.contains(&"pure_removal") {
+    let warning = if passes.contains(&"pure_removal") {
         let (removed, pure_warning) = remove_pure_code(instrs);
         instrs = removed;
-        warning = pure_warning;
+        pure_warning
     } else {
-        warning = None;
-    }
+        None
+    };
 
     if passes.contains(&"offset_sort") {
         instrs = sort_by_offset(instrs);
@@ -148,12 +147,7 @@ pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     let mut needed_offset = 0;
     for i in (0..index).rev() {
         match instrs[i] {
-            Increment { offset, .. } => {
-                if offset == needed_offset {
-                    return Some(i);
-                }
-            }
-            Set { offset, .. } => {
+            Increment { offset, .. } | Set { offset, .. } => {
                 if offset == needed_offset {
                     return Some(i);
                 }
@@ -184,12 +178,12 @@ pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     None
 }
 
-/// Inverse of previous_cell_change.
+/// Inverse of `previous_cell_change`.
 ///
-/// This is very similar to previous_cell_change and previous
-/// implementations called previous_cell_change on the reversed
+/// This is very similar to `previous_cell_change` and previous
+/// implementations called `previous_cell_change` on the reversed
 /// vector. This proved extremely hard to reason about. Instead, we
-/// have copied the body of previous_cell_change and highlighted the
+/// have copied the body of `previous_cell_change` and highlighted the
 /// differences.
 pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     assert!(index < instrs.len());
@@ -198,12 +192,7 @@ pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     // Unlike previous_cell_change, we iterate forward.
     for (i, instr) in instrs.iter().enumerate().skip(index + 1) {
         match *instr {
-            Increment { offset, .. } => {
-                if offset == needed_offset {
-                    return Some(i);
-                }
-            }
-            Set { offset, .. } => {
+            Increment { offset, .. } | Set { offset, .. } => {
                 if offset == needed_offset {
                     return Some(i);
                 }
@@ -423,7 +412,7 @@ pub fn sort_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
     result
 }
 
-/// Given a HashMap with orderable keys, return the values according to
+/// Given a `HashMap` with orderable keys, return the values according to
 /// the key order.
 /// {2: 'foo': 1: 'bar'} => vec!['bar', 'foo']
 fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
@@ -433,7 +422,7 @@ fn ordered_values<K: Ord + Hash + Eq, V>(map: HashMap<K, V>) -> Vec<V> {
 }
 
 /// Given a BF program, combine sets/increments using offsets so we
-/// have single PointerIncrement at the end.
+/// have single `PointerIncrement` at the end.
 fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut instrs_by_offset: HashMap<isize, Vec<AstNode>> = HashMap::new();
     let mut current_offset = 0;
@@ -698,8 +687,7 @@ fn is_multiply_loop_body(body: &[AstNode]) -> bool {
     // A multiply loop may only contain increments and pointer increments.
     for body_instr in body {
         match *body_instr {
-            Increment {..} => {}
-            PointerIncrement {..} => {}
+            Increment {..} | PointerIncrement {..} => {}
             _ => return false,
         }
     }

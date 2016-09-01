@@ -19,8 +19,8 @@ macro_rules! assert_cstring_eq {
         let actual_str = actual.to_string_lossy();
 
         if expected_str != actual_str {
-            let expected_lines = expected_str.split("\n");
-            let actual_lines = actual_str.split("\n");
+            let expected_lines = expected_str.split('\n');
+            let actual_lines = actual_str.split('\n');
             println!("Lines do not match!");
 
             for differing_line in expected_lines.zip_longest(actual_lines).filter(|pair| {

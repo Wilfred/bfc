@@ -25,7 +25,7 @@ const LLVM_FALSE: LLVMBool = 0;
 const LLVM_TRUE: LLVMBool = 1;
 
 /// A struct that keeps ownership of all the strings we've passed to
-/// the LLVM API until we destroy the LLVMModule.
+/// the LLVM API until we destroy the `LLVMModule`.
 pub struct Module {
     module: *mut LLVMModule,
     strings: Vec<CString>,

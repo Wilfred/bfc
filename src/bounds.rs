@@ -102,11 +102,7 @@ fn movement(instr: &AstNode) -> (SaturatingInt, SaturatingInt) {
                  SaturatingInt::Number(amount as i64))
             }
         }
-        Increment { offset, .. } => {
-            (SaturatingInt::Number(offset as i64),
-             SaturatingInt::Number(0))
-        }
-        Set { offset, .. } => {
+        Increment { offset, .. } | Set { offset, .. } => {
             (SaturatingInt::Number(offset as i64),
              SaturatingInt::Number(0))
         }
