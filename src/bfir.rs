@@ -94,7 +94,7 @@ fn fmt_with_indent(instr: &AstNode, indent: i32, f: &mut fmt::Formatter) {
     }
 
     match instr {
-        &Loop {body: ref loop_body, position, .. } => {
+        &Loop { body: ref loop_body, position, .. } => {
             let _ = write!(f, "Loop position: {:?}", position);
 
             for loop_instr in loop_body {

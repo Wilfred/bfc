@@ -665,13 +665,13 @@ fn not_redundant_set_when_nonzero() {
 fn is_pure(instrs: &[AstNode]) -> bool {
     for instr in instrs {
         match *instr {
-            Loop {..} => {
+            Loop { .. } => {
                 return false;
             }
-            Read {..} => {
+            Read { .. } => {
                 return false;
             }
-            Write {..} => {
+            Write { .. } => {
                 return false;
             }
             _ => (),

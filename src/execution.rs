@@ -179,12 +179,12 @@ pub fn execute_with_state<'a>(instrs: &'a [AstNode],
 
                 instr_idx += 1;
             }
-            Write {..} => {
+            Write { .. } => {
                 let cell_value = state.cells[state.cell_ptr as usize];
                 state.outputs.push(cell_value.0);
                 instr_idx += 1;
             }
-            Read {..} => {
+            Read { .. } => {
                 if let Some(read_value) = dummy_read_value {
                     // If we're given a dummy value to use for the
                     // read, pretend that we've read that value.
@@ -204,10 +204,8 @@ pub fn execute_with_state<'a>(instrs: &'a [AstNode],
                     instr_idx += 1;
                 } else {
                     // Execute the loop body.
-                    let loop_outcome = execute_with_state(body,
-                                                          state,
-                                                          steps_left,
-                                                          dummy_read_value);
+                    let loop_outcome =
+                        execute_with_state(body, state, steps_left, dummy_read_value);
                     match loop_outcome {
                         Outcome::Completed(remaining_steps) => {
                             // We've run several steps during the loop
@@ -374,7 +372,11 @@ fn multiply_move_wrapping() {
 fn multiply_move_offset_too_high() {
     let mut changes: HashMap<isize, Cell> = HashMap::new();
     changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
-    let instrs = [Increment { amount: Wrapping(1), offset: 0, position: None },
+    let instrs = [Increment {
+                      amount: Wrapping(1),
+                      offset: 0,
+                      position: None,
+                  },
                   MultiplyMove {
                       changes: changes,
                       position: Some(Position { start: 0, end: 0 }),
@@ -396,7 +398,11 @@ fn multiply_move_offset_too_high() {
 fn multiply_move_offset_too_low() {
     let mut changes = HashMap::new();
     changes.insert(-1, Wrapping(1));
-    let instrs = [Increment { amount: Wrapping(1), offset: 0, position: None },
+    let instrs = [Increment {
+                      amount: Wrapping(1),
+                      offset: 0,
+                      position: None,
+                  },
                   MultiplyMove {
                       changes: changes,
                       position: Some(Position { start: 0, end: 0 }),

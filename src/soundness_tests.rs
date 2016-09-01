@@ -6,7 +6,11 @@ use execution::Outcome::*;
 use peephole::*;
 
 
-fn transform_is_sound<F>(instrs: Vec<AstNode>, transform: F, check_cells: bool, dummy_read_value: Option<i8>) -> TestResult
+fn transform_is_sound<F>(instrs: Vec<AstNode>,
+                         transform: F,
+                         check_cells: bool,
+                         dummy_read_value: Option<i8>)
+                         -> TestResult
     where F: Fn(Vec<AstNode>) -> Vec<AstNode>
 {
     let max_steps = 1000;
@@ -29,7 +33,10 @@ fn transform_is_sound<F>(instrs: Vec<AstNode>, transform: F, check_cells: bool, 
     // situations where a dead loop that makes us think we use
     // MAX_CELLS so state2 has fewer cells.
     let mut state2 = ExecutionState::initial(&instrs[..]);
-    let result2 = execute_with_state(&optimised_instrs[..], &mut state2, max_steps, dummy_read_value);
+    let result2 = execute_with_state(&optimised_instrs[..],
+                                     &mut state2,
+                                     max_steps,
+                                     dummy_read_value);
 
     // Compare the outcomes: they should be the same.
     match (result, result2) {

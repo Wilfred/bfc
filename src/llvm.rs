@@ -118,9 +118,7 @@ unsafe fn int8(val: c_ulonglong) -> LLVMValueRef {
 /// integer.
 // TODO: this should be a machine word size rather than hard-coding 32-bits.
 fn int32(val: c_ulonglong) -> LLVMValueRef {
-    unsafe {
-        LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE)
-    }
+    unsafe { LLVMConstInt(LLVMInt32Type(), val, LLVM_FALSE) }
 }
 
 fn int1_type() -> LLVMTypeRef {
@@ -198,15 +196,15 @@ fn run_length_encode<T>(cells: &[T]) -> Vec<(T, usize)>
     where T: Eq + Copy
 {
     cells.into_iter()
-         .map(|val| (*val, 1))
-         .coalesce(|(prev_val, prev_count), (val, count)| {
-             if prev_val == val {
-                 Ok((val, prev_count + count))
-             } else {
-                 Err(((prev_val, prev_count), (val, count)))
-             }
-         })
-         .collect()
+        .map(|val| (*val, 1))
+        .coalesce(|(prev_val, prev_count), (val, count)| {
+            if prev_val == val {
+                Ok((val, prev_count + count))
+            } else {
+                Err(((prev_val, prev_count), (val, count)))
+            }
+        })
+        .collect()
 }
 
 fn add_cells_init(init_values: &[Wrapping<i8>],
@@ -238,11 +236,8 @@ fn add_cells_init(init_values: &[Wrapping<i8>],
                                                offset_vec.len() as u32,
                                                module.new_string_ptr("offset_cell_ptr"));
 
-            let mut memset_args = vec![offset_cell_ptr,
-                                       llvm_cell_val,
-                                       llvm_cell_count,
-                                       one,
-                                       false_];
+            let mut memset_args =
+                vec![offset_cell_ptr, llvm_cell_val, llvm_cell_count, one, false_];
             add_function_call(module, bb, "llvm.memset.p0i8.i32", &mut memset_args, "");
 
             offset += cell_count;
@@ -457,10 +452,8 @@ unsafe fn compile_multiply_move(changes: &HashMap<isize, Cell>,
     builder.position_at_end(bb);
 
     // First, get the current cell value.
-    let (cell_val, cell_val_ptr) = add_current_cell_access(module,
-                                                           bb,
-                                                           ctx.cells,
-                                                           ctx.cell_index_ptr);
+    let (cell_val, cell_val_ptr) =
+        add_current_cell_access(module, bb, ctx.cells, ctx.cell_index_ptr);
 
     // Check if the current cell is zero, as we only do the multiply
     // if it's non-zero.
@@ -615,11 +608,8 @@ unsafe fn compile_loop(loop_body: &[AstNode],
     //   br %cell_value_is_zero, %loop_after, %loop_body
     builder.position_at_end(loop_header_bb);
 
-    let cell_val = add_current_cell_access(module,
-                                           &mut *loop_header_bb,
-                                           ctx.cells,
-                                           ctx.cell_index_ptr)
-                       .0;
+    let cell_val =
+        add_current_cell_access(module, &mut *loop_header_bb, ctx.cells, ctx.cell_index_ptr).0;
 
     let zero = int8(0);
     let cell_val_is_zero = LLVMBuildICmp(builder.builder,
@@ -666,8 +656,8 @@ unsafe fn compile_instr(instr: &AstNode,
         Set { amount, offset, .. } => compile_set(amount, offset, module, bb, ctx),
         MultiplyMove { ref changes, .. } => compile_multiply_move(changes, module, bb, ctx),
         PointerIncrement { amount, .. } => compile_ptr_increment(amount, module, bb, ctx),
-        Read {..} => compile_read(module, bb, ctx),
-        Write {..} => compile_write(module, bb, ctx),
+        Read { .. } => compile_read(module, bb, ctx),
+        Write { .. } => compile_write(module, bb, ctx),
         Loop { ref body, .. } => compile_loop(body, start_instr, module, main_fn, bb, ctx),
     }
 }
@@ -752,9 +742,8 @@ pub fn compile_to_module(module_name: &str,
                 // TODO: decide on a consistent order between module and init_bb as
                 // parameters.
                 let llvm_cells = add_cells_init(&initial_state.cells, &mut module, init_bb);
-                let llvm_cell_index = add_cell_index_init(initial_state.cell_ptr,
-                                                          init_bb,
-                                                          &mut module);
+                let llvm_cell_index =
+                    add_cell_index_init(initial_state.cell_ptr, init_bb, &mut module);
 
                 let ctx = CompileContext {
                     cells: llvm_cells,
