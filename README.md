@@ -398,7 +398,7 @@ included in the output, but runtime execution can begin at an
 arbitrary position in the loop.
 
 For example, consider `+[-]+[+,]`. We can execute `+[-]+`
-entirely, but `[+,]` depends on runtme values. The
+entirely, but `[+,]` depends on runtime values. The
 compiled output contains `[+,]`, but we start execution at the
 `,` (continuing execution from where compile time execution had to
 stop).
