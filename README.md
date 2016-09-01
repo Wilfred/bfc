@@ -61,14 +61,20 @@ You will need LLVM and Rust installed to compile bfc.
 
     $ cargo build --release
 
-Debug builds work, but large BF programs will take a long time
-in speculative execution if bfc is compiled without optimisations. You
-can disable this by passing `--opt=0` or `--opt=1` when running bfc.
+You can then compile and run BF programs as follows:
 
 ```
 $ target/release/bfc sample_programs/hello_world.bf
 $ ./hello_world
 Hello World!
+```
+
+You can use debug builds of bfc, but bfc will run much slower on large
+BF programs. This is due to bfc's speculative exectuion. You can
+disable this by passing `--opt=0` or `--opt=1` when running bfc.
+
+```
+$ target/debug/bfc --opt=0 sample_programs/hello_world.bf
 ```
 
 By default, bfc compiles programs to executables that run on the
