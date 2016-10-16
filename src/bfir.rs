@@ -17,10 +17,20 @@ use self::AstNode::*;
 pub type Cell = Wrapping<i8>;
 
 /// An inclusive range used for tracking positions in source code.
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Position {
     pub start: usize,
     pub end: usize,
+}
+
+impl fmt::Debug for Position {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.start == self.end {
+            write!(f, "{}", self.start)
+        } else {
+            write!(f, "{}-{}", self.start, self.end)
+        }
+    }
 }
 
 pub trait Combine<T> {
