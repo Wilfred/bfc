@@ -167,7 +167,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         return Ok(());
     }
 
-    let (state, warning) = if opt_level == "2" {
+    let (state, execution_warning) = if opt_level == "2" {
         execution::execute(&instrs, execution::MAX_STEPS)
     } else {
         let mut init_state = execution::ExecutionState::initial(&instrs[..]);
@@ -176,12 +176,12 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         (init_state, None)
     };
 
-    if let Some(warning) = warning {
+    if let Some(execution_warning) = execution_warning {
         let info = Info {
             level: Level::Warning,
             filename: path.to_owned(),
-            message: warning.message,
-            position: warning.position,
+            message: execution_warning.message,
+            position: execution_warning.position,
             source: Some(src),
         };
         println!("{}", info);
