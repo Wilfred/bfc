@@ -9,10 +9,10 @@ readme = "README.md"
 license = "GPL-2.0"
 
 [dependencies]
-llvm-sys = "0.3"
-itertools = "0.4"
+llvm-sys = "40"
+itertools = "0.6"
 rand = "0.3"
-quickcheck = "0.3"
+quickcheck = "0.4"
 tempfile = "2.1"
 getopts = "0.2"
 matches = "0.1"
