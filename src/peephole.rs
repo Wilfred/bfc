@@ -48,7 +48,7 @@ pub fn optimize(instrs: Vec<AstNode>,
     }
 
     // TODO: use proper Info here.
-    println!("Warning: ran peephole optimisations {} times but did not reach a fixed point!",
+    eprintln!("Warning: ran peephole optimisations {} times but did not reach a fixed point!",
              MAX_OPT_ITERATIONS);
 
     (result, warnings)

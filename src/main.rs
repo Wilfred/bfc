@@ -156,7 +156,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
                 position: warning.position,
                 source: Some(src.clone()),
             };
-            println!("{}", info);
+            eprintln!("{}", info);
         }
     }
 
@@ -184,7 +184,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
             position: execution_warning.position,
             source: Some(src),
         };
-        println!("{}", info);
+        eprintln!("{}", info);
     }
 
     let target_triple = matches.opt_str("target");
@@ -298,8 +298,7 @@ fn main() {
     match compile_file(&matches) {
         Ok(_) => {}
         Err(e) => {
-            // TODO: this should go to stderr.
-            println!("{}", e);
+            eprintln!("{}", e);
             std::process::exit(2);
         }
     }
