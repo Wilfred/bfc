@@ -50,7 +50,7 @@ fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> AstNode {
             let mut changes = HashMap::new();
             changes.insert(1, Wrapping(-1));
             MultiplyMove {
-                changes: changes,
+                changes,
                 position: Some(Position { start: 0, end: 0 }),
             }
         }
@@ -59,7 +59,7 @@ fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> AstNode {
             changes.insert(1, Wrapping(2));
             changes.insert(4, Wrapping(10));
             MultiplyMove {
-                changes: changes,
+                changes,
                 position: Some(Position { start: 0, end: 0 }),
             }
         }
@@ -308,7 +308,7 @@ fn no_combine_before_read_after_multiply() {
     changes.insert(1, Wrapping(-1));
     let initial = vec![
         MultiplyMove {
-            changes: changes,
+            changes,
             position: None,
         },
         Read { position: None },
@@ -720,7 +720,7 @@ fn should_remove_redundant_set_multiply() {
         },
     ];
     let expected = vec![MultiplyMove {
-        changes: changes,
+        changes,
         position: Some(Position { start: 0, end: 0 }),
     }];
     assert_eq!(remove_redundant_sets(initial), expected);

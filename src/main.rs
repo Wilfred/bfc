@@ -250,7 +250,7 @@ fn strip_executable(executable_path: &str) -> Result<(), String> {
     shell::run_shell_command("strip", &strip_args[..])
 }
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     let args: Vec<_> = env::args().collect();
