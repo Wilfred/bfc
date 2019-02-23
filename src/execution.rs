@@ -88,8 +88,6 @@ pub fn execute_with_state<'a>(instrs: &'a [AstNode],
                               dummy_read_value: Option<i8>)
                               -> Outcome {
     let mut steps_left = steps;
-    let mut state = state;
-
     let mut instr_idx = 0;
     while instr_idx < instrs.len() && steps_left > 0 {
         let cell_ptr = state.cell_ptr as usize;
