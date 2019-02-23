@@ -1,9 +1,9 @@
 //! Human-readable warnings and errors for the CLI.
 
-use std::fmt;
-use ansi_term::Colour::{Red, Purple};
-use ansi_term::Style;
 use ansi_term::ANSIStrings;
+use ansi_term::Colour::{Purple, Red};
+use ansi_term::Style;
+use std::fmt;
 
 use bfir::Position;
 
@@ -100,11 +100,13 @@ impl fmt::Display for Info {
 
         let bold = Style::new().bold();
         let default = Style::default();
-        let strings = [bold.paint(file_text),
-                       color.bold().paint(level_text),
-                       bold.paint(self.message.clone()),
-                       default.paint(context_line),
-                       color.bold().paint(caret_line)];
+        let strings = [
+            bold.paint(file_text),
+            color.bold().paint(level_text),
+            bold.paint(self.message.clone()),
+            default.paint(context_line),
+            color.bold().paint(caret_line),
+        ];
         write!(f, "{}", ANSIStrings(&strings))
     }
 }

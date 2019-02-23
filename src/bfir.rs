@@ -5,9 +5,9 @@
 //! It also provides functions for generating ASTs from source code,
 //! producing good error messages on malformed inputs.
 
+use std::collections::HashMap;
 use std::fmt;
 use std::num::Wrapping;
-use std::collections::HashMap;
 
 use self::AstNode::*;
 
@@ -104,7 +104,11 @@ fn fmt_with_indent(instr: &AstNode, indent: i32, f: &mut fmt::Formatter) {
     }
 
     match instr {
-        &Loop { body: ref loop_body, position, .. } => {
+        &Loop {
+            body: ref loop_body,
+            position,
+            ..
+        } => {
             let _ = write!(f, "Loop position: {:?}", position);
 
             for loop_instr in loop_body {
@@ -155,60 +159,48 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, ParseError> {
 
     for (index, c) in source.chars().enumerate() {
         match c {
-            '+' => {
-                instructions.push(Increment {
-                    amount: Wrapping(1),
-                    offset: 0,
-                    position: Some(Position {
-                        start: index,
-                        end: index,
-                    }),
-                })
-            }
-            '-' => {
-                instructions.push(Increment {
-                    amount: Wrapping(-1),
-                    offset: 0,
-                    position: Some(Position {
-                        start: index,
-                        end: index,
-                    }),
-                })
-            }
-            '>' => {
-                instructions.push(PointerIncrement {
-                    amount: 1,
-                    position: Some(Position {
-                        start: index,
-                        end: index,
-                    }),
-                })
-            }
-            '<' => {
-                instructions.push(PointerIncrement {
-                    amount: -1,
-                    position: Some(Position {
-                        start: index,
-                        end: index,
-                    }),
-                })
-            }
-            ',' => {
-                instructions.push(Read {
-                    position: Some(Position {
-                        start: index,
-                        end: index,
-                    }),
-                })
-            }
-            '.' => {
-                instructions.push(Write {
-                    position: Some(Position {
-                        start: index,
-                        end: index,
-                    }),
-                })
-            }
+            '+' => instructions.push(Increment {
+                amount: Wrapping(1),
+                offset: 0,
+                position: Some(Position {
+                    start: index,
+                    end: index,
+                }),
+            }),
+            '-' => instructions.push(Increment {
+                amount: Wrapping(-1),
+                offset: 0,
+                position: Some(Position {
+                    start: index,
+                    end: index,
+                }),
+            }),
+            '>' => instructions.push(PointerIncrement {
+                amount: 1,
+                position: Some(Position {
+                    start: index,
+                    end: index,
+                }),
+            }),
+            '<' => instructions.push(PointerIncrement {
+                amount: -1,
+                position: Some(Position {
+                    start: index,
+                    end: index,
+                }),
+            }),
+            ',' => instructions.push(Read {
+                position: Some(Position {
+                    start: index,
+                    end: index,
+                }),
+            }),
+            '.' => instructions.push(Write {
+                position: Some(Position {
+                    start: index,
+                    end: index,
+                }),
+            }),
             '[' => {
                 stack.push((instructions, index));
                 instructions = vec![];
@@ -253,106 +245,134 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, ParseError> {
 
 #[test]
 fn parse_increment() {
-    assert_eq!(parse("+").unwrap(),
-               [Increment {
-                    amount: Wrapping(1),
-                    offset: 0,
-                    position: Some(Position { start: 0, end: 0 }),
-                }]);
-    assert_eq!(parse("++").unwrap(),
-               [Increment {
-                    amount: Wrapping(1),
-                    offset: 0,
-                    position: Some(Position { start: 0, end: 0 }),
-                },
-                Increment {
-                    amount: Wrapping(1),
-                    offset: 0,
-                    position: Some(Position { start: 1, end: 1 }),
-                }]);
+    assert_eq!(
+        parse("+").unwrap(),
+        [Increment {
+            amount: Wrapping(1),
+            offset: 0,
+            position: Some(Position { start: 0, end: 0 }),
+        }]
+    );
+    assert_eq!(
+        parse("++").unwrap(),
+        [
+            Increment {
+                amount: Wrapping(1),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            Increment {
+                amount: Wrapping(1),
+                offset: 0,
+                position: Some(Position { start: 1, end: 1 }),
+            }
+        ]
+    );
 }
 
 #[test]
 fn parse_decrement() {
-    assert_eq!(parse("-").unwrap(),
-               [Increment {
-                    amount: Wrapping(-1),
-                    offset: 0,
-                    position: Some(Position { start: 0, end: 0 }),
-                }]);
+    assert_eq!(
+        parse("-").unwrap(),
+        [Increment {
+            amount: Wrapping(-1),
+            offset: 0,
+            position: Some(Position { start: 0, end: 0 }),
+        }]
+    );
 }
 
 #[test]
 fn parse_pointer_increment() {
-    assert_eq!(parse(">").unwrap(),
-               [PointerIncrement {
-                    amount: 1,
-                    position: Some(Position { start: 0, end: 0 }),
-                }]);
+    assert_eq!(
+        parse(">").unwrap(),
+        [PointerIncrement {
+            amount: 1,
+            position: Some(Position { start: 0, end: 0 }),
+        }]
+    );
 }
 
 #[test]
 fn parse_pointer_decrement() {
-    assert_eq!(parse("<").unwrap(),
-               [PointerIncrement {
-                    amount: -1,
-                    position: Some(Position { start: 0, end: 0 }),
-                }]);
+    assert_eq!(
+        parse("<").unwrap(),
+        [PointerIncrement {
+            amount: -1,
+            position: Some(Position { start: 0, end: 0 }),
+        }]
+    );
 }
 
 #[test]
 fn parse_read() {
-    assert_eq!(parse(",").unwrap(),
-               [Read { position: Some(Position { start: 0, end: 0 }) }]);
+    assert_eq!(
+        parse(",").unwrap(),
+        [Read {
+            position: Some(Position { start: 0, end: 0 })
+        }]
+    );
 }
 
 #[test]
 fn parse_write() {
-    assert_eq!(parse(".").unwrap(),
-               [Write { position: Some(Position { start: 0, end: 0 }) }]);
+    assert_eq!(
+        parse(".").unwrap(),
+        [Write {
+            position: Some(Position { start: 0, end: 0 })
+        }]
+    );
 }
 
 #[test]
 fn parse_empty_loop() {
     let expected = [Loop {
-                        body: vec![],
-                        position: Some(Position { start: 0, end: 1 }),
-                    }];
+        body: vec![],
+        position: Some(Position { start: 0, end: 1 }),
+    }];
     assert_eq!(parse("[]").unwrap(), expected);
 }
 
 #[test]
 fn parse_simple_loop() {
     let loop_body = vec![Increment {
-                             amount: Wrapping(1),
-                             offset: 0,
-                             position: Some(Position { start: 1, end: 1 }),
-                         }];
+        amount: Wrapping(1),
+        offset: 0,
+        position: Some(Position { start: 1, end: 1 }),
+    }];
     let expected = [Loop {
-                        body: loop_body,
-                        position: Some(Position { start: 0, end: 2 }),
-                    }];
+        body: loop_body,
+        position: Some(Position { start: 0, end: 2 }),
+    }];
     assert_eq!(parse("[+]").unwrap(), expected);
 }
 
 #[test]
 fn parse_complex_loop() {
-    let loop_body = vec![Read { position: Some(Position { start: 2, end: 2 }) },
-                         Increment {
-                             amount: Wrapping(1),
-                             offset: 0,
-                             position: Some(Position { start: 3, end: 3 }),
-                         }];
-    let expected = [Write { position: Some(Position { start: 0, end: 0 }) },
-                    Loop {
-                        body: loop_body,
-                        position: Some(Position { start: 1, end: 4 }),
-                    },
-                    Increment {
-                        amount: Wrapping(-1),
-                        offset: 0,
-                        position: Some(Position { start: 5, end: 5 }),
-                    }];
+    let loop_body = vec![
+        Read {
+            position: Some(Position { start: 2, end: 2 }),
+        },
+        Increment {
+            amount: Wrapping(1),
+            offset: 0,
+            position: Some(Position { start: 3, end: 3 }),
+        },
+    ];
+    let expected = [
+        Write {
+            position: Some(Position { start: 0, end: 0 }),
+        },
+        Loop {
+            body: loop_body,
+            position: Some(Position { start: 1, end: 4 }),
+        },
+        Increment {
+            amount: Wrapping(-1),
+            offset: 0,
+            position: Some(Position { start: 5, end: 5 }),
+        },
+    ];
     assert_eq!(parse(".[,+]-").unwrap(), expected);
 }
 

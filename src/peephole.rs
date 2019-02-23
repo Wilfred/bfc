@@ -1,24 +1,25 @@
 //! Optimisations that replace parts of the BF AST with faster
 //! equivalents.
 
-use std::hash::Hash;
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 use std::num::Wrapping;
 
 use itertools::Itertools;
 
 use diagnostics::Warning;
 
-use bfir::{AstNode, Position, Combine, Cell, get_position};
 use bfir::AstNode::*;
+use bfir::{get_position, AstNode, Cell, Combine, Position};
 
 const MAX_OPT_ITERATIONS: u64 = 40;
 
 /// Given a sequence of BF instructions, apply peephole optimisations
 /// (repeatedly if necessary).
-pub fn optimize(instrs: Vec<AstNode>,
-                pass_specification: &Option<String>)
-                -> (Vec<AstNode>, Vec<Warning>) {
+pub fn optimize(
+    instrs: Vec<AstNode>,
+    pass_specification: &Option<String>,
+) -> (Vec<AstNode>, Vec<Warning>) {
     // Many of our individual peephole optimisations remove
     // instructions, creating new opportunities to combine. We run
     // until we've found a fixed-point where no further optimisations
@@ -48,22 +49,26 @@ pub fn optimize(instrs: Vec<AstNode>,
     }
 
     // TODO: use proper Info here.
-    eprintln!("Warning: ran peephole optimisations {} times but did not reach a fixed point!",
-             MAX_OPT_ITERATIONS);
+    eprintln!(
+        "Warning: ran peephole optimisations {} times but did not reach a fixed point!",
+        MAX_OPT_ITERATIONS
+    );
 
     (result, warnings)
 }
 
 /// Apply all our peephole optimisations once and return the result.
-fn optimize_once(instrs: Vec<AstNode>,
-                 pass_specification: &Option<String>)
-                 -> (Vec<AstNode>, Option<Warning>) {
-    let pass_specification = pass_specification.clone()
-                                               .unwrap_or("combine_inc,combine_ptr,known_zero,\
-                                                           multiply,zeroing_loop,combine_set,\
-                                                           dead_loop,redundant_set,read_clobber,\
-                                                           pure_removal,offset_sort"
-                                                              .to_owned());
+fn optimize_once(
+    instrs: Vec<AstNode>,
+    pass_specification: &Option<String>,
+) -> (Vec<AstNode>, Option<Warning>) {
+    let pass_specification = pass_specification.clone().unwrap_or(
+        "combine_inc,combine_ptr,known_zero,\
+         multiply,zeroing_loop,combine_set,\
+         dead_loop,redundant_set,read_clobber,\
+         pure_removal,offset_sort"
+            .to_owned(),
+    );
     let passes: Vec<_> = pass_specification.split(',').collect();
 
     let mut instrs = instrs;
@@ -113,20 +118,17 @@ fn optimize_once(instrs: Vec<AstNode>,
 /// Defines a method on iterators to map a function over all loop bodies.
 trait MapLoopsExt: Iterator<Item = AstNode> {
     fn map_loops<F>(&mut self, f: F) -> Vec<AstNode>
-        where F: Fn(Vec<AstNode>) -> Vec<AstNode>
+    where
+        F: Fn(Vec<AstNode>) -> Vec<AstNode>,
     {
-        self.map(|instr| {
-                match instr {
-                    Loop { body, position } => {
-                        Loop {
-                            body: f(body),
-                            position,
-                        }
-                    }
-                    other => other,
-                }
-            })
-            .collect()
+        self.map(|instr| match instr {
+            Loop { body, position } => Loop {
+                body: f(body),
+                position,
+            },
+            other => other,
+        })
+        .collect()
     }
 }
 
@@ -146,8 +148,7 @@ pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     let mut needed_offset = 0;
     for i in (0..index).rev() {
         match instrs[i] {
-            Increment { offset, .. } |
-            Set { offset, .. } => {
+            Increment { offset, .. } | Set { offset, .. } => {
                 if offset == needed_offset {
                     return Some(i);
                 }
@@ -157,9 +158,7 @@ pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
             }
             MultiplyMove { ref changes, .. } => {
                 // These cells are written to.
-                let mut offsets: Vec<isize> = changes.keys()
-                    .cloned()
-                    .collect();
+                let mut offsets: Vec<isize> = changes.keys().cloned().collect();
                 // This cell is zeroed.
                 offsets.push(0);
 
@@ -191,8 +190,7 @@ pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     // Unlike previous_cell_change, we iterate forward.
     for (i, instr) in instrs.iter().enumerate().skip(index + 1) {
         match *instr {
-            Increment { offset, .. } |
-            Set { offset, .. } => {
+            Increment { offset, .. } | Set { offset, .. } => {
                 if offset == needed_offset {
                     return Some(i);
                 }
@@ -203,9 +201,7 @@ pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
             }
             MultiplyMove { ref changes, .. } => {
                 // These cells are written to.
-                let mut offsets: Vec<isize> = changes.keys()
-                    .cloned()
-                    .collect();
+                let mut offsets: Vec<isize> = changes.keys().cloned().collect();
                 // This cell is zeroed.
                 offsets.push(0);
 
@@ -226,12 +222,22 @@ pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
 /// Combine consecutive increments into a single increment
 /// instruction.
 pub fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
-    instrs.into_iter()
+    instrs
+        .into_iter()
         .coalesce(|prev_instr, instr| {
             // Collapse consecutive increments.
-            if let Increment { amount: prev_amount, offset: prev_offset, position: prev_pos } =
-                   prev_instr {
-                if let Increment { amount, offset, position } = instr {
+            if let Increment {
+                amount: prev_amount,
+                offset: prev_offset,
+                position: prev_pos,
+            } = prev_instr
+            {
+                if let Increment {
+                    amount,
+                    offset,
+                    position,
+                } = instr
+                {
                     if prev_offset == offset {
                         return Ok(Increment {
                             amount: amount + prev_amount,
@@ -245,7 +251,11 @@ pub fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
         })
         .filter(|instr| {
             // Remove any increments of 0.
-            if let Increment { amount: Wrapping(0), .. } = *instr {
+            if let Increment {
+                amount: Wrapping(0),
+                ..
+            } = *instr
+            {
                 return false;
             }
             true
@@ -254,10 +264,15 @@ pub fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
 }
 
 pub fn combine_ptr_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
-    instrs.into_iter()
+    instrs
+        .into_iter()
         .coalesce(|prev_instr, instr| {
             // Collapse consecutive increments.
-            if let PointerIncrement { amount: prev_amount, position: prev_pos } = prev_instr {
+            if let PointerIncrement {
+                amount: prev_amount,
+                position: prev_pos,
+            } = prev_instr
+            {
                 if let PointerIncrement { amount, position } = instr {
                     return Ok(PointerIncrement {
                         amount: amount + prev_amount,
@@ -289,7 +304,6 @@ pub fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
             Read { .. } => {
                 // If we can find the time this cell was modified:
                 if let Some(prev_modify_index) = previous_cell_change(&instrs, index) {
-
                     // This modify instruction is not redundant if we
                     // wrote anything afterwards.
                     if let Some(write_index) = last_write_index {
@@ -314,7 +328,8 @@ pub fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
         }
     }
 
-    instrs.into_iter()
+    instrs
+        .into_iter()
         .enumerate()
         .filter(|&(index, _)| !redundant_instr_positions.contains(&index))
         .map(|(_, instr)| instr)
@@ -323,12 +338,18 @@ pub fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
 /// Convert [-] to Set 0.
 pub fn zeroing_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
-    instrs.into_iter()
+    instrs
+        .into_iter()
         .map(|instr| {
             if let Loop { ref body, position } = instr {
                 // If the loop is [-]
                 if body.len() == 1 {
-                    if let Increment { amount: Wrapping(-1), offset: 0, .. } = body[0] {
+                    if let Increment {
+                        amount: Wrapping(-1),
+                        offset: 0,
+                        ..
+                    } = body[0]
+                    {
                         return Set {
                             amount: Wrapping(0),
                             offset: 0,
@@ -344,7 +365,8 @@ pub fn zeroing_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
 /// Remove any loops where we know the current cell is zero.
 pub fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
-    instrs.clone()
+    instrs
+        .clone()
         .into_iter()
         .enumerate()
         .filter(|&(index, ref instr)| {
@@ -361,7 +383,12 @@ pub fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
                 let prev_instr = &instrs[prev_change_index];
                 // If the previous instruction set to zero, our loop is dead.
                 // TODO: MultiplyMove also zeroes the current cell.
-                if let Set { amount: Wrapping(0), offset: 0, .. } = *prev_instr {
+                if let Set {
+                    amount: Wrapping(0),
+                    offset: 0,
+                    ..
+                } = *prev_instr
+                {
                     return false;
                 }
             }
@@ -384,9 +411,7 @@ pub fn sort_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
     for instr in instrs {
         match instr {
-            Increment { .. } |
-            Set { .. } |
-            PointerIncrement { .. } => {
+            Increment { .. } | Set { .. } | PointerIncrement { .. } => {
                 sequence.push(instr);
             }
             _ => {
@@ -431,20 +456,28 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
     for instr in instrs {
         match instr {
-            Increment { amount, offset, position } => {
+            Increment {
+                amount,
+                offset,
+                position,
+            } => {
                 let new_offset = offset + current_offset;
-                let same_offset_instrs = instrs_by_offset.entry(new_offset)
-                    .or_insert_with(|| vec![]);
+                let same_offset_instrs =
+                    instrs_by_offset.entry(new_offset).or_insert_with(|| vec![]);
                 same_offset_instrs.push(Increment {
                     amount,
                     offset: new_offset,
                     position,
                 });
             }
-            Set { amount, offset, position } => {
+            Set {
+                amount,
+                offset,
+                position,
+            } => {
                 let new_offset = offset + current_offset;
-                let same_offset_instrs = instrs_by_offset.entry(new_offset)
-                    .or_insert_with(|| vec![]);
+                let same_offset_instrs =
+                    instrs_by_offset.entry(new_offset).or_insert_with(|| vec![]);
                 same_offset_instrs.push(Set {
                     amount,
                     offset: new_offset,
@@ -486,13 +519,24 @@ pub fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
     // It's sufficient to consider immediately adjacent instructions
     // as sort_sequence_by_offset ensures that if the offset is the
     // same, the instruction is adjacent.
-    instrs.into_iter()
+    instrs
+        .into_iter()
         .coalesce(|prev_instr, instr| {
             // TODO: Set, Write, Increment -> Set, Write, Set
             // Inc x, Set y -> Set y
-            if let (&Increment { offset: inc_offset, position: inc_pos, .. },
-                    &Set { amount: set_amount, offset: set_offset, position: set_pos }) =
-                   (&prev_instr, &instr) {
+            if let (
+                &Increment {
+                    offset: inc_offset,
+                    position: inc_pos,
+                    ..
+                },
+                &Set {
+                    amount: set_amount,
+                    offset: set_offset,
+                    position: set_pos,
+                },
+            ) = (&prev_instr, &instr)
+            {
                 if inc_offset == set_offset {
                     return Ok(Set {
                         amount: set_amount,
@@ -507,9 +551,18 @@ pub fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
         })
         .coalesce(|prev_instr, instr| {
             // Set x, Inc y -> Set x+y
-            if let Set { amount: set_amount, offset: set_offset, position: set_pos } = prev_instr {
-                if let Increment { amount: inc_amount, offset: inc_offset, position: inc_pos } =
-                       instr {
+            if let Set {
+                amount: set_amount,
+                offset: set_offset,
+                position: set_pos,
+            } = prev_instr
+            {
+                if let Increment {
+                    amount: inc_amount,
+                    offset: inc_offset,
+                    position: inc_pos,
+                } = instr
+                {
                     if inc_offset == set_offset {
                         return Ok(Set {
                             amount: set_amount + inc_amount,
@@ -523,8 +576,19 @@ pub fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
         })
         .coalesce(|prev_instr, instr| {
             // Set x, Set y -> Set y
-            if let (&Set { offset: offset1, position: position1, .. },
-                    &Set { amount, offset: offset2, position: position2 }) = (&prev_instr, &instr) {
+            if let (
+                &Set {
+                    offset: offset1,
+                    position: position1,
+                    ..
+                },
+                &Set {
+                    amount,
+                    offset: offset2,
+                    position: position2,
+                },
+            ) = (&prev_instr, &instr)
+            {
                 if offset1 == offset2 {
                     return Ok(Set {
                         amount,
@@ -545,7 +609,12 @@ pub fn remove_redundant_sets(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
     // Remove a set zero at the beginning of the program, since cells
     // are initialised to zero anyway.
-    if let Some(&Set { amount: Wrapping(0), offset: 0, .. }) = reduced.first() {
+    if let Some(&Set {
+        amount: Wrapping(0),
+        offset: 0,
+        ..
+    }) = reduced.first()
+    {
         reduced.remove(0);
     }
 
@@ -557,12 +626,16 @@ fn remove_redundant_sets_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
     for (index, instr) in instrs.iter().enumerate() {
         match *instr {
-            Loop { .. } |
-            MultiplyMove { .. } => {
+            Loop { .. } | MultiplyMove { .. } => {
                 // There's no point setting to zero after a loop, as
                 // the cell is already zero.
                 if let Some(next_index) = next_cell_change(&instrs, index) {
-                    if let Set { amount: Wrapping(0), offset: 0, .. } = instrs[next_index] {
+                    if let Set {
+                        amount: Wrapping(0),
+                        offset: 0,
+                        ..
+                    } = instrs[next_index]
+                    {
                         redundant_instr_positions.insert(next_index);
                     }
                 }
@@ -571,7 +644,8 @@ fn remove_redundant_sets_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
         }
     }
 
-    instrs.into_iter()
+    instrs
+        .into_iter()
         .enumerate()
         .filter(|&(index, _)| !redundant_instr_positions.contains(&index))
         .map(|(_, instr)| instr)
@@ -584,11 +658,9 @@ pub fn annotate_known_zero(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let position = if instrs.is_empty() {
         None
     } else {
-        get_position(&instrs[0]).map(|first_instr_pos| {
-            Position {
-                start: first_instr_pos.start,
-                end: first_instr_pos.start,
-            }
+        get_position(&instrs[0]).map(|first_instr_pos| Position {
+            start: first_instr_pos.start,
+            end: first_instr_pos.start,
         })
     };
 
@@ -622,11 +694,9 @@ fn annotate_known_zero_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
                     position,
                 });
                 // Treat this set as positioned at the ].
-                let set_pos = position.map(|loop_pos| {
-                    Position {
-                        start: loop_pos.end,
-                        end: loop_pos.end,
-                    }
+                let set_pos = position.map(|loop_pos| Position {
+                    start: loop_pos.end,
+                    end: loop_pos.end,
                 });
 
                 let set_instr = Set {
@@ -669,7 +739,8 @@ pub fn remove_pure_code(mut instrs: Vec<AstNode>) -> (Vec<AstNode>, Option<Warni
     let warning = if pure_instrs.is_empty() {
         None
     } else {
-        let position = pure_instrs.into_iter()
+        let position = pure_instrs
+            .into_iter()
             .map(|instr| get_position(&instr))
             .filter(|pos| pos.is_some())
             .fold1(|pos1, pos2| pos1.combine(pos2))
@@ -689,8 +760,7 @@ fn is_multiply_loop_body(body: &[AstNode]) -> bool {
     // A multiply loop may only contain increments and pointer increments.
     for body_instr in body {
         match *body_instr {
-            Increment { .. } |
-            PointerIncrement { .. } => {}
+            Increment { .. } | PointerIncrement { .. } => {}
             _ => return false,
         }
     }
@@ -742,7 +812,8 @@ fn cell_changes(instrs: &[AstNode]) -> HashMap<isize, Cell> {
 }
 
 pub fn extract_multiply(instrs: Vec<AstNode>) -> Vec<AstNode> {
-    instrs.into_iter()
+    instrs
+        .into_iter()
         .map(|instr| {
             match instr {
                 Loop { body, position } => {
@@ -752,10 +823,7 @@ pub fn extract_multiply(instrs: Vec<AstNode>) -> Vec<AstNode> {
                         // the cell we're moving from.
                         changes.remove(&0);
 
-                        MultiplyMove {
-                            changes,
-                            position,
-                        }
+                        MultiplyMove { changes, position }
                     } else {
                         Loop {
                             body: extract_multiply(body),

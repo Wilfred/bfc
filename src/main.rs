@@ -1,48 +1,46 @@
 #![warn(trivial_numeric_casts)]
-
 // option_unwrap_used is specific to clippy. However, we don't want to
 // add clippy to the build requirements, so we build without it and
 // ignore any warnings about rustc not recognising clippy's lints.
 #![allow(unknown_lints)]
-
 // TODO: enable this warning and cleanup.
 #![allow(option_unwrap_used)]
 
 //! bfc is a highly optimising compiler for BF.
 
-extern crate llvm_sys;
+extern crate ansi_term;
+extern crate getopts;
 extern crate itertools;
+extern crate llvm_sys;
 extern crate quickcheck;
 extern crate rand;
 extern crate tempfile;
-extern crate getopts;
-extern crate ansi_term;
 
 #[macro_use]
 extern crate matches;
 
+use diagnostics::{Info, Level};
+use getopts::{Matches, Options};
 use std::env;
 use std::fs::File;
 use std::io::prelude::Read;
 use std::path::Path;
-use getopts::{Options, Matches};
 use tempfile::NamedTempFile;
-use diagnostics::{Info, Level};
 
 mod bfir;
+mod bounds;
+mod diagnostics;
+mod execution;
 mod llvm;
 mod peephole;
-mod bounds;
-mod execution;
-mod diagnostics;
 mod shell;
 
+#[cfg(test)]
+mod llvm_tests;
 #[cfg(test)]
 mod peephole_tests;
 #[cfg(test)]
 mod soundness_tests;
-#[cfg(test)]
-mod llvm_tests;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents. Return a diagnostic if we can't open or read the file.
@@ -56,7 +54,7 @@ fn slurp(path: &str) -> Result<String, Info> {
                 message: format!("{}", message),
                 position: None,
                 source: None,
-            })
+            });
         }
     };
 
@@ -64,15 +62,13 @@ fn slurp(path: &str) -> Result<String, Info> {
 
     match file.read_to_string(&mut contents) {
         Ok(_) => Ok(contents),
-        Err(message) => {
-            Err(Info {
-                level: Level::Error,
-                filename: path.to_owned(),
-                message: format!("{}", message),
-                position: None,
-                source: None,
-            })
-        }
+        Err(message) => Err(Info {
+            level: Level::Error,
+            filename: path.to_owned(),
+            message: format!("{}", message),
+            position: None,
+            source: None,
+        }),
     }
 }
 
@@ -197,7 +193,9 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         return Ok(());
     }
 
-    let llvm_opt_raw = matches.opt_str("llvm-opt").unwrap_or_else(|| "3".to_owned());
+    let llvm_opt_raw = matches
+        .opt_str("llvm-opt")
+        .unwrap_or_else(|| "3".to_owned());
     let mut llvm_opt = llvm_opt_raw.parse::<i64>().unwrap_or(3);
     if llvm_opt < 0 || llvm_opt > 3 {
         // TODO: warn on unrecognised input.
@@ -212,7 +210,11 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     try!(llvm::write_object_file(&mut llvm_module, &obj_file_path));
 
     let output_name = executable_name(path);
-    try!(link_object_file(&obj_file_path, &output_name, target_triple));
+    try!(link_object_file(
+        &obj_file_path,
+        &output_name,
+        target_triple
+    ));
 
     let strip_opt = matches.opt_str("strip").unwrap_or_else(|| "yes".to_owned());
     if strip_opt == "yes" {
@@ -222,13 +224,20 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     Ok(())
 }
 
-fn link_object_file(object_file_path: &str,
-                    executable_path: &str,
-                    target_triple: Option<String>)
-                    -> Result<(), String> {
+fn link_object_file(
+    object_file_path: &str,
+    executable_path: &str,
+    target_triple: Option<String>,
+) -> Result<(), String> {
     // Link the object file.
     let clang_args = if let Some(ref target_triple) = target_triple {
-        vec![object_file_path, "-target", &target_triple, "-o", &executable_path[..]]
+        vec![
+            object_file_path,
+            "-target",
+            &target_triple,
+            "-o",
+            &executable_path[..],
+        ]
     } else {
         vec![object_file_path, "-o", &executable_path[..]]
     };
@@ -255,22 +264,28 @@ fn main() {
 
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
     opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
-    opts.optopt("",
-                "passes",
-                "limit bfc optimisations to those specified",
-                "PASS-SPECIFICATION");
-    opts.optopt("",
-                "strip",
-                "strip symbols from the binary (default: yes)",
-                "yes|no");
+    opts.optopt(
+        "",
+        "passes",
+        "limit bfc optimisations to those specified",
+        "PASS-SPECIFICATION",
+    );
+    opts.optopt(
+        "",
+        "strip",
+        "strip symbols from the binary (default: yes)",
+        "yes|no",
+    );
 
     let default_triple_cstring = llvm::get_default_target_triple();
     let default_triple = default_triple_cstring.to_str().unwrap();
 
-    opts.optopt("",
-                "target",
-                &format!("LLVM target triple (default: {})", default_triple),
-                "TARGET");
+    opts.optopt(
+        "",
+        "target",
+        &format!("LLVM target triple (default: {})", default_triple),
+        "TARGET",
+    );
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,

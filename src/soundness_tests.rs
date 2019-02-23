@@ -1,17 +1,18 @@
 use quickcheck::{quickcheck, TestResult};
 
 use bfir::AstNode;
-use execution::{execute_with_state, ExecutionState};
 use execution::Outcome::*;
+use execution::{execute_with_state, ExecutionState};
 use peephole::*;
 
-
-fn transform_is_sound<F>(instrs: Vec<AstNode>,
-                         transform: F,
-                         check_cells: bool,
-                         dummy_read_value: Option<i8>)
-                         -> TestResult
-    where F: Fn(Vec<AstNode>) -> Vec<AstNode>
+fn transform_is_sound<F>(
+    instrs: Vec<AstNode>,
+    transform: F,
+    check_cells: bool,
+    dummy_read_value: Option<i8>,
+) -> TestResult
+where
+    F: Fn(Vec<AstNode>) -> Vec<AstNode>,
 {
     let max_steps = 1000;
 
@@ -33,10 +34,12 @@ fn transform_is_sound<F>(instrs: Vec<AstNode>,
     // situations where a dead loop that makes us think we use
     // MAX_CELLS so state2 has fewer cells.
     let mut state2 = ExecutionState::initial(&instrs[..]);
-    let result2 = execute_with_state(&optimised_instrs[..],
-                                     &mut state2,
-                                     max_steps,
-                                     dummy_read_value);
+    let result2 = execute_with_state(
+        &optimised_instrs[..],
+        &mut state2,
+        max_steps,
+        dummy_read_value,
+    );
 
     // Compare the outcomes: they should be the same.
     match (result, result2) {
@@ -55,16 +58,20 @@ fn transform_is_sound<F>(instrs: Vec<AstNode>,
 
     // Likewise we should have written the same outputs.
     if state.outputs != state2.outputs {
-        println!("Different outputs! Original outputs: {:?} Optimised: {:?}",
-                 state.outputs, state2.outputs);
+        println!(
+            "Different outputs! Original outputs: {:?} Optimised: {:?}",
+            state.outputs, state2.outputs
+        );
         return TestResult::failed();
     }
 
     // If requested, compare that the cells at the end are the same
     // too. This is true of most, but not all, of our optimisations.
     if check_cells && state.cells != state2.cells {
-        println!("Different cell states! Optimised state: {:?} Optimised: {:?}",
-                 state.cells, state2.cells);
+        println!(
+            "Different cell states! Optimised state: {:?} Optimised: {:?}",
+            state.cells, state2.cells
+        );
         return TestResult::failed();
     }
 
@@ -146,7 +153,6 @@ fn combine_before_read_is_sound() {
     }
     quickcheck(is_sound as fn(Vec<AstNode>, Option<i8>) -> TestResult)
 }
-
 
 #[test]
 fn remove_pure_code_is_sound() {
