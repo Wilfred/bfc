@@ -845,7 +845,7 @@ impl TargetMachine {
                                         cpu.as_ptr() as *const _,
                                         features.as_ptr() as *const _,
                                         LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive,
-                                        LLVMRelocMode::LLVMRelocDefault,
+                                        LLVMRelocMode::LLVMRelocPIC,
                                         LLVMCodeModel::LLVMCodeModelDefault);
         }
 

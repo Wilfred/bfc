@@ -1,6 +1,8 @@
 # v1.8.0
 
-Nothing here yet.
+Updated to LLVM 7.0.
+
+Fixed a linking error on recent LLVM versions.
 
 # v1.7.0
 

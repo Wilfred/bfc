@@ -57,10 +57,11 @@ fn compile_loop() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -125,10 +126,11 @@ fn compile_empty_program() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -170,10 +172,11 @@ fn compile_set_with_offset() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -227,10 +230,11 @@ fn compile_read() {
                                    });
 
     let expected = "; ModuleID = 'foo'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -286,10 +290,11 @@ fn compile_write() {
                                    });
 
     let expected = "; ModuleID = 'foo'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -345,10 +350,11 @@ fn respect_initial_cell_ptr() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -406,10 +412,11 @@ fn compile_multiply_move() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -486,10 +493,11 @@ fn set_initial_cell_values() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -543,12 +551,13 @@ fn compile_static_outputs() {
                                        outputs: vec![5, 10],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 @known_outputs = constant [2 x i8] c\"\\05\\0A\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -591,10 +600,11 @@ fn compile_ptr_increment() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -649,10 +659,11 @@ fn compile_increment() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -710,10 +721,11 @@ fn compile_increment_with_offset() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
@@ -775,10 +787,11 @@ fn compile_start_instr_midway() {
                                        outputs: vec![],
                                    });
     let expected = "; ModuleID = \'foo\'
+source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i32(i8* nocapture, i8, i32, i32, i1) #0
+declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32, i1) #0
 
 declare i8* @malloc(i32)
 
