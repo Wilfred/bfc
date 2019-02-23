@@ -195,7 +195,7 @@ unsafe fn add_function_call(module: &mut Module,
 fn run_length_encode<T>(cells: &[T]) -> Vec<(T, usize)>
     where T: Eq + Copy
 {
-    cells.into_iter()
+    cells.iter()
         .map(|val| (*val, 1))
         .coalesce(|(prev_val, prev_count), (val, count)| {
             if prev_val == val {
@@ -748,7 +748,7 @@ pub fn compile_to_module(module_name: &str,
                 let ctx = CompileContext {
                     cells: llvm_cells,
                     cell_index_ptr: llvm_cell_index,
-                    main_fn: main_fn,
+                    main_fn,
                 };
 
                 for instr in instrs {

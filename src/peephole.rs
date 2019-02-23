@@ -120,7 +120,7 @@ trait MapLoopsExt: Iterator<Item = AstNode> {
                     Loop { body, position } => {
                         Loop {
                             body: f(body),
-                            position: position,
+                            position,
                         }
                     }
                     other => other,
@@ -158,7 +158,6 @@ pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
             MultiplyMove { ref changes, .. } => {
                 // These cells are written to.
                 let mut offsets: Vec<isize> = changes.keys()
-                    .into_iter()
                     .cloned()
                     .collect();
                 // This cell is zeroed.
@@ -205,7 +204,6 @@ pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
             MultiplyMove { ref changes, .. } => {
                 // These cells are written to.
                 let mut offsets: Vec<isize> = changes.keys()
-                    .into_iter()
                     .cloned()
                     .collect();
                 // This cell is zeroed.
@@ -237,7 +235,7 @@ pub fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
                     if prev_offset == offset {
                         return Ok(Increment {
                             amount: amount + prev_amount,
-                            offset: offset,
+                            offset,
                             position: prev_pos.combine(position),
                         });
                     }
@@ -334,7 +332,7 @@ pub fn zeroing_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
                         return Set {
                             amount: Wrapping(0),
                             offset: 0,
-                            position: position,
+                            position,
                         };
                     }
                 }
@@ -399,7 +397,7 @@ pub fn sort_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
                 if let Loop { body, position } = instr {
                     result.push(Loop {
                         body: sort_by_offset(body),
-                        position: position,
+                        position,
                     });
                 } else {
                     result.push(instr);
@@ -438,9 +436,9 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
                 let same_offset_instrs = instrs_by_offset.entry(new_offset)
                     .or_insert_with(|| vec![]);
                 same_offset_instrs.push(Increment {
-                    amount: amount,
+                    amount,
                     offset: new_offset,
-                    position: position,
+                    position,
                 });
             }
             Set { amount, offset, position } => {
@@ -448,9 +446,9 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
                 let same_offset_instrs = instrs_by_offset.entry(new_offset)
                     .or_insert_with(|| vec![]);
                 same_offset_instrs.push(Set {
-                    amount: amount,
+                    amount,
                     offset: new_offset,
-                    position: position,
+                    position,
                 });
             }
             PointerIncrement { amount, position } => {
@@ -529,7 +527,7 @@ pub fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
                     &Set { amount, offset: offset2, position: position2 }) = (&prev_instr, &instr) {
                 if offset1 == offset2 {
                     return Ok(Set {
-                        amount: amount,
+                        amount,
                         offset: offset1,
                         // Whilst the first Set is dead here, by including
                         // it in the position tracking we can show better warnings.
@@ -599,7 +597,7 @@ pub fn annotate_known_zero(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let set_instr = Set {
         amount: Wrapping(0),
         offset: 0,
-        position: position,
+        position,
     };
     // Insert the set instruction unless there is one already present.
     if instrs.first() != Some(&set_instr) {
@@ -621,7 +619,7 @@ fn annotate_known_zero_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
             Loop { body, position } => {
                 result.push(Loop {
                     body: annotate_known_zero_inner(body),
-                    position: position,
+                    position,
                 });
                 // Treat this set as positioned at the ].
                 let set_pos = position.map(|loop_pos| {
@@ -678,7 +676,7 @@ pub fn remove_pure_code(mut instrs: Vec<AstNode>) -> (Vec<AstNode>, Option<Warni
             .map(|pos| pos.unwrap());
         Some(Warning {
             message: "These instructions have no effect.".to_owned(),
-            position: position,
+            position,
         })
     };
 
@@ -755,13 +753,13 @@ pub fn extract_multiply(instrs: Vec<AstNode>) -> Vec<AstNode> {
                         changes.remove(&0);
 
                         MultiplyMove {
-                            changes: changes,
-                            position: position,
+                            changes,
+                            position,
                         }
                     } else {
                         Loop {
                             body: extract_multiply(body),
-                            position: position,
+                            position,
                         }
                     }
                 }

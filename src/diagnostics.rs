@@ -86,14 +86,14 @@ impl fmt::Display for Info {
             context_line = "\n".to_owned() + line;
 
             // Highlight the faulty characters on that line.
-            caret_line = caret_line + "\n";
+            caret_line += "\n";
             for _ in 0..column_idx {
-                caret_line = caret_line + " ";
+                caret_line += " ";
             }
-            caret_line = caret_line + "^";
+            caret_line += "^";
             if width > 0 {
                 for _ in 0..width {
-                    caret_line = caret_line + "~";
+                    caret_line += "~";
                 }
             }
         }

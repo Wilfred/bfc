@@ -80,7 +80,7 @@ fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> AstNode {
                 PointerIncrement { amount: 1, position: None },
             ];
             Loop {
-                body: body,
+                body,
                 position: None,
             }
         }
@@ -92,7 +92,7 @@ fn arbitrary_instr<G: Gen>(g: &mut G, max_depth: usize) -> AstNode {
                 body.push(arbitrary_instr(g, max_depth - 1));
             }
             Loop {
-                body: body,
+                body,
                 position: Some(Position { start: 0, end: 0 }),
             }
         }
@@ -877,7 +877,7 @@ fn pathological_optimisation_opportunity() {
 fn count_instrs(instrs: &[AstNode]) -> u64 {
     let mut count = 0;
     for instr in instrs {
-        if let &Loop { ref body, .. } = instr {
+        if let Loop { ref body, .. } = *instr {
             count += count_instrs(body);
         }
         count += 1;

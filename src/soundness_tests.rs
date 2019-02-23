@@ -62,12 +62,10 @@ fn transform_is_sound<F>(instrs: Vec<AstNode>,
 
     // If requested, compare that the cells at the end are the same
     // too. This is true of most, but not all, of our optimisations.
-    if check_cells {
-        if state.cells != state2.cells {
-            println!("Different cell states! Optimised state: {:?} Optimised: {:?}",
-                     state.cells, state2.cells);
-            return TestResult::failed();
-        }
+    if check_cells && state.cells != state2.cells {
+        println!("Different cell states! Optimised state: {:?} Optimised: {:?}",
+                 state.cells, state2.cells);
+        return TestResult::failed();
     }
 
     TestResult::passed()

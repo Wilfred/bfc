@@ -118,7 +118,7 @@ attributes #0 = { argmemonly nounwind }
 fn compile_empty_program() {
     let result = compile_to_module("foo",
                                    Some("i686-pc-linux-gnu".to_owned()),
-                                   &vec![],
+                                   &[],
                                    &ExecutionState {
                                        start_instr: None,
                                        cells: vec![Wrapping(0)],
@@ -543,7 +543,7 @@ attributes #0 = { argmemonly nounwind }
 fn compile_static_outputs() {
     let result = compile_to_module("foo",
                                    Some("i686-pc-linux-gnu".to_owned()),
-                                   &vec![],
+                                   &[],
                                    &ExecutionState {
                                        start_instr: None,
                                        cells: vec![],

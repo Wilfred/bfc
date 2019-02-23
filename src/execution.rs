@@ -55,7 +55,7 @@ pub enum Outcome {
 /// It takes around 1 million steps to finish executing bottles.bf at
 /// compile time. This is intolerably slow for debug builds of bfc, but
 /// instant on a release build.
-pub const MAX_STEPS: u64 = 10000000;
+pub const MAX_STEPS: u64 = 10_000_000;
 
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
@@ -95,7 +95,7 @@ pub fn execute_with_state<'a>(instrs: &'a [AstNode],
         match instrs[instr_idx] {
             Increment { amount, offset, .. } => {
                 let target_cell_ptr = (cell_ptr as isize + offset) as usize;
-                state.cells[target_cell_ptr] = state.cells[target_cell_ptr] + amount;
+                state.cells[target_cell_ptr] += amount;
                 instr_idx += 1;
             }
             Set { amount, offset, .. } => {
@@ -123,8 +123,8 @@ pub fn execute_with_state<'a>(instrs: &'a [AstNode],
                             .to_owned()
                     };
                     return Outcome::RuntimeError(Warning {
-                        message: message,
-                        position: position,
+                        message,
+                        position,
                     });
                 } else {
                     state.cell_ptr = new_cell_ptr;
@@ -152,7 +152,7 @@ pub fn execute_with_state<'a>(instrs: &'a [AstNode],
 
                             return Outcome::RuntimeError(Warning {
                                 message: message.to_owned(),
-                                position: position,
+                                position,
                             });
                         }
                         if dest_ptr as usize >= state.cells.len() {
@@ -163,7 +163,7 @@ pub fn execute_with_state<'a>(instrs: &'a [AstNode],
                                                  dest_ptr,
                                                  state.cells.len() - 1)
                                     .to_owned(),
-                                position: position,
+                                position,
                             });
                         }
 
@@ -303,7 +303,7 @@ fn multiply_move_executed() {
                   },
 
                   MultiplyMove {
-                      changes: changes,
+                      changes,
                       position: Some(Position { start: 0, end: 0 }),
                   }];
 
@@ -326,7 +326,7 @@ fn multiply_move_when_current_cell_is_zero() {
     changes.insert(-1, Wrapping(2));
 
     let instrs = [MultiplyMove {
-                      changes: changes,
+                      changes,
                       position: None,
                   }];
 
@@ -351,7 +351,7 @@ fn multiply_move_wrapping() {
                       position: Some(Position { start: 0, end: 0 }),
                   },
                   MultiplyMove {
-                      changes: changes,
+                      changes,
                       position: Some(Position { start: 0, end: 0 }),
                   }];
 
@@ -376,7 +376,7 @@ fn multiply_move_offset_too_high() {
                       position: None,
                   },
                   MultiplyMove {
-                      changes: changes,
+                      changes,
                       position: Some(Position { start: 0, end: 0 }),
                   }];
 
@@ -402,7 +402,7 @@ fn multiply_move_offset_too_low() {
                       position: None,
                   },
                   MultiplyMove {
-                      changes: changes,
+                      changes,
                       position: Some(Position { start: 0, end: 0 }),
                   }];
 
@@ -729,5 +729,5 @@ fn arithmetic_error_nested_loops() {
     // mandlebrot.bf. Previously, if the first element in a loop was
     // another loop, we had arithmetic overflow.
     let instrs = parse("+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
-    execute(&instrs, MAX_STEPS).0;
+    execute(&instrs, MAX_STEPS);
 }

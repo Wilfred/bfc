@@ -108,7 +108,7 @@ fn fmt_with_indent(instr: &AstNode, indent: i32, f: &mut fmt::Formatter) {
             let _ = write!(f, "Loop position: {:?}", position);
 
             for loop_instr in loop_body {
-                let _ = write!(f, "\n");
+                let _ = writeln!(f);
                 fmt_with_indent(loop_instr, indent + 1, f);
             }
         }

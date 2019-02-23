@@ -197,7 +197,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         return Ok(());
     }
 
-    let llvm_opt_raw = matches.opt_str("llvm-opt").unwrap_or("3".to_owned());
+    let llvm_opt_raw = matches.opt_str("llvm-opt").unwrap_or_else(|| "3".to_owned());
     let mut llvm_opt = llvm_opt_raw.parse::<i64>().unwrap_or(3);
     if llvm_opt < 0 || llvm_opt > 3 {
         // TODO: warn on unrecognised input.
@@ -214,7 +214,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     let output_name = executable_name(path);
     try!(link_object_file(&obj_file_path, &output_name, target_triple));
 
-    let strip_opt = matches.opt_str("strip").unwrap_or("yes".to_owned());
+    let strip_opt = matches.opt_str("strip").unwrap_or_else(|| "yes".to_owned());
     if strip_opt == "yes" {
         try!(strip_executable(&output_name))
     }
