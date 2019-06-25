@@ -5,6 +5,7 @@
 #[cfg(test)]
 use std::collections::HashMap;
 use std::num::Wrapping;
+use std::env;
 
 #[cfg(test)]
 use quickcheck::quickcheck;
@@ -51,11 +52,20 @@ pub enum Outcome {
 }
 
 /// The maximum number of steps we should execute at compile time.
-///
-/// It takes around 1 million steps to finish executing bottles.bf at
-/// compile time. This is intolerably slow for debug builds of bfc, but
-/// instant on a release build.
-pub const MAX_STEPS: u64 = 10_000_000;
+pub fn max_steps() -> u64 {
+    // It takes around 1 million steps to finish executing bottles.bf
+    // at compile time. This is intolerably slow for debug builds of
+    // bfc, but instant on a release build.
+    let mut steps = 10_000_000;
+
+    match env::var_os("BFC_MAX_STEPS") {
+        Some(val) => {
+            steps = val.to_str().unwrap().parse::<u64>().unwrap_or(steps);
+        },
+        None => {}
+    };
+    steps
+}
 
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
@@ -261,7 +271,7 @@ pub fn execute_with_state<'a>(
 #[test]
 fn cant_evaluate_inputs() {
     let instrs = parse(",.").unwrap();
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -277,7 +287,7 @@ fn cant_evaluate_inputs() {
 #[test]
 fn increment_executed() {
     let instrs = parse("+").unwrap();
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -322,7 +332,7 @@ fn multiply_move_executed() {
         },
     ];
 
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
     assert_eq!(
         final_state,
         ExecutionState {
@@ -347,7 +357,7 @@ fn multiply_move_when_current_cell_is_zero() {
         position: None,
     }];
 
-    let (final_state, warning) = execute(&instrs, MAX_STEPS);
+    let (final_state, warning) = execute(&instrs, max_steps());
     assert_eq!(warning, None);
     assert_eq!(
         final_state,
@@ -376,7 +386,7 @@ fn multiply_move_wrapping() {
         },
     ];
 
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
     assert_eq!(
         final_state,
         ExecutionState {
@@ -405,7 +415,7 @@ fn multiply_move_offset_too_high() {
         },
     ];
 
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
     let mut expected_cells = vec![Wrapping(0); MAX_CELL_INDEX + 1];
     expected_cells[0] = Wrapping(1);
     assert_eq!(
@@ -435,7 +445,7 @@ fn multiply_move_offset_too_low() {
         },
     ];
 
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
     assert_eq!(
         final_state,
         ExecutionState {
@@ -454,7 +464,7 @@ fn set_executed() {
         offset: 0,
         position: Some(Position { start: 0, end: 0 }),
     }];
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -474,7 +484,7 @@ fn set_wraps() {
         offset: 0,
         position: Some(Position { start: 0, end: 0 }),
     }];
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -490,7 +500,7 @@ fn set_wraps() {
 #[test]
 fn decrement_executed() {
     let instrs = parse("-").unwrap();
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -517,7 +527,7 @@ fn increment_wraps() {
             position: Some(Position { start: 0, end: 0 }),
         },
     ];
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -533,7 +543,7 @@ fn increment_wraps() {
 #[test]
 fn ptr_increment_executed() {
     let instrs = parse(">").unwrap();
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -549,7 +559,7 @@ fn ptr_increment_executed() {
 #[test]
 fn ptr_out_of_range() {
     let instrs = parse("<").unwrap();
-    let (final_state, warning) = execute(&instrs, MAX_STEPS);
+    let (final_state, warning) = execute(&instrs, max_steps());
 
     assert_eq!(
         final_state,
@@ -583,7 +593,7 @@ fn limit_to_steps_specified() {
 #[test]
 fn write_executed() {
     let instrs = parse("+.").unwrap();
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -599,7 +609,7 @@ fn write_executed() {
 #[test]
 fn loop_executed() {
     let instrs = parse("++[-]").unwrap();
-    let final_state = execute(&instrs, MAX_STEPS).0;
+    let final_state = execute(&instrs, max_steps()).0;
 
     assert_eq!(
         final_state,
@@ -802,5 +812,5 @@ fn arithmetic_error_nested_loops() {
     // mandlebrot.bf. Previously, if the first element in a loop was
     // another loop, we had arithmetic overflow.
     let instrs = parse("+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
-    execute(&instrs, MAX_STEPS);
+    execute(&instrs, max_steps());
 }

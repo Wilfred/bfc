@@ -164,7 +164,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     }
 
     let (state, execution_warning) = if opt_level == "2" {
-        execution::execute(&instrs, execution::MAX_STEPS)
+        execution::execute(&instrs, execution::max_steps())
     } else {
         let mut init_state = execution::ExecutionState::initial(&instrs[..]);
         // TODO: this will crash on the empty program.
