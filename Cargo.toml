@@ -9,7 +9,7 @@ readme = "README.md"
 license = "GPL-2.0"
 
 [dependencies]
-llvm-sys = "70"
+llvm-sys = "80"
 itertools = "0.4"
 rand = "0.3"
 quickcheck = "0.3"
