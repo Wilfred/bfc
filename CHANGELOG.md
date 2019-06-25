@@ -1,8 +1,9 @@
 # v1.8.0
 
-Updated to LLVM 7.0.
+Updated to LLVM 8.0.
 
-Fixed a linking error on recent LLVM versions.
+Fixed a linking error on recent LLVM versions, and a pass manager
+segfault on LLVM 8.
 
 # v1.7.0
 
