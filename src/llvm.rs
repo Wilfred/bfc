@@ -961,17 +961,20 @@ impl Drop for TargetMachine {
     }
 }
 
-pub fn write_object_file(module: &mut Module, path: &str) -> Result<(), String> {
+pub fn init_llvm() {
     unsafe {
-        let target_triple = LLVMGetTarget(module.module);
-
         // TODO: are all these necessary? Are there docs?
         LLVM_InitializeAllTargetInfos();
         LLVM_InitializeAllTargets();
         LLVM_InitializeAllTargetMCs();
         LLVM_InitializeAllAsmParsers();
         LLVM_InitializeAllAsmPrinters();
+    }
+}
 
+pub fn write_object_file(module: &mut Module, path: &str) -> Result<(), String> {
+    unsafe {
+        let target_triple = LLVMGetTarget(module.module);
         let target_machine = try!(TargetMachine::new(target_triple));
 
         let mut obj_error = module.new_mut_string_ptr("Writing object file failed.");

@@ -183,6 +183,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         eprintln!("{}", info);
     }
 
+    llvm::init_llvm();
     let target_triple = matches.opt_str("target");
     let mut llvm_module = llvm::compile_to_module(path, target_triple.clone(), &instrs, &state);
 
