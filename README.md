@@ -179,8 +179,8 @@ If increments/decrements cancel out, we remove them entirely.
 We combine pointer increments:
 
 ```
-   Compile            Combine
-+++  =>   PointerIncrement 1   =>   PointerIncrement 2
+   Compile                  Combine
+>>   =>   PointerIncrement 1   =>   PointerIncrement 2
           PointerIncrement 1
 ```
 
