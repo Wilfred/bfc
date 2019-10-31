@@ -12,8 +12,8 @@ extern crate ansi_term;
 extern crate getopts;
 extern crate itertools;
 extern crate llvm_sys;
+#[cfg(test)]
 extern crate quickcheck;
-extern crate rand;
 extern crate tempfile;
 
 #[macro_use]

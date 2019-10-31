@@ -11,9 +11,10 @@ license = "GPL-2.0"
 [dependencies]
 llvm-sys = "80"
 itertools = "0.4"
-rand = "0.3"
-quickcheck = "0.3"
 tempfile = "2.1"
 getopts = "0.2"
 matches = "0.1"
 ansi_term = "0.9"
+
+[dev-dependencies]
+quickcheck = "0.3"
