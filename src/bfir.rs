@@ -9,6 +9,9 @@ use std::collections::HashMap;
 use std::fmt;
 use std::num::Wrapping;
 
+#[cfg(test)]
+use pretty_assertions::assert_eq;
+
 use self::AstNode::*;
 
 /// A cell is the fundamental BF datatype that we work with. BF

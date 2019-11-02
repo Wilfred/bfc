@@ -13,6 +13,8 @@ extern crate getopts;
 extern crate itertools;
 extern crate llvm_sys;
 #[cfg(test)]
+extern crate pretty_assertions;
+#[cfg(test)]
 extern crate quickcheck;
 extern crate tempfile;
 
@@ -26,6 +28,9 @@ use std::fs::File;
 use std::io::prelude::Read;
 use std::path::Path;
 use tempfile::NamedTempFile;
+
+#[cfg(test)]
+use pretty_assertions::assert_eq;
 
 mod bfir;
 mod bounds;

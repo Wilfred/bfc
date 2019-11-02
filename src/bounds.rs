@@ -3,6 +3,8 @@
 //! Calculate the maximum cell accessed by a BF program.
 
 #[cfg(test)]
+use pretty_assertions::assert_eq;
+#[cfg(test)]
 use quickcheck::quickcheck;
 #[cfg(test)]
 use std::collections::HashMap;

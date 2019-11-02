@@ -18,3 +18,4 @@ ansi_term = "0.9"
 
 [dev-dependencies]
 quickcheck = "0.3"
+pretty_assertions = "0.6.1"

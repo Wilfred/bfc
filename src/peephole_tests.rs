@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::num::Wrapping;
 
+use pretty_assertions::assert_eq;
 use quickcheck::quickcheck;
 
 use bfir::AstNode::*;

@@ -4,9 +4,11 @@
 
 #[cfg(test)]
 use std::collections::HashMap;
-use std::num::Wrapping;
 use std::env;
+use std::num::Wrapping;
 
+#[cfg(test)]
+use pretty_assertions::assert_eq;
 #[cfg(test)]
 use quickcheck::quickcheck;
 
