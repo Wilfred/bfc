@@ -975,7 +975,7 @@ pub fn init_llvm() {
 pub fn write_object_file(module: &mut Module, path: &str) -> Result<(), String> {
     unsafe {
         let target_triple = LLVMGetTarget(module.module);
-        let target_machine = try!(TargetMachine::new(target_triple));
+        let target_machine = TargetMachine::new(target_triple)?;
 
         let mut obj_error = module.new_mut_string_ptr("Writing object file failed.");
         let result = LLVMTargetMachineEmitToFile(

@@ -211,20 +211,20 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     llvm::optimise_ir(&mut llvm_module, llvm_opt);
 
     // Compile the LLVM IR to a temporary object file.
-    let object_file = try!(convert_io_error(NamedTempFile::new()));
+    let object_file = convert_io_error(NamedTempFile::new())?;
     let obj_file_path = object_file.path().to_str().expect("path not valid utf-8");
-    try!(llvm::write_object_file(&mut llvm_module, &obj_file_path));
+    llvm::write_object_file(&mut llvm_module, &obj_file_path)?;
 
     let output_name = executable_name(path);
-    try!(link_object_file(
+    link_object_file(
         &obj_file_path,
         &output_name,
         target_triple
-    ));
+    )?;
 
     let strip_opt = matches.opt_str("strip").unwrap_or_else(|| "yes".to_owned());
     if strip_opt == "yes" {
-        try!(strip_executable(&output_name))
+        strip_executable(&output_name)?
     }
 
     Ok(())
