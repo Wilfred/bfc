@@ -216,11 +216,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     llvm::write_object_file(&mut llvm_module, &obj_file_path)?;
 
     let output_name = executable_name(path);
-    link_object_file(
-        &obj_file_path,
-        &output_name,
-        target_triple
-    )?;
+    link_object_file(&obj_file_path, &output_name, target_triple)?;
 
     let strip_opt = matches.opt_str("strip").unwrap_or_else(|| "yes".to_owned());
     if strip_opt == "yes" {

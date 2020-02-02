@@ -63,7 +63,7 @@ pub fn max_steps() -> u64 {
     match env::var_os("BFC_MAX_STEPS") {
         Some(val) => {
             steps = val.to_str().unwrap().parse::<u64>().unwrap_or(steps);
-        },
+        }
         None => {}
     };
     steps
