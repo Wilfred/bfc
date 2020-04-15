@@ -168,10 +168,15 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         return Ok(());
     }
 
+    let max_cell_index: usize = match matches.opt_get("max-cells") {
+        Ok(max) => max.unwrap_or_else(|| 999999),
+        Err(parse_error) => return Err(parse_error.to_string())
+    };
+
     let (state, execution_warning) = if opt_level == "2" {
-        execution::execute(&instrs, execution::max_steps())
+        execution::execute(&instrs, execution::max_steps(), max_cell_index)
     } else {
-        let mut init_state = execution::ExecutionState::initial(&instrs[..]);
+        let mut init_state = execution::ExecutionState::initial(&instrs[..], max_cell_index);
         // TODO: this will crash on the empty program.
         init_state.start_instr = Some(&instrs[0]);
         (init_state, None)
@@ -264,6 +269,7 @@ fn main() {
     opts.optflag("", "dump-llvm", "print LLVM IR generated");
     opts.optflag("", "dump-ir", "print BF IR generated");
 
+    opts.optopt("m", "max-cells", "maximum 0-indexed cell index", "COUNT");
     opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
     opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
     opts.optopt(

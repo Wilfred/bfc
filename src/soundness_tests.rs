@@ -5,6 +5,8 @@ use execution::Outcome::*;
 use execution::{execute_with_state, ExecutionState};
 use peephole::*;
 
+use bounds::MAX_CELL_INDEX;
+
 fn transform_is_sound<F>(
     instrs: Vec<AstNode>,
     transform: F,
@@ -17,7 +19,7 @@ where
     let max_steps = 1000;
 
     // First, we execute the program given.
-    let mut state = ExecutionState::initial(&instrs[..]);
+    let mut state = ExecutionState::initial(&instrs[..], MAX_CELL_INDEX);
     let result = execute_with_state(&instrs[..], &mut state, max_steps, dummy_read_value);
 
     // Optimisations may change malformed programs to well-formed
@@ -33,7 +35,7 @@ where
     // get the same number of cells. Otherwise we could get in messy
     // situations where a dead loop that makes us think we use
     // MAX_CELLS so state2 has fewer cells.
-    let mut state2 = ExecutionState::initial(&instrs[..]);
+    let mut state2 = ExecutionState::initial(&instrs[..], MAX_CELL_INDEX);
     let result2 = execute_with_state(
         &optimised_instrs[..],
         &mut state2,
