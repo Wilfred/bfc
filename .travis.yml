@@ -15,7 +15,7 @@ before_script:
 
 install:
  # Install LLVM 3.8.
- - wget http://llvm.org/pre-releases/3.8.0/rc2/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+ - wget https://releases.llvm.org/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
  - tar xf clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04.tar.xz
  - export PATH="$PWD/clang+llvm-3.8.0-rc2-x86_64-linux-gnu-ubuntu-14.04/bin:$PATH"
  - cc --version
