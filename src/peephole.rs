@@ -62,13 +62,13 @@ fn optimize_once(
     instrs: Vec<AstNode>,
     pass_specification: &Option<String>,
 ) -> (Vec<AstNode>, Option<Warning>) {
-    let pass_specification = pass_specification.clone().unwrap_or(
+    let pass_specification = pass_specification.clone().unwrap_or_else(|| {
         "combine_inc,combine_ptr,known_zero,\
          multiply,zeroing_loop,combine_set,\
          dead_loop,redundant_set,read_clobber,\
          pure_removal,offset_sort"
-            .to_owned(),
-    );
+            .to_owned()
+    });
     let passes: Vec<_> = pass_specification.split(',').collect();
 
     let mut instrs = instrs;
@@ -463,7 +463,7 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
             } => {
                 let new_offset = offset + current_offset;
                 let same_offset_instrs =
-                    instrs_by_offset.entry(new_offset).or_insert_with(|| vec![]);
+                    instrs_by_offset.entry(new_offset).or_insert_with(Vec::new);
                 same_offset_instrs.push(Increment {
                     amount,
                     offset: new_offset,
@@ -477,7 +477,7 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
             } => {
                 let new_offset = offset + current_offset;
                 let same_offset_instrs =
-                    instrs_by_offset.entry(new_offset).or_insert_with(|| vec![]);
+                    instrs_by_offset.entry(new_offset).or_insert_with(Vec::new);
                 same_offset_instrs.push(Set {
                     amount,
                     offset: new_offset,

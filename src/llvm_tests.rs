@@ -398,7 +398,7 @@ fn compile_multiply_move() {
     changes.insert(1, Wrapping(2));
     changes.insert(2, Wrapping(3));
     let instrs = vec![MultiplyMove {
-        changes: changes,
+        changes,
         position: Some(Position { start: 0, end: 0 }),
     }];
 
