@@ -1,10 +1,4 @@
 #![warn(trivial_numeric_casts)]
-// option_unwrap_used is specific to clippy. However, we don't want to
-// add clippy to the build requirements, so we build without it and
-// ignore any warnings about rustc not recognising clippy's lints.
-#![allow(unknown_lints)]
-// TODO: enable this warning and cleanup.
-#![allow(option_unwrap_used)]
 
 //! bfc is a highly optimising compiler for BF.
 
