@@ -5,9 +5,9 @@ use std::num::Wrapping;
 use bfir::AstNode::*;
 use bfir::Position;
 use execution::ExecutionState;
-use itertools::EitherOrBoth::Both;
-use itertools::Itertools;
 use llvm::compile_to_module;
+
+use pretty_assertions::assert_eq;
 
 /// Assert that two CString values are equal. If they're not, print
 /// the strings nicely (e.g. '\n' as an actual newline).
@@ -15,26 +15,12 @@ macro_rules! assert_cstring_eq {
     ($actual:expr, $expected:expr) => {{
         let expected = $expected;
         let expected_str = expected.to_string_lossy();
+        let expected_lines: Vec<_> = expected_str.lines().collect();
         let actual = $actual;
         let actual_str = actual.to_string_lossy();
+        let actual_lines: Vec<_> = actual_str.lines().collect();
 
-        if expected_str != actual_str {
-            let expected_lines = expected_str.split('\n');
-            let actual_lines = actual_str.split('\n');
-            println!("Lines do not match!");
-
-            for differing_line in
-                expected_lines
-                    .zip_longest(actual_lines)
-                    .filter(|pair| match *pair {
-                        Both(x, y) => x != y,
-                        _ => true,
-                    })
-            {
-                println!("{:?}", differing_line);
-            }
-            assert!(false);
-        }
+        assert_eq!(expected_lines, actual_lines);
     }};
 }
 
