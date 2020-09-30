@@ -987,8 +987,7 @@ pub fn write_object_file(module: &mut Module, path: &str) -> Result<(), String> 
         );
 
         if result != 0 {
-            println!("obj_error: {:?}", CStr::from_ptr(obj_error as *const _));
-            assert!(false);
+            panic!("obj_error: {:?}", CStr::from_ptr(obj_error as *const _));
         }
     }
     Ok(())
