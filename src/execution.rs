@@ -60,12 +60,9 @@ pub fn max_steps() -> u64 {
     // bfc, but instant on a release build.
     let mut steps = 10_000_000;
 
-    match env::var_os("BFC_MAX_STEPS") {
-        Some(val) => {
-            steps = val.to_str().unwrap().parse::<u64>().unwrap_or(steps);
-        }
-        None => {}
-    };
+    if let Some(val) = env::var_os("BFC_MAX_STEPS") {
+        steps = val.to_str().unwrap().parse::<u64>().unwrap_or(steps);
+    }
     steps
 }
 
