@@ -131,7 +131,6 @@ pub fn execute_with_state<'a>(
                             "This instruction moves the pointer to cell {}.",
                             new_cell_ptr
                         )
-                        .to_owned()
                     } else {
                         format!(
                             "This instruction moves the pointer after the last cell ({}), to \
@@ -139,7 +138,6 @@ pub fn execute_with_state<'a>(
                             state.cells.len() - 1,
                             new_cell_ptr
                         )
-                        .to_owned()
                     };
                     return Outcome::RuntimeError(Warning { message, position });
                 } else {
@@ -171,7 +169,7 @@ pub fn execute_with_state<'a>(
                             );
 
                             return Outcome::RuntimeError(Warning {
-                                message: message.to_owned(),
+                                message,
                                 position,
                             });
                         }
@@ -183,8 +181,7 @@ pub fn execute_with_state<'a>(
                                      highest cell is {})",
                                     dest_ptr,
                                     state.cells.len() - 1
-                                )
-                                .to_owned(),
+                                ),
                                 position,
                             });
                         }
