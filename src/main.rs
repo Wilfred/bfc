@@ -248,7 +248,10 @@ fn link_object_file(
 }
 
 fn strip_executable(executable_path: &str) -> Result<(), String> {
-    let strip_args = ["-s", &executable_path[..]];
+    let strip_args = match std::env::consts::OS {
+        "macos" => vec![&executable_path[..]],
+        _ => vec!["-s", &executable_path[..]],
+    };
     shell::run_shell_command("strip", &strip_args[..])
 }
 
