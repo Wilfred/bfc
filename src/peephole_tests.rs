@@ -152,7 +152,7 @@ fn quickcheck_combine_increments_remove_zero_any_offset() {
     fn combine_increments_remove_zero_any_offset(offset: isize) -> bool {
         let initial = vec![Increment {
             amount: Wrapping(0),
-            offset: offset,
+            offset,
             position: Some(Position { start: 0, end: 0 }),
         }];
         combine_increments(initial) == vec![]
@@ -477,18 +477,18 @@ fn quickcheck_should_combine_set_and_increment() {
         let initial = vec![
             Set {
                 amount: set_amount,
-                offset: offset,
+                offset,
                 position: Some(Position { start: 0, end: 0 }),
             },
             Increment {
                 amount: increment_amount,
-                offset: offset,
+                offset,
                 position: Some(Position { start: 0, end: 0 }),
             },
         ];
         let expected = vec![Set {
             amount: set_amount + increment_amount,
-            offset: offset,
+            offset,
             position: Some(Position { start: 0, end: 0 }),
         }];
         combine_set_and_increments(initial) == expected
@@ -569,18 +569,18 @@ fn quickcheck_combine_set_and_set() {
         let initial = vec![
             Set {
                 amount: Wrapping(set_amount_before),
-                offset: offset,
+                offset,
                 position: Some(Position { start: 0, end: 0 }),
             },
             Set {
                 amount: Wrapping(set_amount_after),
-                offset: offset,
+                offset,
                 position: Some(Position { start: 0, end: 0 }),
             },
         ];
         let expected = vec![Set {
             amount: Wrapping(set_amount_after),
-            offset: offset,
+            offset,
             position: Some(Position { start: 0, end: 0 }),
         }];
         combine_set_and_increments(initial) == expected
@@ -653,18 +653,18 @@ fn quickcheck_should_combine_increment_and_set() {
         let initial = vec![
             Increment {
                 amount: Wrapping(2),
-                offset: offset,
+                offset,
                 position: Some(Position { start: 0, end: 0 }),
             },
             Set {
                 amount: Wrapping(3),
-                offset: offset,
+                offset,
                 position: Some(Position { start: 0, end: 0 }),
             },
         ];
         let expected = vec![Set {
             amount: Wrapping(3),
-            offset: offset,
+            offset,
             position: Some(Position { start: 0, end: 0 }),
         }];
         combine_set_and_increments(initial) == expected
@@ -922,7 +922,7 @@ fn quickcheck_optimize_should_be_idempotent() {
         // Once we've optimized once, running again shouldn't reduce the
         // instructions further. If it does, we're probably running our
         // optimisations in the wrong order.
-        let minimal = optimize(instrs.clone(), &None).0;
+        let minimal = optimize(instrs, &None).0;
         optimize(minimal.clone(), &None).0 == minimal
     }
     quickcheck(optimize_should_be_idempotent as fn(Vec<AstNode>) -> bool);
@@ -1385,7 +1385,7 @@ fn prev_mutate_multiply_offset_matches() {
 
     let instrs = vec![
         MultiplyMove {
-            changes: changes.clone(),
+            changes,
             position: Some(Position { start: 0, end: 0 }),
         },
         PointerIncrement {
@@ -1406,7 +1406,7 @@ fn prev_mutate_multiply_offset_doesnt_match() {
 
     let instrs = vec![
         MultiplyMove {
-            changes: changes.clone(),
+            changes,
             position: Some(Position { start: 0, end: 0 }),
         },
         PointerIncrement {
@@ -1429,7 +1429,7 @@ fn prev_mutate_multiply_ignore_offset() {
 
     let instrs = vec![
         MultiplyMove {
-            changes: changes.clone(),
+            changes,
             position: Some(Position { start: 0, end: 0 }),
         },
         Read {
