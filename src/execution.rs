@@ -34,10 +34,10 @@ pub struct ExecutionState<'a> {
 }
 
 impl<'a> ExecutionState<'a> {
-    pub fn initial(instrs: &[AstNode]) -> Self {
+    pub fn initial(instrs: &[AstNode], max_cell_index: usize) -> Self {
         ExecutionState {
             start_instr: None,
-            cells: vec![Wrapping(0); highest_cell_index(instrs) + 1],
+            cells: vec![Wrapping(0); highest_cell_index(instrs, max_cell_index) + 1],
             cell_ptr: 0,
             outputs: vec![],
         }
@@ -69,8 +69,8 @@ pub fn max_steps() -> u64 {
 /// Compile time speculative execution of instructions. We return the
 /// final state of the cells, any print side effects, and the point in
 /// the code we reached.
-pub fn execute(instrs: &[AstNode], steps: u64) -> (ExecutionState, Option<Warning>) {
-    let mut state = ExecutionState::initial(instrs);
+pub fn execute(instrs: &[AstNode], steps: u64, max_cell_index: usize) -> (ExecutionState, Option<Warning>) {
+    let mut state = ExecutionState::initial(instrs, max_cell_index);
     let outcome = execute_with_state(instrs, &mut state, steps, None);
 
     // Sanity check: if we have a start instruction we
@@ -267,7 +267,7 @@ pub fn execute_with_state<'a>(
 #[test]
 fn cant_evaluate_inputs() {
     let instrs = parse(",.").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -283,7 +283,7 @@ fn cant_evaluate_inputs() {
 #[test]
 fn increment_executed() {
     let instrs = parse("+").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -328,7 +328,7 @@ fn multiply_move_executed() {
         },
     ];
 
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
     assert_eq!(
         final_state,
         ExecutionState {
@@ -353,7 +353,7 @@ fn multiply_move_when_current_cell_is_zero() {
         position: None,
     }];
 
-    let (final_state, warning) = execute(&instrs, max_steps());
+    let (final_state, warning) = execute(&instrs, max_steps(), MAX_CELL_INDEX);
     assert_eq!(warning, None);
     assert_eq!(
         final_state,
@@ -382,7 +382,7 @@ fn multiply_move_wrapping() {
         },
     ];
 
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
     assert_eq!(
         final_state,
         ExecutionState {
@@ -411,8 +411,8 @@ fn multiply_move_offset_too_high() {
         },
     ];
 
-    let final_state = execute(&instrs, max_steps()).0;
-    let mut expected_cells = vec![Wrapping(0); MAX_CELL_INDEX + 1];
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
+    let mut expected_cells = vec![Wrapping(0); MAX_CELL_INDEX];
     expected_cells[0] = Wrapping(1);
     assert_eq!(
         final_state,
@@ -441,7 +441,7 @@ fn multiply_move_offset_too_low() {
         },
     ];
 
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
     assert_eq!(
         final_state,
         ExecutionState {
@@ -460,7 +460,7 @@ fn set_executed() {
         offset: 0,
         position: Some(Position { start: 0, end: 0 }),
     }];
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -480,7 +480,7 @@ fn set_wraps() {
         offset: 0,
         position: Some(Position { start: 0, end: 0 }),
     }];
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -496,7 +496,7 @@ fn set_wraps() {
 #[test]
 fn decrement_executed() {
     let instrs = parse("-").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -523,7 +523,7 @@ fn increment_wraps() {
             position: Some(Position { start: 0, end: 0 }),
         },
     ];
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -539,7 +539,7 @@ fn increment_wraps() {
 #[test]
 fn ptr_increment_executed() {
     let instrs = parse(">").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -555,7 +555,7 @@ fn ptr_increment_executed() {
 #[test]
 fn ptr_out_of_range() {
     let instrs = parse("<").unwrap();
-    let (final_state, warning) = execute(&instrs, max_steps());
+    let (final_state, warning) = execute(&instrs, max_steps(), MAX_CELL_INDEX);
 
     assert_eq!(
         final_state,
@@ -573,7 +573,7 @@ fn ptr_out_of_range() {
 #[test]
 fn limit_to_steps_specified() {
     let instrs = parse("++++").unwrap();
-    let final_state = execute(&instrs, 2).0;
+    let final_state = execute(&instrs, 2, MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -589,7 +589,7 @@ fn limit_to_steps_specified() {
 #[test]
 fn write_executed() {
     let instrs = parse("+.").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -605,7 +605,7 @@ fn write_executed() {
 #[test]
 fn loop_executed() {
     let instrs = parse("++[-]").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+    let final_state = execute(&instrs, max_steps(), MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -623,7 +623,7 @@ fn loop_executed() {
 #[test]
 fn partially_execute_up_to_runtime_value() {
     let instrs = parse("+[[,]]").unwrap();
-    let final_state = execute(&instrs, 10).0;
+    let final_state = execute(&instrs, 10, MAX_CELL_INDEX).0;
 
     // Get the inner read instruction
     let start_instr = match instrs[1] {
@@ -657,7 +657,7 @@ fn partially_execute_up_to_runtime_value() {
 fn execute_read_with_dummy_value() {
     let instrs = parse(",").unwrap();
 
-    let mut state = ExecutionState::initial(&instrs[..]);
+    let mut state = ExecutionState::initial(&instrs[..], MAX_CELL_INDEX);
     execute_with_state(&instrs[..], &mut state, 5, Some(1));
 
     assert_eq!(state.cells[0], Wrapping(1));
@@ -668,7 +668,7 @@ fn execute_read_with_dummy_value_nested_loop() {
     // Regression test.
     let instrs = parse("+[[,]]").unwrap();
 
-    let mut state = ExecutionState::initial(&instrs[..]);
+    let mut state = ExecutionState::initial(&instrs[..], MAX_CELL_INDEX);
     let outcome = execute_with_state(&instrs[..], &mut state, 20, Some(0));
 
     assert!(matches!(outcome, Outcome::Completed(_)));
@@ -679,7 +679,7 @@ fn execute_read_with_dummy_value_nested_loop() {
 #[test]
 fn partially_execute_complete_toplevel_loop() {
     let instrs = parse("+[-],").unwrap();
-    let final_state = execute(&instrs, 10).0;
+    let final_state = execute(&instrs, 10, MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -695,7 +695,7 @@ fn partially_execute_complete_toplevel_loop() {
 #[test]
 fn partially_execute_up_to_step_limit() {
     let instrs = parse("+[++++]").unwrap();
-    let final_state = execute(&instrs, 3).0;
+    let final_state = execute(&instrs, 3, MAX_CELL_INDEX).0;
 
     let start_instr = match instrs[1] {
         Loop { ref body, .. } => &body[2],
@@ -718,7 +718,7 @@ fn loop_up_to_step_limit() {
     let instrs = parse("++[-]").unwrap();
     // Assuming we take one step to enter the loop, we will execute
     // the loop body once.
-    let final_state = execute(&instrs, 4).0;
+    let final_state = execute(&instrs, 4, MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -736,7 +736,7 @@ fn loop_with_read_body() {
     // We can't execute the whole loop, so our start instruction
     // should be the read.
     let instrs = parse("+[+,]").unwrap();
-    let final_state = execute(&instrs, 4).0;
+    let final_state = execute(&instrs, 4, MAX_CELL_INDEX).0;
 
     // Get the inner read instruction
     let start_instr = match instrs[1] {
@@ -764,7 +764,7 @@ fn loop_with_read_body() {
 #[test]
 fn up_to_infinite_loop_executed() {
     let instrs = parse("++[]").unwrap();
-    let final_state = execute(&instrs, 20).0;
+    let final_state = execute(&instrs, 20, MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -780,7 +780,7 @@ fn up_to_infinite_loop_executed() {
 #[test]
 fn up_to_nonempty_infinite_loop() {
     let instrs = parse("+[+]").unwrap();
-    let final_state = execute(&instrs, 20).0;
+    let final_state = execute(&instrs, 20, MAX_CELL_INDEX).0;
 
     assert_eq!(
         final_state,
@@ -796,7 +796,7 @@ fn up_to_nonempty_infinite_loop() {
 #[test]
 fn quickcheck_cell_ptr_in_bounds() {
     fn cell_ptr_in_bounds(instrs: Vec<AstNode>) -> bool {
-        let state = execute(&instrs, 100).0;
+        let state = execute(&instrs, 100, MAX_CELL_INDEX).0;
         (state.cell_ptr >= 0) && (state.cell_ptr < state.cells.len() as isize)
     }
     quickcheck(cell_ptr_in_bounds as fn(Vec<AstNode>) -> bool);
@@ -808,5 +808,5 @@ fn arithmetic_error_nested_loops() {
     // mandlebrot.bf. Previously, if the first element in a loop was
     // another loop, we had arithmetic overflow.
     let instrs = parse("+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
-    execute(&instrs, max_steps());
+    execute(&instrs, max_steps(), MAX_CELL_INDEX);
 }
