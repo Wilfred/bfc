@@ -2,19 +2,6 @@
 
 //! bfc is a highly optimising compiler for BF.
 
-extern crate ansi_term;
-extern crate getopts;
-extern crate itertools;
-extern crate llvm_sys;
-#[cfg(test)]
-extern crate pretty_assertions;
-#[cfg(test)]
-extern crate quickcheck;
-extern crate tempfile;
-
-#[macro_use]
-extern crate matches;
-
 use crate::diagnostics::{Info, Level};
 use getopts::{Matches, Options};
 use std::env;
