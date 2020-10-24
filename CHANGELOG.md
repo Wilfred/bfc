@@ -1,5 +1,7 @@
 # v1.9.0
 
+Updated to LLVM 10.0.
+
 Bug fixes:
 
 * Fixed an issue with stripping symbols on macOS (#23).
