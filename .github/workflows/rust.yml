@@ -11,10 +11,11 @@ env:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
+    - name: Install LLVM package
+      run: sudo apt-get install llvm-10-dev
     - uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
