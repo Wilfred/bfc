@@ -11,12 +11,12 @@ license = "GPL-2.0"
 
 [dependencies]
 llvm-sys = "100.0.0"
-itertools = "0.4"
-tempfile = "2.1"
-getopts = "0.2"
-matches = "0.1"
+itertools = "0.9"
+tempfile = "3.1"
+getopts = "0.2.21"
+matches = "0.1.8"
 ansi_term = "0.9"
 
 [dev-dependencies]
-quickcheck = "0.3"
+quickcheck = "0.9.2"
 pretty_assertions = "0.6.1"
