@@ -3,6 +3,7 @@
 Bug fixes:
 
 * Fixed an issue with stripping symbols on macOS (#23).
+* ANSI colour codes are only output when stdout is a TTY (#15).
 
 # v1.8.0
 

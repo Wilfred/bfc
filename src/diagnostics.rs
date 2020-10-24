@@ -1,8 +1,6 @@
 //! Human-readable warnings and errors for the CLI.
 
-use ansi_term::ANSIStrings;
-use ansi_term::Colour::{Purple, Red};
-use ansi_term::Style;
+use colored::*;
 use std::fmt;
 
 use crate::bfir::Position;
@@ -66,15 +64,12 @@ impl fmt::Display for Info {
         };
 
         let level_text;
-        let color;
         match self.level {
             Level::Warning => {
-                color = Purple;
-                level_text = " warning: ";
+                level_text = " warning: ".purple();
             }
             Level::Error => {
-                color = Red;
-                level_text = " error: ";
+                level_text = " error: ".red();
             }
         }
 
@@ -98,15 +93,10 @@ impl fmt::Display for Info {
             }
         }
 
-        let bold = Style::new().bold();
-        let default = Style::default();
-        let strings = [
-            bold.paint(file_text),
-            color.bold().paint(level_text),
-            bold.paint(self.message.clone()),
-            default.paint(context_line),
-            color.bold().paint(caret_line),
-        ];
-        write!(f, "{}", ANSIStrings(&strings))
-    }
+        write!(f, "{}", file_text.bold())?;
+        write!(f, "{}", level_text.bold())?;
+        write!(f, "{}", self.message.bold())?;
+        write!(f, "{}", context_line)?;
+        write!(f, "{}", caret_line.bold().red())
+ }
 }
