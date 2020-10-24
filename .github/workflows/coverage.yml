@@ -1,10 +1,9 @@
 on: [push]
 
-name: build
+name: coverage
 
 jobs:
   check:
-    name: Rust Coverage
     runs-on: ubuntu-18.04
     steps:
       - name: Install LLVM package
