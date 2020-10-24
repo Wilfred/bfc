@@ -1,6 +1,6 @@
 [package]
 name = "bfc"
-version = "1.8.0"
+version = "1.9.0"
 authors = ["Wilfred Hughes <me@wilfred.me.uk>"]
 edition = "2018"
 homepage = "https://github.com/Wilfred/bfc"
