@@ -5,7 +5,7 @@ use ansi_term::Colour::{Purple, Red};
 use ansi_term::Style;
 use std::fmt;
 
-use bfir::Position;
+use crate::bfir::Position;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Warning {

@@ -7,10 +7,10 @@ use std::num::Wrapping;
 
 use itertools::Itertools;
 
-use diagnostics::Warning;
+use crate::diagnostics::Warning;
 
-use bfir::AstNode::*;
-use bfir::{get_position, AstNode, Cell, Combine, Position};
+use crate::bfir::AstNode::*;
+use crate::bfir::{get_position, AstNode, Cell, Combine, Position};
 
 const MAX_OPT_ITERATIONS: u64 = 40;
 

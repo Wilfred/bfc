@@ -13,17 +13,17 @@ use pretty_assertions::assert_eq;
 use quickcheck::quickcheck;
 
 #[cfg(test)]
-use bfir::{parse, Position};
+use crate::bfir::{parse, Position};
 
-use bfir::AstNode::*;
-use bfir::{AstNode, Cell};
+use crate::bfir::AstNode::*;
+use crate::bfir::{AstNode, Cell};
 
-use diagnostics::Warning;
+use crate::diagnostics::Warning;
 
 #[cfg(test)]
-use bounds::MAX_CELL_INDEX;
+use crate::bounds::MAX_CELL_INDEX;
 
-use bounds::highest_cell_index;
+use crate::bounds::highest_cell_index;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionState<'a> {

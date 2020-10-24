@@ -15,7 +15,7 @@ extern crate tempfile;
 #[macro_use]
 extern crate matches;
 
-use diagnostics::{Info, Level};
+use crate::diagnostics::{Info, Level};
 use getopts::{Matches, Options};
 use std::env;
 use std::fs::File;

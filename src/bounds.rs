@@ -14,11 +14,11 @@ use std::num::Wrapping;
 use std::cmp::{max, Ord, Ordering};
 use std::ops::Add;
 
-use bfir::AstNode;
-use bfir::AstNode::*;
+use crate::bfir::AstNode;
+use crate::bfir::AstNode::*;
 
 #[cfg(test)]
-use bfir::{parse, Position};
+use crate::bfir::{parse, Position};
 
 // 100,000 cells, zero-indexed.
 pub const MAX_CELL_INDEX: usize = 99999;

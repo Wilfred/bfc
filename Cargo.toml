@@ -2,6 +2,7 @@
 name = "bfc"
 version = "1.8.0"
 authors = ["Wilfred Hughes <me@wilfred.me.uk>"]
+edition = "2018"
 homepage = "https://github.com/Wilfred/bfc"
 repository = "https://github.com/Wilfred/bfc"
 description = "An industrial-grade brainfuck compiler"

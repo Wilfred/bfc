@@ -37,7 +37,7 @@ impl fmt::Debug for Position {
 }
 
 pub trait Combine<T> {
-    fn combine(&self, T) -> T;
+    fn combine(&self, _: T) -> T;
 }
 
 impl Combine<Option<Position>> for Option<Position> {

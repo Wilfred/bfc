@@ -16,10 +16,10 @@ use std::str;
 use std::collections::HashMap;
 use std::num::Wrapping;
 
-use bfir::AstNode::*;
-use bfir::{AstNode, Cell};
+use crate::bfir::AstNode::*;
+use crate::bfir::{AstNode, Cell};
 
-use execution::ExecutionState;
+use crate::execution::ExecutionState;
 
 const LLVM_FALSE: LLVMBool = 0;
 const LLVM_TRUE: LLVMBool = 1;

@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::ffi::CString;
 use std::num::Wrapping;
 
-use bfir::AstNode::*;
-use bfir::Position;
-use execution::ExecutionState;
-use llvm::compile_to_module;
+use crate::bfir::AstNode::*;
+use crate::bfir::Position;
+use crate::execution::ExecutionState;
+use crate::llvm::compile_to_module;
 
 use pretty_assertions::assert_eq;
 

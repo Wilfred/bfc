@@ -4,12 +4,12 @@ use std::num::Wrapping;
 use pretty_assertions::assert_eq;
 use quickcheck::quickcheck;
 
-use bfir::AstNode::*;
-use bfir::{AstNode, Position};
-use diagnostics::Warning;
+use crate::bfir::AstNode::*;
+use crate::bfir::{AstNode, Position};
+use crate::diagnostics::Warning;
 
-use bfir::parse;
-use peephole::*;
+use crate::bfir::parse;
+use crate::peephole::*;
 use quickcheck::{Arbitrary, Gen, TestResult};
 
 impl Arbitrary for AstNode {

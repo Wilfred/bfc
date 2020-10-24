@@ -1,9 +1,9 @@
 use quickcheck::{quickcheck, TestResult};
 
-use bfir::AstNode;
-use execution::Outcome::*;
-use execution::{execute_with_state, ExecutionState};
-use peephole::*;
+use crate::bfir::AstNode;
+use crate::execution::Outcome::*;
+use crate::execution::{execute_with_state, ExecutionState};
+use crate::peephole::*;
 
 fn transform_is_sound<F>(
     instrs: Vec<AstNode>,
