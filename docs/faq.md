@@ -6,7 +6,9 @@ sidebar_label: FAQ
 
 ## Why did you do this?
 
-BF is a really good language for learning about compilers. 
+BF is a really good language for learning about compilers. With only
+eight operations, it's way more feasible to build elaborate features
+like compile-time evaluation. Also, it's fun.
 
 ## What license is bfc under?
 
@@ -29,6 +31,8 @@ term "brainfuck" on the home page. Other pages use "BF".
 
 ## Are there other BF optimisers?
 
+There are! Some noteworthy examples I've seen are:
+
 * https://code.google.com/p/esotope-bfc/wiki/Optimization
 * http://www.nayuki.io/page/optimizing-brainfuck-compiler
 * http://mearie.org/projects/esotope/bfc/
@@ -39,5 +43,4 @@ compiles directly to asm)
 * https://github.com/matslina/bfoptimization
 * [Platonic Ideal Brainfuck Interpeter](http://catseye.tc/node/pibfi)
   [(src)](https://github.com/catseye/pibfi) (even has a profiler!)
-* https://github.com/rmmh/beefit - using LuaJIT
-
+* https://github.com/rmmh/beefit (uses LuaJIT)

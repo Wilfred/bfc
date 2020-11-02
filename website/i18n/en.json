@@ -11,17 +11,11 @@
       },
       "changelog": {
         "title": "Changelog",
-        "sidebar_label": "Changelogxo"
+        "sidebar_label": "Changelog"
       },
       "compliance": {
         "title": "Compliance",
         "sidebar_label": "Compliance"
-      },
-      "doc2": {
-        "title": "document number 2"
-      },
-      "doc3": {
-        "title": "This is document number 3"
       },
       "doc5": {
         "title": "Fifth Document"
@@ -33,18 +27,13 @@
       "optimisations": {
         "title": "Optimisations",
         "sidebar_label": "Optimisations"
-      },
-      "usage": {
-        "title": "Usage",
-        "sidebar_label": "Usage"
       }
     },
     "links": {
-      "Usage": "Usage",
+      "Get Started": "Get Started",
       "Optimisations": "Optimisations",
       "FAQ": "FAQ",
-      "Changelog": "Changelog",
-      "GitHub": "GitHub"
+      "Changelog": "Changelog"
     },
     "categories": {
       "Docusaurus": "Docusaurus",
