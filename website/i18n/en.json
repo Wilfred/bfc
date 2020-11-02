@@ -5,13 +5,17 @@
     "previous": "Previous",
     "tagline": "an industrial-grade Brainfuck compiler",
     "docs": {
+      "getting-started": {
+        "title": "Getting Started",
+        "sidebar_label": "Getting Started"
+      },
       "changelog": {
         "title": "Changelog",
-        "sidebar_label": "Example Page2"
+        "sidebar_label": "Changelogxo"
       },
-      "doc1": {
-        "title": "Latin-ish",
-        "sidebar_label": "Example Page"
+      "compliance": {
+        "title": "Compliance",
+        "sidebar_label": "Compliance"
       },
       "doc2": {
         "title": "document number 2"
@@ -21,12 +25,26 @@
       },
       "doc5": {
         "title": "Fifth Document"
+      },
+      "faq": {
+        "title": "FAQ",
+        "sidebar_label": "FAQ"
+      },
+      "optimisations": {
+        "title": "Optimisations",
+        "sidebar_label": "Optimisations"
+      },
+      "usage": {
+        "title": "Usage",
+        "sidebar_label": "Usage"
       }
     },
     "links": {
-      "Docs": "Docs",
+      "Usage": "Usage",
+      "Optimisations": "Optimisations",
+      "FAQ": "FAQ",
       "Changelog": "Changelog",
-      "Help": "Help"
+      "GitHub": "GitHub"
     },
     "categories": {
       "Docusaurus": "Docusaurus",

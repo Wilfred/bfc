@@ -18,8 +18,7 @@ class HomeSplash extends React.Component {
     const { siteConfig, language = "" } = this.props;
     const { baseUrl, docsUrl } = siteConfig;
     const docsPart = `${docsUrl ? `${docsUrl}/` : ""}`;
-    const langPart = `${language ? `${language}/` : ""}`;
-    const docUrl = (doc) => `${baseUrl}${docsPart}${langPart}${doc}`;
+    const docUrl = (doc) => `${baseUrl}${docsPart}${doc}`;
 
     const SplashContainer = (props) => (
       <div className="homeContainer">
@@ -64,7 +63,8 @@ class HomeSplash extends React.Component {
         <div className="inner">
           <ProjectTitle tagline={siteConfig.tagline} title={siteConfig.title} />
           <PromoSection>
-            <Button href={docUrl("install.html")}>Install</Button>
+            <Button href={docUrl("getting-started")}>Install</Button>
+            <Button href="https://github.com/Wilfred/bfc">GitHub</Button>
           </PromoSection>
         </div>
       </SplashContainer>
@@ -124,11 +124,11 @@ class Index extends React.Component {
     // 'freelancer' for overengineered or 'lightbulb moment' or 'researching'
     // 'shared workspace' 'dev productivity'
     const Description = () => (
-        <Block background="light">
+      <Block background="light">
         {[
           {
             content:
-            "This is another description of how this project is useful",
+              "This is another description of how this project is useful",
             image: `${baseUrl}img/undraw_researching.svg`,
             imageAlign: "right",
             title: "Utterly Over-engineered",

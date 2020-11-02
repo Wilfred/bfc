@@ -11,17 +11,17 @@
 const siteConfig = {
   title: "bfc", // Title for your website.
   tagline: "an industrial-grade Brainfuck compiler",
-  url: "https://your-docusaurus-test-site.com", // Your website URL
+  url: "http://bfc.wilfred.me.uk",
   baseUrl: "/",
   projectName: "bfc-site",
   organizationName: "wilfred",
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    // { doc: "changelog", label: "Changelog" },
-    { doc: "doc1", label: "Docs" },
+    { doc: "getting-started", label: "Get Started" },
+    { doc: "optimisations", label: "Optimisations" },
+    { doc: "faq", label: "FAQ" },
     { doc: "changelog", label: "Changelog" },
-    { page: "help", label: "Help" },
   ],
 
   /* path to images for header/footer */
@@ -44,7 +44,7 @@ const siteConfig = {
   },
 
   // Add custom scripts here that would be placed in <script> tags.
-  scripts: ["https://buttons.github.io/buttons.js"],
+  scripts: [],
 
   // On page navigation for the current documentation page.
   onPageNav: "separate",
