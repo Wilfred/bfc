@@ -102,13 +102,11 @@ class Index extends React.Component {
     );
 
     const TryOut = () => (
-      <Block id="try" background="dark">
+      <Block id="try" background="light">
         {[
           {
             content:
-              "To make your landing page more attractive, use illustrations! Check out " +
-              "[**unDraw**](https://undraw.co/) which provides you with customizable illustrations which are free to use. " +
-              "The illustrations you see on this page are from unDraw.",
+              "bfc leverages traditional compiler techniques to maximise performance. It includes compile-time evaluation, dead code elimination, and constant folding.\n\n",
             image: `${baseUrl}img/undraw_stepping_up.svg`,
             imageAlign: "left",
             title: "Highly Optimising",
@@ -124,7 +122,7 @@ class Index extends React.Component {
     // 'freelancer' for overengineered or 'lightbulb moment' or 'researching'
     // 'shared workspace' 'dev productivity'
     const Description = () => (
-      <Block background="light">
+      <Block background="dark">
         {[
           {
             content:
@@ -137,15 +135,14 @@ class Index extends React.Component {
       </Block>
     );
 
-    const LearnHow = () => (
+    const LlvmBased = () => (
       <Block background="light">
         {[
           {
-            content:
-              "Each new Docusaurus project has **randomly-generated** theme colors.",
-            image: `${baseUrl}img/undraw_youtube_tutorial.svg`,
+            content: "LLVM, Rust, QuickCheck",
+            image: `${baseUrl}img/undraw_researching.svg`,
             imageAlign: "right",
-            title: "Randomly Generated Theme Colors",
+            title: "Modern Toolchain",
           },
         ]}
       </Block>
@@ -155,9 +152,9 @@ class Index extends React.Component {
       <div>
         <HomeSplash siteConfig={siteConfig} language={language} />
         <div className="mainContainer">
-          <LearnHow />
           <TryOut />
           <Description />
+          <LlvmBased />
         </div>
       </div>
     );
