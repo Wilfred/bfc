@@ -1,15 +1,14 @@
 ---
 id: changelog
 title: Changelog
-sidebar_label: Changelog
 ---
 
 
-# v1.10.0
+## v1.10.0
 
 No changes yet.
 
-# v1.9.0
+## v1.9.0
 
 Updated to LLVM 10.0.
 
@@ -18,14 +17,14 @@ Bug fixes:
 * Fixed an issue with stripping symbols on macOS (#23).
 * ANSI colour codes are only output when stdout is a TTY (#15).
 
-# v1.8.0
+## v1.8.0
 
 Updated to LLVM 8.0.
 
 Fixed a linking error on recent LLVM versions, and a pass manager
 segfault on LLVM 8.
 
-# v1.7.0
+## v1.7.0
 
 Bug fixes:
 
@@ -46,13 +45,13 @@ Usability:
 
 * Added a `--version` CLI argument.
 
-# v1.6.0
+## v1.6.0
 
 Extracting multiply loops was causing a variety of soundness failures
 and segfaults. This peephole optimisation has been moved to a branch
 until it's more robust.
 
-# v1.5.0
+## v1.5.0
 
 Bug fixes:
 
@@ -68,7 +67,7 @@ Usability:
 * Added a `--passes` CLI argument to customise which bfc optimisation
   passes are run.
 
-# v1.4.0
+## v1.4.0
 
 Portability:
 
@@ -87,7 +86,7 @@ Performance:
   shelling out to `opt` and `llc`. This provides a modest improvement
   to compile time.
 
-# v1.3.0
+## v1.3.0
 
 Performance:
 
@@ -115,7 +114,7 @@ Usability:
 * bfc now generates a warning with position on code that is guaranteed
   to error at runtime.
 
-# v1.2.0
+## v1.2.0
 
 Optimisations:
 
@@ -134,7 +133,7 @@ Bug fixes:
 * In some cases, reorder with offset led to miscompilation
 (only seen in mandelbrot.bf).
 
-# v1.1.0
+## v1.1.0
 
 Optimisations:
 
@@ -156,7 +155,7 @@ Usability:
 * Improved the output of `--help`
 * `--dump-bf-ir` has been renamed to `--dump-bf`
 
-# v1.0.0
+## v1.0.0
 
 First release!
 
