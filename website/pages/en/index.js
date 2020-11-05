@@ -101,12 +101,12 @@ class Index extends React.Component {
       </div>
     );
 
-    const TryOut = () => (
+    const Optimising = () => (
       <Block id="try" background="light">
         {[
           {
             content:
-              "bfc leverages traditional compiler techniques to maximise performance. It includes compile-time evaluation, dead code elimination, and constant folding.\n\n",
+              "bfc leverages traditional compiler techniques to reduce runtime and memory usage.\n\nbfc includes compile-time evaluation, dead code elimination, and constant folding.\n\n[Learn more about optimisations](/docs/optimisations).",
             image: `${baseUrl}img/undraw_stepping_up.svg`,
             imageAlign: "left",
             title: "Highly Optimising",
@@ -121,7 +121,7 @@ class Index extends React.Component {
     // 'booked' or 'convert' for retargetable arch
     // 'freelancer' for overengineered or 'lightbulb moment' or 'researching'
     // 'shared workspace' 'dev productivity'
-    const Description = () => (
+    const Overengineered = () => (
       <Block background="dark">
         {[
           {
@@ -135,14 +135,15 @@ class Index extends React.Component {
       </Block>
     );
 
-    const LlvmBased = () => (
+    const Buzzwords = () => (
       <Block background="light">
         {[
           {
+            // use 'dev productivity' on undraw?
             content: "LLVM, Rust, QuickCheck",
-            image: `${baseUrl}img/undraw_researching.svg`,
+            image: `${baseUrl}img/undraw_done_checking.svg`,
             imageAlign: "right",
-            title: "Modern Toolchain",
+            title: "Buzzword Compliant Toolchain",
           },
         ]}
       </Block>
@@ -152,9 +153,9 @@ class Index extends React.Component {
       <div>
         <HomeSplash siteConfig={siteConfig} language={language} />
         <div className="mainContainer">
-          <TryOut />
-          <Description />
-          <LlvmBased />
+          <Optimising />
+          <Overengineered />
+          <Buzzwords />
         </div>
       </div>
     );

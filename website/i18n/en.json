@@ -6,23 +6,23 @@
     "tagline": "an industrial-grade Brainfuck compiler",
     "docs": {
       "getting-started": {
-        "title": "Getting Started",
-        "sidebar_label": "Getting Started"
+        "title": "Getting Started"
       },
       "changelog": {
         "title": "Changelog"
       },
       "compliance": {
-        "title": "Compliance",
-        "sidebar_label": "Compliance"
+        "title": "BF Compliance"
       },
       "faq": {
-        "title": "FAQ",
-        "sidebar_label": "FAQ"
+        "title": "FAQ"
       },
       "optimisations": {
         "title": "Optimisations",
         "sidebar_label": "Optimisations"
+      },
+      "testing": {
+        "title": "Testing"
       }
     },
     "links": {

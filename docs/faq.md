@@ -1,7 +1,6 @@
 ---
 id: faq
 title: FAQ
-sidebar_label: FAQ
 ---
 
 ## Why did you do this?
@@ -12,8 +11,11 @@ like compile-time evaluation. Also, it's fun.
 
 ## What license is bfc under?
 
-bfc is licensed under GPLv2 or later. Sample programs are largely
-written by other authors and are under other licenses.
+bfc is licensed under GPLv2 or later. Documentation (files ending .md)
+is licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Sample programs are largely written by other authors and are under
+other licenses.
 
 ## What is the logo?
 

@@ -32,7 +32,7 @@ const siteConfig = {
   /* Colors for website */
   colors: {
     primaryColor: "#791919",
-    secondaryColor: "#ff0000", // seems unused
+    secondaryColor: "#ff0000", // Only visible on mobile site AFAICS
   },
 
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.

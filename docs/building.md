@@ -1,7 +1,6 @@
 ---
 id: getting-started
 title: Getting Started
-sidebar_label: Getting Started
 ---
 
 ## Prerequisites
@@ -29,7 +28,7 @@ $ ninja
 ```
 
 bfc uses [llvm-sys](https://crates.io/crates/llvm-sys), which wraps
-the LLVM version installed on your system.
+the locally installed LLVM.
 
 **llvm-sys requires the `llvm-config` binary to be installed**. Check
 that your LLVM installation includes this (not all packages do,
@@ -91,12 +90,3 @@ and highlighting.
 
 Note that some warning are generated during analysis for optimisation, so disabling
 optimisations will produce fewer warnings.
-
-### Running tests
-
-```
-$ cargo test
-```
-
-bfc uses quickcheck to ensure optimisations are in the optimal order
-(by verifying that our optimiser is idempotent).
