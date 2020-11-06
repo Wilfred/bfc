@@ -126,7 +126,7 @@ class Index extends React.Component {
         {[
           {
             content:
-              "An elaborate IR with position-preserving optimisations.\n\nExtensive testing, even testing idempotence and observational equivalence of optimisations.\n\nUser diagnostics.\n\nGratuitous website.",
+              "An elaborate IR with position-preserving optimisations.\n\n[Extensive testing](/docs/testing), even testing idempotence and observational equivalence of optimisations.\n\nColoured [code diagnostics](/docs/getting-started#diagnostics) with position highlighting.\n\nGratuitous website.",
             image: `${baseUrl}img/undraw_researching.svg`,
             imageAlign: "right",
             title: "Utterly Over-engineered",
