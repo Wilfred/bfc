@@ -5,9 +5,6 @@
     "previous": "Previous",
     "tagline": "an industrial-grade Brainfuck compiler",
     "docs": {
-      "getting-started": {
-        "title": "Getting Started"
-      },
       "changelog": {
         "title": "Changelog"
       },
@@ -17,16 +14,18 @@
       "faq": {
         "title": "FAQ"
       },
+      "getting-started": {
+        "title": "Getting Started"
+      },
       "optimisations": {
-        "title": "Optimisations",
-        "sidebar_label": "Optimisations"
+        "title": "Optimisations"
       },
       "testing": {
         "title": "Testing"
       }
     },
     "links": {
-      "Get Started": "Get Started",
+      "Geting Started": "Geting Started",
       "Optimisations": "Optimisations",
       "FAQ": "FAQ",
       "Changelog": "Changelog"

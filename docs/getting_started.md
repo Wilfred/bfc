@@ -3,12 +3,16 @@ id: getting-started
 title: Getting Started
 ---
 
-## Prerequisites
+This page describes how to install and run bfc.
+
+## Installation
+
+### Prerequisites
 
 You will need LLVM and Rust installed to compile bfc. For Rust, I
 recommend [using rustup](https://rustup.rs/).
 
-### LLVM
+#### LLVM
 
 bfc is built against recent LLVM. See [the changelog](changelog.md)
 for information on the most recent LLVM version used.
@@ -41,7 +45,7 @@ example, to use the prebuilt LLVM shown above:
 $ export PATH=~/tmp/llvm_3_8_build:$PATH
 ```
 
-## Compiling bfc
+### Compiling bfc
 
 bfc should be compiled with cargo, Rust's packaging and build
 tool. Cargo will download necessary dependencies (other than LLVM), so

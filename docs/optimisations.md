@@ -1,12 +1,25 @@
 ---
 id: optimisations
 title: Optimisations
-sidebar_label: Optimisations
 ---
 
-## Peephole optimisations
+bfc includes an extensive range of optimisations. This page discusses
+the techniques used, and gives examples of BF programs that are
+transformed in each case.
 
-bfc provides a range of peephole optimisations.
+By default, bfc will run all optimisations. This can be controlled by
+CLI options:
+
+```
+--opt=0 # no optimisations
+--opt=1 # peephole only
+--opt=2 # peephole and speculative execution
+```
+
+## Peephole Optimisations
+
+Peephole optimisations operate on small sequences of BF
+instructions. When applied together they provide significant speedups.
 
 ### Combining Instructions
 
@@ -192,7 +205,7 @@ like `[>-<->>+++<<]`.
 
 ## Cell Bounds Analysis
 
-BF programs can use up to 100,000 cells, all of which must be
+bfc provides programs with [up to 100,000 cells](/docs/compliance), all of which must be
 zero-initialised. However, most programs don't use the whole range.
 
 bfc uses static analysis to work out how many cells a BF program may
@@ -235,19 +248,19 @@ entry:
 }
 ```
 
-### Infinite Loops
+### Ensuring Termination
 
 bfc sets a maximum number of execution steps, avoiding infinite loops
 hanging the compiler. As a result `+[]` will have `+` executed (so our
 initial cell value is `1` and `[]` will be in the compiled output.
 
-### Runtime Values
+### Handling Unknown Values
 
-If a program reads from stdin, speculation execution stops. As a
-result, `>,` will have `>` executed (setting the initial cell pointer
-to 1) and `,` will be in the compiled output.
+If a program reads from data from stdin, speculation execution
+stops. As a result, `>,` will have `>` executed (setting the initial
+cell pointer to 1) and `,` will be in the compiled output.
 
-### Loop Execution
+### Partial Loop Evaluation
 
 If loops can be entirely executed at compile time, they will be
 removed from the resulting binary. Partially executed loops will be
@@ -262,7 +275,7 @@ stop).
 
 ## Further Reading
 
-Interested readers may enjoy my blog posts:
+Interested readers may also enjoy my blog posts:
 
 * [An Optimising BF Compiler](http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/)
 * [Even More BF Optimisations](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/)

@@ -126,24 +126,10 @@ class Index extends React.Component {
         {[
           {
             content:
-              "This is another description of how this project is useful",
+              "An elaborate IR with position-preserving optimisations.\n\nExtensive testing, even testing idempotence and observational equivalence of optimisations.\n\nUser diagnostics.\n\nGratuitous website.",
             image: `${baseUrl}img/undraw_researching.svg`,
             imageAlign: "right",
             title: "Utterly Over-engineered",
-          },
-        ]}
-      </Block>
-    );
-
-    const Buzzwords = () => (
-      <Block background="light">
-        {[
-          {
-            // use 'dev productivity' on undraw?
-            content: "LLVM, Rust, QuickCheck",
-            image: `${baseUrl}img/undraw_done_checking.svg`,
-            imageAlign: "right",
-            title: "Buzzword Compliant Toolchain",
           },
         ]}
       </Block>
@@ -155,7 +141,6 @@ class Index extends React.Component {
         <div className="mainContainer">
           <Optimising />
           <Overengineered />
-          <Buzzwords />
         </div>
       </div>
     );

@@ -3,11 +3,23 @@ id: faq
 title: FAQ
 ---
 
+## What is bfc?
+
+bfc is an LLVM-based compiler that converts
+[Brainfuck](https://en.wikipedia.org/wiki/Brainfuck) to native code.
+
+## How fast is it?
+
+I believe it's the second fastest BF compiler. Mats Linander's [BF
+optimisation research
+project](https://github.com/matslina/bfoptimization) is still faster
+on many programs.
+
 ## Why did you do this?
 
 BF is a really good language for learning about compilers. With only
 eight operations, it's way more feasible to build elaborate features
-like compile-time evaluation. Also, it's fun.
+like speculative execution and instruction reordering. Also, it's fun.
 
 ## What license is bfc under?
 
@@ -33,7 +45,7 @@ term "brainfuck" on the home page. Other pages use "BF".
 
 ## Are there other BF optimisers?
 
-There are! Some noteworthy examples I've seen are:
+Many! Some noteworthy examples I've seen are:
 
 * https://code.google.com/p/esotope-bfc/wiki/Optimization
 * http://www.nayuki.io/page/optimizing-brainfuck-compiler

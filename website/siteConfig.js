@@ -16,9 +16,8 @@ const siteConfig = {
   projectName: "bfc-site",
   organizationName: "wilfred",
 
-  // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    { doc: "getting-started", label: "Get Started" },
+    { doc: "getting-started", label: "Geting Started" },
     { doc: "optimisations", label: "Optimisations" },
     { doc: "faq", label: "FAQ" },
     { doc: "changelog", label: "Changelog" },

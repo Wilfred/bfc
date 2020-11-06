@@ -88,6 +88,8 @@ Performance:
 
 ## v1.3.0
 
+[Announcement blog post](http://www.wilfred.me.uk/blog/2016/02/07/an-industrial-grade-bf-compiler/).
+
 Performance:
 
 * We now specify the data layout and target to LLVM, as recommended
@@ -115,6 +117,8 @@ Usability:
   to error at runtime.
 
 ## v1.2.0
+
+[Announcement blog post](http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/).
 
 Optimisations:
 
@@ -157,7 +161,7 @@ Usability:
 
 ## v1.0.0
 
-First release!
+First release! [Announcement blog post](http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/).
 
 * Compiles to 32-bit x86 binaries.
 * Peephole optimisations
