@@ -41,7 +41,8 @@ wiki](https://esolangs.org/wiki/Brainfuck). Some writers even
 use the term "the unmentionable programming language".
 
 To avoid confusion (and help search engines), this website uses the
-term "brainfuck" on the home page. Other pages use "BF".
+term "brainfuck" on introductions, such as the home page. In other
+cases I use "BF".
 
 ## Are there other BF optimisers?
 

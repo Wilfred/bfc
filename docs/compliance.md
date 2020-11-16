@@ -15,8 +15,8 @@ around. As a result, `-` sets cell #0 to 255.
 
 ## Array Size
 
-bfc provides 100,000 cells. Accessing cells outside of this range
-(e.g. cell #100,000 (zero-indexed) or cell #-1) is explicitly undefined. It will
+bfc provides 100,000 cells. Accessing cells outside of the range #0 to
+#99,999 is explicitly undefined. It will
 probably segfault.
 
 bfc will generate a warning if it can statically prove out-of-range
