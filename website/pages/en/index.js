@@ -63,8 +63,8 @@ class HomeSplash extends React.Component {
         <div className="inner">
           <ProjectTitle tagline={siteConfig.tagline} title={siteConfig.title} />
           <PromoSection>
-            <Button href={docUrl("getting-started")}>Install</Button>
-            <Button href="https://github.com/Wilfred/bfc">GitHub</Button>
+            <Button href={docUrl("getting-started")}>Get Started</Button>
+            <Button href="https://github.com/Wilfred/bfc">Source on GitHub</Button>
           </PromoSection>
         </div>
       </SplashContainer>
@@ -129,7 +129,7 @@ class Index extends React.Component {
               "An elaborate IR with position-preserving optimisations.\n\n[Extensive testing](/docs/testing), even testing idempotence and observational equivalence of optimisations.\n\nColoured [code diagnostics](/docs/getting-started#diagnostics) with position highlighting.\n\nGratuitous website.",
             image: `${baseUrl}img/undraw_researching.svg`,
             imageAlign: "right",
-            title: "Utterly Over-engineered",
+            title: "Utterly Over-Engineered",
           },
         ]}
       </Block>
