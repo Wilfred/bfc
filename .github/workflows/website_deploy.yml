@@ -1,0 +1,27 @@
+name: Deploy Website
+
+on:
+  push:
+    branches:
+      - master
+
+defaults:
+  run:
+    working-directory: website
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Deploying to surge
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - name: Install deps
+        run: npm ci
+      - name: Build the site
+        run: npm run build
+      - run: npm run deploy -- --token ${{ secrets.SURGE_TOKEN }}
