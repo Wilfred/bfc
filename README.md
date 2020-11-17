@@ -15,8 +15,4 @@ bfc is an industrial grade compiler for
 * show syntax errors with highlighting of the offending source code
 * show warnings with highlighting of the offending source code
 
-It is structured as follows:
-
-```
-BF source -> BF IR -> LLVM IR -> x86-64 Binary
-```
+To learn more: http://bfc.wilfred.me.uk
