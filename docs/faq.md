@@ -40,9 +40,9 @@ The unfortunate name of brainfuck is [discussed on the esolangs
 wiki](https://esolangs.org/wiki/Brainfuck). Some writers even
 use the term "the unmentionable programming language".
 
-To avoid confusion (and help search engines), this website uses the
-term "brainfuck" on introductions, such as the home page. In other
-cases I use "BF".
+To avoid confusion (and help search engines), I use the term
+"brainfuck" on introductions, such as the home page. In other cases I
+use "BF".
 
 ## Are there other BF optimisers?
 
