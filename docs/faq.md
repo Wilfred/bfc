@@ -8,6 +8,17 @@ title: FAQ
 bfc is an LLVM-based compiler that converts
 [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck) to native code.
 
+## Is this a serious project?
+
+It's a legitimate BF implementation with genuine compiler
+optimisations. bfc is [referenced on
+Wikipedia](https://en.wikipedia.org/wiki/Brainfuck#Implementations)
+and [the llvm-sys
+docs](https://gitlab.com/taricorp/llvm-sys.rs#documentation).
+
+bfc is also a toy. I'm always pleasantly surprised when people find
+actual uses for it.
+
 ## How fast is it?
 
 I believe it's the second fastest BF compiler. Mats Linander's [BF
