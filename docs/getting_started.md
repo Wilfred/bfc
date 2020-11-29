@@ -92,5 +92,5 @@ and highlighting.
 
 ![diagnostics screenshot](/img/bfc_diagnostics.png)
 
-Note that some warning are generated during analysis for optimisation, so disabling
+Note that some warnings are generated during analysis for optimisation, so disabling
 optimisations will produce fewer warnings.
