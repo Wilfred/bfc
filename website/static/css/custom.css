@@ -11,6 +11,10 @@
   padding-bottom: 0;
 }
 
+.imageAlignSide .blockImage {
+  padding: 80px;
+}
+
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 

@@ -23,8 +23,10 @@ like speculative execution and instruction reordering. Also, it's fun.
 
 ## What license is bfc under?
 
-bfc is licensed under GPLv2 or later. Documentation (files ending .md)
-is licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+bfc is licensed under GPLv2 or later. Documentation (files ending .md
+or .png) is licensed under [CC-BY
+4.0](https://creativecommons.org/licenses/by/4.0/), and [Twemoji
+images](https://twemoji.twitter.com/) are also CC-BY 4.0.
 
 Sample programs are largely written by other authors and are under
 other licenses.

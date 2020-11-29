@@ -98,7 +98,7 @@ class Index extends React.Component {
           {
             content:
             "bfc uses traditional compiler techniques to reduce runtime and memory usage.\n\nbfc includes compile-time evaluation, dead code elimination, and constant folding.\n\n[Learn more about optimisations](/docs/optimisations).",
-            image: `${baseUrl}img/undraw_stepping_up.svg`,
+            image: `${baseUrl}img/racing_car.svg`,
             imageAlign: "left",
             title: "a fast compiler for a silly language",
           },
@@ -112,7 +112,7 @@ class Index extends React.Component {
           {
             content:
               "An elaborate IR with position-preserving optimisations.\n\n[Extensive testing](/docs/testing), even testing idempotence and observational equivalence of optimisations.\n\nColoured [code diagnostics](/docs/getting-started#diagnostics) with position highlighting.\n\nGratuitous website.",
-            image: `${baseUrl}img/undraw_researching.svg`,
+            image: `${baseUrl}img/hammer_wrench.svg`,
             imageAlign: "right",
             title: "utterly over-engineered",
           },
