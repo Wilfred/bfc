@@ -64,7 +64,9 @@ class HomeSplash extends React.Component {
           <ProjectTitle tagline={siteConfig.tagline} title={siteConfig.title} />
           <PromoSection>
             <Button href={docUrl("getting-started")}>Get Started</Button>
-            <Button href="https://github.com/Wilfred/bfc">Source on GitHub</Button>
+            <Button href="https://github.com/Wilfred/bfc">
+              Source on GitHub
+            </Button>
           </PromoSection>
         </div>
       </SplashContainer>
@@ -84,21 +86,10 @@ class Index extends React.Component {
         background={props.background}
       >
         <GridBlock
-          align="center"
           contents={props.children}
           layout={props.layout}
         />
       </Container>
-    );
-
-    const FeatureCallout = () => (
-      <div
-        className="productShowcaseSection paddingBottom"
-        style={{ textAlign: "center" }}
-      >
-        <h2>Feature Callout</h2>
-        <MarkdownBlock>These are features of this project</MarkdownBlock>
-      </div>
     );
 
     const Optimising = () => (
@@ -106,21 +97,15 @@ class Index extends React.Component {
         {[
           {
             content:
-              "bfc leverages traditional compiler techniques to reduce runtime and memory usage.\n\nbfc includes compile-time evaluation, dead code elimination, and constant folding.\n\n[Learn more about optimisations](/docs/optimisations).",
+            "bfc uses traditional compiler techniques to reduce runtime and memory usage.\n\nbfc includes compile-time evaluation, dead code elimination, and constant folding.\n\n[Learn more about optimisations](/docs/optimisations).",
             image: `${baseUrl}img/undraw_stepping_up.svg`,
             imageAlign: "left",
-            title: "Highly Optimising",
+            title: "a fast compiler for a silly language",
           },
         ]}
       </Block>
     );
 
-    // 'done checking' for lints
-    // ''Business plan' for perf or 'stepping up' or 'growth chart' or 'statistic chart' or 'file analysis' or 'speed test' or 'fast loading'
-    // fixing bugs svg?
-    // 'booked' or 'convert' for retargetable arch
-    // 'freelancer' for overengineered or 'lightbulb moment' or 'researching'
-    // 'shared workspace' 'dev productivity'
     const Overengineered = () => (
       <Block background="dark">
         {[
@@ -129,7 +114,7 @@ class Index extends React.Component {
               "An elaborate IR with position-preserving optimisations.\n\n[Extensive testing](/docs/testing), even testing idempotence and observational equivalence of optimisations.\n\nColoured [code diagnostics](/docs/getting-started#diagnostics) with position highlighting.\n\nGratuitous website.",
             image: `${baseUrl}img/undraw_researching.svg`,
             imageAlign: "right",
-            title: "Utterly Over-Engineered",
+            title: "utterly over-engineered",
           },
         ]}
       </Block>
