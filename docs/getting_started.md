@@ -68,7 +68,7 @@ Hello World!
 ```
 
 You can use debug builds of bfc, but bfc will run much slower on large
-BF programs. This is due to bfc's speculative exectuion. You can
+BF programs. This is due to bfc's speculative execution. You can
 disable this by passing `--opt=0` or `--opt=1` when running bfc.
 
 ```
