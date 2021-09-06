@@ -7,6 +7,9 @@ bfc includes an extensive range of optimisations. This page discusses
 the techniques used, and gives examples of BF programs that are
 transformed in each case.
 
+See also [BF compliance](compliance.md) for implementation decisions
+that affect BF program portability.
+
 By default, bfc will run all optimisations. This can be controlled by
 CLI options:
 
