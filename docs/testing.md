@@ -94,4 +94,4 @@ This script compiles real BF programs, runs them, and verifies their
 output matches the corresponding `.out` file.
 
 This is the final step in bfc testing. It catches issues that only
-occur in larger, real-word BF programs.
+occur in larger, real-world BF programs.
