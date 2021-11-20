@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Changelog · bfc</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="## v1.10.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Changelog · bfc"/><meta property="og:type" content="website"/><meta property="og:url" content="http://bfc.wilfred.me.uk/"/><meta property="og:description" content="## v1.10.0"/><meta property="og:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><link rel="shortcut icon" href="/img/favicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/header_icon.png" alt="bfc"/><h2 class="headerTitleWithLogo">bfc</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/getting-started" target="_self">Geting Started</a></li><li class=""><a href="/docs/optimisations" target="_self">Optimisations</a></li><li class=""><a href="/docs/faq" target="_self">FAQ</a></li><li class="siteNavItemActive"><a href="/docs/changelog" target="_self">Changelog</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Changelog</h1></header><article><div><span><h2><a class="anchor" aria-hidden="true" id="v1100"></a><a href="#v1100" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.10.0</h2>
+<p>No changes yet.</p>
+<h2><a class="anchor" aria-hidden="true" id="v190"></a><a href="#v190" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.9.0</h2>
+<p>Updated to LLVM 10.0.</p>
+<p>Bug fixes:</p>
+<ul>
+<li>Fixed an issue with stripping symbols on macOS (#23).</li>
+<li>ANSI colour codes are only output when stdout is a TTY (#15).</li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="v180"></a><a href="#v180" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.8.0</h2>
+<p>Updated to LLVM 8.0.</p>
+<p>Fixed a linking error on recent LLVM versions, and a pass manager
+segfault on LLVM 8.</p>
+<h2><a class="anchor" aria-hidden="true" id="v170"></a><a href="#v170" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.7.0</h2>
+<p>Bug fixes:</p>
+<ul>
+<li>Fixed a rare crash on programs with a large number of instructions
+had no effect.</li>
+<li>Fixed a memory issue where programs with a large number of cells
+(which were stored on the stack) were misoptimised and
+segfaulted. Cell storage is now on the heap.</li>
+</ul>
+<p>Optimisations:</p>
+<ul>
+<li>Stripping symbols from the output binary can now be controlled with
+<code>--strip</code>.</li>
+<li>Re-added a multiply loop optimisation. This was removed in 1.5.0 due to
+soundness bugs.</li>
+</ul>
+<p>Usability:</p>
+<ul>
+<li>Added a <code>--version</code> CLI argument.</li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="v160"></a><a href="#v160" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.6.0</h2>
+<p>Extracting multiply loops was causing a variety of soundness failures
+and segfaults. This peephole optimisation has been moved to a branch
+until it's more robust.</p>
+<h2><a class="anchor" aria-hidden="true" id="v150"></a><a href="#v150" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.5.0</h2>
+<p>Bug fixes:</p>
+<ul>
+<li>Fixed an optimisation that incorrectly removed instructions when
+both <code>.</code> and <code>,</code> instructions were present.</li>
+<li>Moved to LLVM 3.8, as LLVM 3.7 misoptimised some programs (see #8).</li>
+</ul>
+<p>Usability:</p>
+<ul>
+<li>bfc now reports a helpful error on nonexistent targets.</li>
+<li>Improved wording of the warning message on multiply loops that
+access out-of-bounds cells.</li>
+<li>Added a <code>--passes</code> CLI argument to customise which bfc optimisation
+passes are run.</li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="v140"></a><a href="#v140" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.4.0</h2>
+<p>Portability:</p>
+<ul>
+<li><p>bfc now supports cross-compilation, so you can compile for any
+architecture that LLVM supports.</p></li>
+<li><p>Fixed an issue compiling bfc on ARM.</p></li>
+</ul>
+<p>Performance:</p>
+<ul>
+<li><p>LLVM's default optimisation levels are tuned for C. We now run LLVM
+optimisation passes twice, to fully leverage LLVM. Many programs now
+execute in less than half the time.</p></li>
+<li><p>We now run optimisations using LLVM's API directly rather than
+shelling out to <code>opt</code> and <code>llc</code>. This provides a modest improvement
+to compile time.</p></li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="v130"></a><a href="#v130" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.3.0</h2>
+<p><a href="http://www.wilfred.me.uk/blog/2016/02/07/an-industrial-grade-bf-compiler/">Announcement blog post</a>.</p>
+<p>Performance:</p>
+<ul>
+<li>We now specify the data layout and target to LLVM, as recommended
+by the LLVM team. In principle this is faster, but we've seen no
+measurable performance boost.</li>
+</ul>
+<p>Compatibility:</p>
+<ul>
+<li>bfc now provides up to 100,000 cells. This has been increased to
+support awib, which requires at least 65,535 cells available.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li>Fixed a compiler crash due to bounds analysis ignoring offsets.</li>
+<li>Show a more helpful error if <code>llc</code>, <code>clang</code> or <code>strip</code> are not
+available.</li>
+</ul>
+<p>Usability:</p>
+<ul>
+<li>bfc now reports errors and warnings with colour-coded diagnostics
+and filenames.</li>
+<li>bfc now generates an error with position on syntax errors.</li>
+<li>bfc now generates a warning with position on dead code.</li>
+<li>bfc now generates a warning with position on code that is guaranteed
+to error at runtime.</li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="v120"></a><a href="#v120" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.2.0</h2>
+<p><a href="http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/">Announcement blog post</a>.</p>
+<p>Optimisations:</p>
+<ul>
+<li>Compile time execution is now much smarter. Previously, we had to
+finish executing loops in order to skip runtime execution. We can now
+partly execute loops at runtime. This is a big help to many programs
+with a large outer loop, previously they did not benefit from compile
+time exeuction.</li>
+</ul>
+<p>Compiler performance:</p>
+<ul>
+<li><code>--dump-bf</code> is now much faster.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li>In some cases, reorder with offset led to miscompilation
+(only seen in mandelbrot.bf).</li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="v110"></a><a href="#v110" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.1.0</h2>
+<p>Optimisations:</p>
+<ul>
+<li>New optimisation: reorder with offset. See the readme for more
+details.</li>
+<li>Remove redundant sets, dead loop removal and combine before read are
+now smarter. Previously they required adjacent instructions, but
+they now find the next relevant instruction when there are
+irrelevant intermediate instructions.</li>
+<li>LLVM optimisation level can now be set with <code>--llvm-opt</code>.</li>
+</ul>
+<p>Bug fixes:</p>
+<ul>
+<li>Fixed an issue with writing to stdout during speculative execution
+(we were writing to stdin instead).</li>
+</ul>
+<p>Usability:</p>
+<ul>
+<li>Improved the output of <code>--help</code></li>
+<li><code>--dump-bf-ir</code> has been renamed to <code>--dump-bf</code></li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="v100"></a><a href="#v100" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>v1.0.0</h2>
+<p>First release! <a href="http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/">Announcement blog post</a>.</p>
+<ul>
+<li>Compiles to 32-bit x86 binaries.</li>
+<li>Peephole optimisations</li>
+<li>Cell bounds analysis</li>
+<li>Speculative execution</li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#v1100">v1.10.0</a></li><li><a href="#v190">v1.9.0</a></li><li><a href="#v180">v1.8.0</a></li><li><a href="#v170">v1.7.0</a></li><li><a href="#v160">v1.6.0</a></li><li><a href="#v150">v1.5.0</a></li><li><a href="#v140">v1.4.0</a></li><li><a href="#v130">v1.3.0</a></li><li><a href="#v120">v1.2.0</a></li><li><a href="#v110">v1.1.0</a></li><li><a href="#v100">v1.0.0</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/" class="nav-home"></a><div><h5>User Docs</h5><a href="/docs/getting-started">Getting Started</a><a href="/docs/faq">FAQ</a><a href="/docs/changelog">Changelog</a></div><div><h5>PL Geekery</h5><a href="/docs/compliance">BF Compliance</a><a href="/docs/optimisations">Optimisations</a><a href="/docs/testing">Testing</a></div></section><section class="copyright">Copyright © 2021 Wilfred Hughes</section></footer></div></body></html>

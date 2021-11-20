@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Testing · bfc</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="This page describes how bfc is tested. This is primarily useful for"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Testing · bfc"/><meta property="og:type" content="website"/><meta property="og:url" content="http://bfc.wilfred.me.uk/"/><meta property="og:description" content="This page describes how bfc is tested. This is primarily useful for"/><meta property="og:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><link rel="shortcut icon" href="/img/favicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/header_icon.png" alt="bfc"/><h2 class="headerTitleWithLogo">bfc</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/getting-started" target="_self">Geting Started</a></li><li class=""><a href="/docs/optimisations" target="_self">Optimisations</a></li><li class=""><a href="/docs/faq" target="_self">FAQ</a></li><li class=""><a href="/docs/changelog" target="_self">Changelog</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Testing</h1></header><article><div><span><p>This page describes how bfc is tested. This is primarily useful for
+contributors, but is also interesting for readers working on their own
+PL implementations.</p>
+<h2><a class="anchor" aria-hidden="true" id="unit-tests"></a><a href="#unit-tests" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Unit Tests</h2>
+<p>You can run all bfc's unit tests with Cargo.</p>
+<pre><code class="hljs"><span class="hljs-meta">$</span><span class="bash"> cargo <span class="hljs-built_in">test</span></span>
+</code></pre>
+<p>This runs basic unit tests, property-based tests, and LLVM snapshots
+tests.</p>
+<h3><a class="anchor" aria-hidden="true" id="quickcheck"></a><a href="#quickcheck" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Quickcheck</h3>
+<p>bfc includes property-based tests using the <a href="https://github.com/BurntSushi/quickcheck">Rust quickcheck
+library</a>. These operate on
+the intermediate representation used in bfc, called BFIR.</p>
+<p>These tests verify several properties for optimisations: runtime
+improvement, idempotence and behavioural equivalence.</p>
+<h3><a class="anchor" aria-hidden="true" id="verifying-improvement"></a><a href="#verifying-improvement" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Verifying Improvement</h3>
+<p>bfc optimisation should never increase the number of BFIR
+instructions.</p>
+<p><code>f(program)</code> should have fewer (or the same) number of instructions as
+<code>program</code>.</p>
+<h3><a class="anchor" aria-hidden="true" id="verifying-idempotence"></a><a href="#verifying-idempotence" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Verifying Idempotence</h3>
+<p>All bfc optimisation passes are idempotent. Running an
+optimisation twice should produce the same output as running it
+once.</p>
+<p>This property applies to individual peephole optimisations, as well as
+the combined optimiser. Testing this catches phase ordering issues, as
+well as optimisations that need to compute a fixpoint.</p>
+<p><code>f(f(program))</code> should be the same as <code>f(program)</code>.</p>
+<h3><a class="anchor" aria-hidden="true" id="verifying-behavioural-equivalence"></a><a href="#verifying-behavioural-equivalence" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Verifying Behavioural Equivalence</h3>
+<p>bfc opimisation passes should never change the semantics of a program.</p>
+<p><code>eval(program)</code> should give the same result as <code>eval(f(program))</code>,
+provided that <code>eval(program)</code> terminates within a specific number of
+steps. bfc checks this by evaluating the code within a sandbox.</p>
+<p>This same evaluator is also used during compilation, for compile-time
+evaluation of code!</p>
+<p>If <code>program</code> relies on runtime inputs, the test can verify the program
+state prior to the first runtime input, or choose an arbitrary input.</p>
+<p>Some tests also check the cell state after executing <code>program</code>, which
+should be the same as executing <code>f(program)</code>. This is not true of all
+optimisation passes: dead code may modify cells that are unused.</p>
+<h3><a class="anchor" aria-hidden="true" id="finding-interesting-programs"></a><a href="#finding-interesting-programs" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Finding Interesting Programs</h3>
+<p>BFIR defines 7 different expressions. Randomly generated IR would only
+have a 1/7 chance of producing a loop, so only a 1/49 chance of
+producing a nested loop.</p>
+<p>Nested loops, particularly including multiply loops, tend to expose
+interesting bugs. BFIR generation in tests overweights these kind of
+loops, so tests spend more time exercising more complicated loops.</p>
+<h3><a class="anchor" aria-hidden="true" id="llvm-snapshot-tests"></a><a href="#llvm-snapshot-tests" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>LLVM Snapshot Tests</h3>
+<p>The file <code>llvm_tests.rs</code> tests that certain BF programs produce the
+expected LLVM IR output.</p>
+<p>These tests tend to be brittle, especially when upgrading major LLVM
+versions. They are useful for verifying that unrelated refactoring
+hasn't changed the compiled output.</p>
+<h2><a class="anchor" aria-hidden="true" id="integration-tests"></a><a href="#integration-tests" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Integration Tests</h2>
+<pre><code class="hljs">$ ./<span class="hljs-built_in">int</span>egration_tests.sh
+</code></pre>
+<p>This script compiles real BF programs, runs them, and verifies their
+output matches the corresponding <code>.out</code> file.</p>
+<p>This is the final step in bfc testing. It catches issues that only
+occur in larger, real-world BF programs.</p>
+</span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#unit-tests">Unit Tests</a><ul class="toc-headings"><li><a href="#quickcheck">Quickcheck</a></li><li><a href="#verifying-improvement">Verifying Improvement</a></li><li><a href="#verifying-idempotence">Verifying Idempotence</a></li><li><a href="#verifying-behavioural-equivalence">Verifying Behavioural Equivalence</a></li><li><a href="#finding-interesting-programs">Finding Interesting Programs</a></li><li><a href="#llvm-snapshot-tests">LLVM Snapshot Tests</a></li></ul></li><li><a href="#integration-tests">Integration Tests</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/" class="nav-home"></a><div><h5>User Docs</h5><a href="/docs/getting-started">Getting Started</a><a href="/docs/faq">FAQ</a><a href="/docs/changelog">Changelog</a></div><div><h5>PL Geekery</h5><a href="/docs/compliance">BF Compliance</a><a href="/docs/optimisations">Optimisations</a><a href="/docs/testing">Testing</a></div></section><section class="copyright">Copyright © 2021 Wilfred Hughes</section></footer></div></body></html>

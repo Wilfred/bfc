@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "examples": "docusaurus-examples",
+    "start": "docusaurus-start",
+    "build": "docusaurus-build",
+    "deploy": "npm run build && surge build/bfc-site bfc.wilfred.me.uk"
+  },
+  "devDependencies": {
+    "docusaurus": "^1.14.6",
+    "surge": "^0.21.7"
+  }
+}

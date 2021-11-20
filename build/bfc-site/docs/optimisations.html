@@ -1,0 +1,194 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Optimisations · bfc</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="bfc includes an extensive range of optimisations. This page discusses"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Optimisations · bfc"/><meta property="og:type" content="website"/><meta property="og:url" content="http://bfc.wilfred.me.uk/"/><meta property="og:description" content="bfc includes an extensive range of optimisations. This page discusses"/><meta property="og:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><link rel="shortcut icon" href="/img/favicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/header_icon.png" alt="bfc"/><h2 class="headerTitleWithLogo">bfc</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/getting-started" target="_self">Geting Started</a></li><li class="siteNavItemActive"><a href="/docs/optimisations" target="_self">Optimisations</a></li><li class=""><a href="/docs/faq" target="_self">FAQ</a></li><li class=""><a href="/docs/changelog" target="_self">Changelog</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Optimisations</h1></header><article><div><span><p>bfc includes an extensive range of optimisations. This page discusses
+the techniques used, and gives examples of BF programs that are
+transformed in each case.</p>
+<p>See also <a href="/docs/compliance">BF compliance</a> for implementation decisions
+that affect BF program portability.</p>
+<p>By default, bfc will run all optimisations. This can be controlled by
+CLI options:</p>
+<pre><code class="hljs"><span class="hljs-attr">--opt</span>=<span class="hljs-number">0</span> <span class="hljs-comment"># no optimisations</span>
+<span class="hljs-attr">--opt</span>=<span class="hljs-number">1</span> <span class="hljs-comment"># peephole only</span>
+<span class="hljs-attr">--opt</span>=<span class="hljs-number">2</span> <span class="hljs-comment"># peephole and speculative execution</span>
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="peephole-optimisations"></a><a href="#peephole-optimisations" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Peephole Optimisations</h2>
+<p>Peephole optimisations operate on small sequences of BF
+instructions. When applied together they provide significant speedups.</p>
+<h3><a class="anchor" aria-hidden="true" id="combining-instructions"></a><a href="#combining-instructions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Combining Instructions</h3>
+<p>We combine successive increments/decrements:</p>
+<pre><code class="hljs">   Compile            Combine
++++  =&gt;   <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>   =&gt;   <span class="hljs-keyword">Increment</span> <span class="hljs-number">3</span>
+          <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>
+          <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>
+</code></pre>
+<p>If increments/decrements cancel out, we remove them entirely.</p>
+<pre><code class="hljs">   Compile             Combine
++-   =&gt;   <span class="hljs-keyword">Increment</span>  <span class="hljs-number">1</span>    =&gt;   # <span class="hljs-keyword">nothing</span>!
+          <span class="hljs-keyword">Increment</span> <span class="hljs-number">-1</span>
+</code></pre>
+<p>We combine pointer increments:</p>
+<pre><code class="hljs">   Compile                  Combine
+&gt;&gt;   =&gt;   PointerIncrement <span class="hljs-number">1</span>   =&gt;   PointerIncrement <span class="hljs-number">2</span>
+          PointerIncrement <span class="hljs-number">1</span>
+</code></pre>
+<p>We do the same thing for successive sets:</p>
+<pre><code class="hljs">      Combine
+<span class="hljs-builtin-name">Set</span> 1   =&gt;   <span class="hljs-builtin-name">Set</span> 2
+<span class="hljs-builtin-name">Set</span> 2
+
+</code></pre>
+<p>We combine sets and increments too:</p>
+<pre><code class="hljs">  Compile            Known zero       Combine
++   =&gt;   <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>   =&gt;   <span class="hljs-keyword">Set</span> <span class="hljs-number">0</span>       =&gt;   <span class="hljs-keyword">Set</span> <span class="hljs-number">1</span>
+                            <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>
+
+</code></pre>
+<p>We remove increments when there's a set immediately after:</p>
+<pre><code class="hljs">            Combine
+<span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>   =&gt;   <span class="hljs-keyword">Set</span> <span class="hljs-number">2</span>
+<span class="hljs-keyword">Set</span> <span class="hljs-number">2</span>
+
+</code></pre>
+<p>We remove both increments and sets if there's a read immediately
+after:</p>
+<pre><code class="hljs">            Combine
+<span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>   =&gt;   <span class="hljs-keyword">Read</span>
+<span class="hljs-keyword">Read</span>
+
+</code></pre>
+<p>We track the current cell position in straight-line code. If we can
+determine the last instruction to modify the current cell, it doesn't
+need to be immediately previous. For example, <code>+&gt;-&lt;,</code>:</p>
+<pre><code class="hljs">                   Combine
+<span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>          =&gt;   PointerIncrement <span class="hljs-number">1</span>
+PointerIncrement <span class="hljs-number">1</span>        <span class="hljs-keyword">Increment</span> <span class="hljs-number">-1</span>
+<span class="hljs-keyword">Increment</span> <span class="hljs-number">-1</span>              PointerIncrement <span class="hljs-number">-1</span>
+PointerIncrement <span class="hljs-number">-1</span>       <span class="hljs-keyword">Read</span>
+<span class="hljs-keyword">Read</span>
+
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="loop-simplification"></a><a href="#loop-simplification" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Loop Simplification</h3>
+<p><code>[-]</code> is a common BF idiom for zeroing cells. We replace that with
+<code>Set</code>, enabling further instruction combination.</p>
+<pre><code class="hljs">   <span class="hljs-keyword">Compile</span>              <span class="hljs-keyword">Simplify</span>
+[-]  =&gt;   Loop             =&gt;   <span class="hljs-keyword">Set</span> <span class="hljs-number">0</span>
+            <span class="hljs-keyword">Increment</span> <span class="hljs-number">-1</span>
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="dead-code-elimination"></a><a href="#dead-code-elimination" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Dead Code Elimination</h3>
+<p>We remove loops that we know are dead.</p>
+<p>For example, loops at the beginning of a program:</p>
+<pre><code class="hljs">    Compile                  Known zero               DCE
+[&gt;]   =&gt;    <span class="hljs-keyword">Loop</span>                 =&gt;     <span class="hljs-keyword">Set</span> 0          =&gt; <span class="hljs-keyword">Set</span> <span class="hljs-comment">0</span>
+              DataIncrement <span class="hljs-comment">1           Loop</span>
+                                            DataIncrement 
+</code></pre>
+<p>Loops following another loop (one BF technique for comments is
+<code>[-][this, is+a comment.]</code>).</p>
+<pre><code class="hljs"><span class="hljs-code">      Compile                 Annotate                 DCE</span>
+[<span class="hljs-string">&gt;</span>][<span class="hljs-symbol">&gt;</span>]   =&gt;  Loop                =&gt;   Loop              =&gt;   Loop
+<span class="hljs-code">               DataIncrement 1          DataIncrement 1        DataIncrement 1</span>
+<span class="hljs-code">             Loop                     Set 0                  Set 0</span>
+<span class="hljs-code">               DataIncrement 1        Loop</span>
+<span class="hljs-code">                                          DataIncrement 1</span>
+</code></pre>
+<p>Loops where the cell has previously been set to zero:</p>
+<pre><code class="hljs">        Compile               Simplify                 DCE
+[-]&gt;+&lt;[]  =&gt;   <span class="hljs-keyword">Loop</span>              =&gt;    <span class="hljs-keyword">Set</span> <span class="hljs-number">0</span>            =&gt;  <span class="hljs-keyword">Set</span> <span class="hljs-number">0</span>
+                 <span class="hljs-keyword">Increment</span> <span class="hljs-number">-1</span>          DataIncrement <span class="hljs-number">1</span>      DataIncrement <span class="hljs-number">1</span>
+               DataIncrement <span class="hljs-number">1</span>         <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>          <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>
+               <span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>             DataIncrement <span class="hljs-number">-1</span>     DataIncrement <span class="hljs-number">-1</span>
+               DataIncrement <span class="hljs-number">-1</span>        <span class="hljs-keyword">Loop</span>
+               <span class="hljs-keyword">Loop</span>
+</code></pre>
+<p>We remove redundant set commands after loops (often generated by loop
+annotation as above).</p>
+<pre><code class="hljs">       Remove redundant <span class="hljs-keyword">set</span>
+<span class="hljs-keyword">Loop</span>           =&gt;   <span class="hljs-keyword">Loop</span>
+  <span class="hljs-keyword">Increment</span> <span class="hljs-number">-1</span>        <span class="hljs-keyword">Increment</span> <span class="hljs-number">-1</span>
+<span class="hljs-keyword">Set</span> <span class="hljs-number">0</span>
+
+</code></pre>
+<p>We also remove dead code at the end of a program.</p>
+<pre><code class="hljs">        <span class="hljs-keyword">Remove</span> pure code
+<span class="hljs-keyword">Write</span>         =&gt;           <span class="hljs-keyword">Write</span>
+<span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span>
+</code></pre>
+<p>Finally, we remove cell modifications that are immediately overwritten
+by reads, e.g. <code>+,</code> is equivalent to <code>,</code>.</p>
+<h3><a class="anchor" aria-hidden="true" id="reorder-with-offsets"></a><a href="#reorder-with-offsets" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Reorder with offsets</h3>
+<p>Given a sequence of instructions without loops or I/O, we can safely
+reorder them to have the same effect (we assume no out-of-bound cell
+access).</p>
+<p>This enables us to combine pointer operations:</p>
+<pre><code class="hljs">    Compile                   Reorder
+&gt;+&gt;   =&gt;   PointerIncrement <span class="hljs-number">1</span>   =&gt;    Increment <span class="hljs-number">1</span> (offset <span class="hljs-number">1</span>)
+           Increment <span class="hljs-number">1</span>                PointerIncrement <span class="hljs-number">2</span>
+           PointerIncrement <span class="hljs-number">1</span>
+</code></pre>
+<p>We also ensure we modify cells in a consistent order, to aid cache
+locality. For example, <code>&gt;+&lt;+&gt;&gt;+</code> writes to cell #1, then cell #0, then
+cell #2. We reorder these instructions to obtain:</p>
+<pre><code class="hljs"><span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span> (<span class="hljs-keyword">offset</span> <span class="hljs-number">0</span>)
+<span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span> (<span class="hljs-keyword">offset</span> <span class="hljs-number">1</span>)
+<span class="hljs-keyword">Increment</span> <span class="hljs-number">1</span> (<span class="hljs-keyword">offset</span> <span class="hljs-number">2</span>)
+PointerIncrement <span class="hljs-number">2</span>
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="multiply-move-loops"></a><a href="#multiply-move-loops" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Multiply-move loops</h3>
+<p>bfc can detect loops that perform multiplication and converts them to
+multiply instructions. This works for simple cases like <code>[-&gt;++&lt;]</code>
+(multiply by two into the next cell) as well as more complex cases
+like <code>[&gt;-&lt;-&gt;&gt;+++&lt;&lt;]</code>.</p>
+<h2><a class="anchor" aria-hidden="true" id="cell-bounds-analysis"></a><a href="#cell-bounds-analysis" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Cell Bounds Analysis</h2>
+<p>bfc provides programs with <a href="/docs/compliance">up to 100,000 cells</a>, all of which must be
+zero-initialised. However, most programs don't use the whole range.</p>
+<p>bfc uses static analysis to work out how many cells a BF program may
+use, so it doesn't need to allocate or zero-initialise more memory
+than necessary.</p>
+<pre><code class="hljs"><span class="hljs-meta">&gt;&gt;</span>&lt;&lt; only uses three cells
+</code></pre>
+<pre><code class="hljs">[&gt;&gt;&lt;&lt;] uses three cells <span class="hljs-keyword">at</span> most
+</code></pre>
+<pre><code class="hljs">[&gt;&gt;<span class="hljs-string">&lt;&lt;]&gt;&gt;</span>&gt; uses four cells <span class="hljs-built_in">at</span> most
+</code></pre>
+<pre><code class="hljs">[&gt;] may <span class="hljs-keyword">use</span> <span class="hljs-built_in">any</span> <span class="hljs-keyword">number</span> of cells, so we must assume <span class="hljs-number">100</span>,<span class="hljs-number">000</span>
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="speculative-execution"></a><a href="#speculative-execution" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Speculative Execution</h2>
+<p>bfc executes as much as it can at compile time. For some programs
+(such as hello_world.bf) this optimises away the entire program to
+just writing to stdout. bfc doesn't even need to allocate memory for
+cells in this situation.</p>
+<pre><code class="hljs">$ cargo run -- sample_programs/hello_world.bf --dump-llvm
+<span class="hljs-title">@known_outputs</span> = <span class="hljs-keyword">constant</span> [<span class="hljs-number">13</span> <span class="hljs-keyword">x</span> <span class="hljs-keyword">i8</span>] <span class="hljs-keyword">c</span><span class="hljs-string">"Hello World!\0A"</span>
+
+<span class="hljs-keyword">declare</span> <span class="hljs-keyword">i32</span> <span class="hljs-title">@write</span>(<span class="hljs-keyword">i32</span>, <span class="hljs-keyword">i8</span>*, <span class="hljs-keyword">i32</span>)
+
+<span class="hljs-keyword">define</span> <span class="hljs-keyword">i32</span> <span class="hljs-title">@main</span>() {
+entry:
+  <span class="hljs-symbol">%0</span> = <span class="hljs-keyword">call</span> <span class="hljs-keyword">i32</span> <span class="hljs-title">@write</span>(<span class="hljs-keyword">i32</span> <span class="hljs-number">0</span>, <span class="hljs-keyword">i8</span>* <span class="hljs-keyword">getelementptr</span> <span class="hljs-keyword">inbounds</span> ([<span class="hljs-number">13</span> <span class="hljs-keyword">x</span> <span class="hljs-keyword">i8</span>]* <span class="hljs-title">@known_outputs</span>, <span class="hljs-keyword">i32</span> <span class="hljs-number">0</span>, <span class="hljs-keyword">i32</span> <span class="hljs-number">0</span>), <span class="hljs-keyword">i32</span> <span class="hljs-number">13</span>)
+  <span class="hljs-keyword">ret</span> <span class="hljs-keyword">i32</span> <span class="hljs-number">0</span>
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="ensuring-termination"></a><a href="#ensuring-termination" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Ensuring Termination</h3>
+<p>bfc sets a maximum number of execution steps, avoiding infinite loops
+hanging the compiler. As a result <code>+[]</code> will have <code>+</code> executed (so our
+initial cell value is <code>1</code> and <code>[]</code> will be in the compiled output.</p>
+<h3><a class="anchor" aria-hidden="true" id="handling-unknown-values"></a><a href="#handling-unknown-values" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Handling Unknown Values</h3>
+<p>If a program reads from data from stdin, speculation execution
+stops. As a result, <code>&gt;,</code> will have <code>&gt;</code> executed (setting the initial
+cell pointer to 1) and <code>,</code> will be in the compiled output.</p>
+<h3><a class="anchor" aria-hidden="true" id="partial-loop-evaluation"></a><a href="#partial-loop-evaluation" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Partial Loop Evaluation</h3>
+<p>If loops can be entirely executed at compile time, they will be
+removed from the resulting binary. Partially executed loops will be
+included in the output, but runtime execution can begin at an
+arbitrary position in the loop.</p>
+<p>For example, consider <code>+[-]+[+,]</code>. We can execute <code>+[-]+</code>
+entirely, but <code>[+,]</code> depends on runtime values. The
+compiled output contains <code>[+,]</code>, but we start execution at the
+<code>,</code> (continuing execution from where compile time execution had to
+stop).</p>
+<h2><a class="anchor" aria-hidden="true" id="further-reading"></a><a href="#further-reading" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Further Reading</h2>
+<p>Interested readers may also enjoy my blog posts:</p>
+<ul>
+<li><a href="http://www.wilfred.me.uk/blog/2015/08/29/an-optimising-bf-compiler/">An Optimising BF Compiler</a></li>
+<li><a href="http://www.wilfred.me.uk/blog/2015/10/18/even-more-bf-optimisations/">Even More BF Optimisations</a></li>
+<li><a href="http://www.wilfred.me.uk/blog/2016/02/07/an-industrial-grade-bf-compiler">An Industrial Grade BF Compiler</a></li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#peephole-optimisations">Peephole Optimisations</a><ul class="toc-headings"><li><a href="#combining-instructions">Combining Instructions</a></li><li><a href="#loop-simplification">Loop Simplification</a></li><li><a href="#dead-code-elimination">Dead Code Elimination</a></li><li><a href="#reorder-with-offsets">Reorder with offsets</a></li><li><a href="#multiply-move-loops">Multiply-move loops</a></li></ul></li><li><a href="#cell-bounds-analysis">Cell Bounds Analysis</a></li><li><a href="#speculative-execution">Speculative Execution</a><ul class="toc-headings"><li><a href="#ensuring-termination">Ensuring Termination</a></li><li><a href="#handling-unknown-values">Handling Unknown Values</a></li><li><a href="#partial-loop-evaluation">Partial Loop Evaluation</a></li></ul></li><li><a href="#further-reading">Further Reading</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/" class="nav-home"></a><div><h5>User Docs</h5><a href="/docs/getting-started">Getting Started</a><a href="/docs/faq">FAQ</a><a href="/docs/changelog">Changelog</a></div><div><h5>PL Geekery</h5><a href="/docs/compliance">BF Compliance</a><a href="/docs/optimisations">Optimisations</a><a href="/docs/testing">Testing</a></div></section><section class="copyright">Copyright © 2021 Wilfred Hughes</section></footer></div></body></html>

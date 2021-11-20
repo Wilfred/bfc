@@ -1,0 +1,2 @@
+tests:
+	expresso test/*

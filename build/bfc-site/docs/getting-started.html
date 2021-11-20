@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Getting Started · bfc</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="This page describes how to install and run bfc."/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Getting Started · bfc"/><meta property="og:type" content="website"/><meta property="og:url" content="http://bfc.wilfred.me.uk/"/><meta property="og:description" content="This page describes how to install and run bfc."/><meta property="og:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="http://bfc.wilfred.me.uk/img/logo.png"/><link rel="shortcut icon" href="/img/favicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/header_icon.png" alt="bfc"/><h2 class="headerTitleWithLogo">bfc</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavItemActive"><a href="/docs/getting-started" target="_self">Geting Started</a></li><li class=""><a href="/docs/optimisations" target="_self">Optimisations</a></li><li class=""><a href="/docs/faq" target="_self">FAQ</a></li><li class=""><a href="/docs/changelog" target="_self">Changelog</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Getting Started</h1></header><article><div><span><p>This page describes how to install and run bfc.</p>
+<h2><a class="anchor" aria-hidden="true" id="installation"></a><a href="#installation" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Installation</h2>
+<h3><a class="anchor" aria-hidden="true" id="prerequisites"></a><a href="#prerequisites" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Prerequisites</h3>
+<p>You will need LLVM and Rust installed to compile bfc. For Rust, I
+recommend <a href="https://rustup.rs/">using rustup</a>.</p>
+<h4><a class="anchor" aria-hidden="true" id="llvm"></a><a href="#llvm" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>LLVM</h4>
+<p>bfc is built against recent LLVM. See <a href="/docs/changelog">the changelog</a>
+for information on the most recent LLVM version used.</p>
+<p>You can usually install LLVM from your package manager of
+choice. Alternatively, you can build LLVM from source as follows:</p>
+<pre><code class="hljs"><span class="hljs-variable">$ </span>wget <span class="hljs-symbol">http:</span>/<span class="hljs-regexp">/llvm.org/pre</span>-releases/<span class="hljs-number">3.8</span>.0/rc1/llvm<span class="hljs-number">-3.8</span>.0rc1.src.tar.xz
+<span class="hljs-variable">$ </span>tar -xf llvm<span class="hljs-number">-3.8</span>.0rc1.src.tar.xz
+
+<span class="hljs-variable">$ </span>mkdir -p ~<span class="hljs-regexp">/tmp/llvm</span>_3_8_build
+<span class="hljs-variable">$ </span>cd ~<span class="hljs-regexp">/tmp/llvm</span>_3_8_build
+
+<span class="hljs-variable">$ </span>cmake -G Ninja /path/to/untarred/llvm
+<span class="hljs-variable">$ </span>ninja
+</code></pre>
+<p>bfc uses <a href="https://crates.io/crates/llvm-sys">llvm-sys</a>, which wraps
+the locally installed LLVM.</p>
+<p><strong>llvm-sys requires the <code>llvm-config</code> binary to be installed</strong>. Check
+that your LLVM installation includes this (not all packages do,
+especially on Windows).</p>
+<p>llvm-sys will use whatever <code>llvm-config</code> is first on <code>PATH</code>. For
+example, to use the prebuilt LLVM shown above:</p>
+<pre><code class="hljs">$ <span class="hljs-builtin-name">export</span> <span class="hljs-attribute">PATH</span>=~/tmp/llvm_3_8_build:$PATH
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="compiling-bfc"></a><a href="#compiling-bfc" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Compiling bfc</h3>
+<p>bfc should be compiled with cargo, Rust's packaging and build
+tool. Cargo will download necessary dependencies (other than LLVM), so
+an internet connection is required.</p>
+<pre><code class="hljs"><span class="hljs-meta">$</span><span class="bash"> git <span class="hljs-built_in">clone</span> https://github.com/Wilfred/bfc.git</span>
+<span class="hljs-meta">$</span><span class="bash"> <span class="hljs-built_in">cd</span> bfc</span>
+<span class="hljs-meta">$</span><span class="bash"> cargo build --release</span>
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="running-bfc"></a><a href="#running-bfc" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running bfc</h2>
+<p>You can now compile and run BF programs as follows:</p>
+<pre><code class="hljs">$ target/release/<span class="hljs-keyword">bfc </span>sample_programs/hello_world.<span class="hljs-keyword">bf
+</span>$ ./hello_world
+<span class="hljs-symbol">Hello</span> World!
+</code></pre>
+<p>You can use debug builds of bfc, but bfc will run much slower on large
+BF programs. This is due to bfc's speculative execution. You can
+disable this by passing <code>--opt=0</code> or <code>--opt=1</code> when running bfc.</p>
+<pre><code class="hljs">$ target/debug/<span class="hljs-keyword">bfc </span>--<span class="hljs-meta">opt</span><span class="hljs-number">=0</span> sample_programs/hello_world.<span class="hljs-keyword">bf
+</span></code></pre>
+<h3><a class="anchor" aria-hidden="true" id="cross-compilation"></a><a href="#cross-compilation" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Cross-compilation</h3>
+<p>By default, bfc compiles programs to executables that run on the
+current machine. You can explicitly specify architecture using LLVM
+target triples:</p>
+<pre><code class="hljs">$ <span class="hljs-keyword">target</span>/<span class="hljs-keyword">release</span>/bfc sample_programs/hello_world.bf --<span class="hljs-keyword">target</span>=<span class="hljs-keyword">x</span><span class="hljs-number">86</span>_<span class="hljs-number">64</span>-pc-linux-gnu
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="diagnostics"></a><a href="#diagnostics" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Diagnostics</h2>
+<p>bfc can report syntax errors and warnings with relevant line numbers
+and highlighting.</p>
+<p><img src="/img/bfc_diagnostics.png" alt="diagnostics screenshot"></p>
+<p>Note that some warnings are generated during analysis for optimisation, so disabling
+optimisations will produce fewer warnings.</p>
+</span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#installation">Installation</a><ul class="toc-headings"><li><a href="#prerequisites">Prerequisites</a></li><li><a href="#compiling-bfc">Compiling bfc</a></li></ul></li><li><a href="#running-bfc">Running bfc</a><ul class="toc-headings"><li><a href="#cross-compilation">Cross-compilation</a></li></ul></li><li><a href="#diagnostics">Diagnostics</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/" class="nav-home"></a><div><h5>User Docs</h5><a href="/docs/getting-started">Getting Started</a><a href="/docs/faq">FAQ</a><a href="/docs/changelog">Changelog</a></div><div><h5>PL Geekery</h5><a href="/docs/compliance">BF Compliance</a><a href="/docs/optimisations">Optimisations</a><a href="/docs/testing">Testing</a></div></section><section class="copyright">Copyright © 2021 Wilfred Hughes</section></footer></div></body></html>
