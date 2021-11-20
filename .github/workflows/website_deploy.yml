@@ -24,4 +24,9 @@ jobs:
         run: npm ci
       - name: Build the site
         run: npm run build
-      - run: npm run deploy -- --token ${{ secrets.SURGE_TOKEN }}
+
+      - name: Deploy to GitHub pages
+        uses: JamesIves/github-pages-deploy-action@4.1.6
+        with:
+          branch: gh-pages
+          folder: website
