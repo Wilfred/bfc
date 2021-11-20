@@ -1,6 +1,0 @@
-#! /usr/bin/env node
-
-var surge = require('../../../')({
-  cmd: "vcap",
-  platform: "vcap.me",
-})(process.argv.slice(2))
