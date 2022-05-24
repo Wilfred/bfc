@@ -17,7 +17,7 @@ const siteConfig = {
   organizationName: "wilfred",
 
   headerLinks: [
-    { doc: "getting-started", label: "Geting Started" },
+    { doc: "getting-started", label: "Getting Started" },
     { doc: "optimisations", label: "Optimisations" },
     { doc: "faq", label: "FAQ" },
     { doc: "changelog", label: "Changelog" },
