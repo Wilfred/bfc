@@ -1,9 +1,8 @@
 # An optimising compiler for brainfuck
 
-[![Crate version](http://meritbadge.herokuapp.com/bfc)](https://crates.io/crates/bfc)
+[![Crate version](https://img.shields.io/crates/v/bfc)](https://crates.io/crates/bfc)
 [![docs](https://docs.rs/bfc/badge.svg)](https://docs.rs/crate/bfc/)
 [![Coverage Status](https://coveralls.io/repos/Wilfred/bfc/badge.svg?branch=master&service=github)](https://coveralls.io/github/Wilfred/bfc?branch=master)
-[![lines of code](https://tokei.rs/b1/github/wilfred/bfc)](https://github.com/Aaronepower/tokei)
 
 bfc is an industrial grade compiler for
 [brainfuck](https://en.wikipedia.org/wiki/Brainfuck). It can:
