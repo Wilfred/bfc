@@ -4,7 +4,7 @@ name: coverage
 
 jobs:
   check:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Install LLVM package
         run: sudo apt-get install llvm-10-dev
