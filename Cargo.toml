@@ -10,7 +10,7 @@ readme = "README.md"
 license = "GPL-2.0"
 
 [dependencies]
-llvm-sys = "100.0.0"
+llvm-sys = "120.2.5"
 itertools = "0.9"
 tempfile = "3.1"
 getopts = "0.2.21"

@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Install LLVM package
-        run: sudo apt-get install llvm-10-dev
+        run: sudo apt-get install llvm-12-dev
 
       - name: Checkout repository
         uses: actions/checkout@v2
