@@ -86,7 +86,7 @@ loop_header:                                      ; preds = %loop_body, %after_i
   br i1 %cell_value_is_zero, label %loop_after, label %loop_body
 
 loop_body:                                        ; preds = %loop_header
-  %cell_index1 = load i32, i32* %cell_index_ptr
+  %cell_index1 = load i32, i32* %cell_index_ptr, align 4
   %offset_cell_index = add i32 %cell_index1, 0
   %current_cell_ptr2 = getelementptr i8, i8* %cells, i32 %offset_cell_index
   %cell_value3 = load i8, i8* %current_cell_ptr2, align 1
@@ -838,7 +838,7 @@ beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index1 = load i32, i32* %cell_index_ptr
+  %cell_index1 = load i32, i32* %cell_index_ptr, align 4
   %offset_cell_index2 = add i32 %cell_index1, 0
   %current_cell_ptr3 = getelementptr i8, i8* %cells, i32 %offset_cell_index2
   store i8 2, i8* %current_cell_ptr3, align 1
