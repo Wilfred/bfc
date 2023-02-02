@@ -50,7 +50,7 @@ fn compile_loop() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -68,8 +68,8 @@ init:
   %cells = call i8* @malloc(i32 1)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
@@ -79,7 +79,7 @@ after_init:                                       ; preds = %init, %beginning
   br label %loop_header
 
 loop_header:                                      ; preds = %loop_body, %after_init
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
   %cell_value = load i8, i8* %current_cell_ptr
   %cell_value_is_zero = icmp eq i8 0, %cell_value
@@ -99,7 +99,7 @@ loop_after:                                       ; preds = %loop_header
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
@@ -121,7 +121,7 @@ fn compile_empty_program() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -142,7 +142,7 @@ beginning:                                        ; preds = %init
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
@@ -169,7 +169,7 @@ fn compile_set_with_offset() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -187,23 +187,23 @@ init:
   %cells = call i8* @malloc(i32 50)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 50, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %offset_cell_index = add i32 %cell_index, 42
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %offset_cell_index
-  store i8 1, i8* %current_cell_ptr
+  store i8 1, i8* %current_cell_ptr, align 1
   call void @free(i8* %cells)
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -229,7 +229,7 @@ fn compile_read() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -247,15 +247,15 @@ init:
   %cells = call i8* @malloc(i32 1)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
   %input_char = call i32 @getchar()
   %input_byte = trunc i32 %input_char to i8
@@ -264,7 +264,7 @@ after_init:                                       ; preds = %init, %beginning
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     println!("actual: {}", result.to_cstring().to_str().unwrap());
@@ -291,7 +291,7 @@ fn compile_write() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -309,15 +309,15 @@ init:
   %cells = call i8* @malloc(i32 1)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
   %cell_value = load i8, i8* %current_cell_ptr
   %cell_val_as_char = sext i8 %cell_value to i32
@@ -326,7 +326,7 @@ after_init:                                       ; preds = %init, %beginning
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -353,7 +353,7 @@ fn respect_initial_cell_ptr() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -371,7 +371,7 @@ init:
   %cells = call i8* @malloc(i32 10)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 10, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
+  %cell_index_ptr = alloca i32, align 4
   store i32 8, i32* %cell_index_ptr
   br label %after_init
 
@@ -379,14 +379,14 @@ beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %new_cell_index = add i32 %cell_index, 1
   store i32 %new_cell_index, i32* %cell_index_ptr
   call void @free(i8* %cells)
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -417,7 +417,7 @@ fn compile_multiply_move() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -435,15 +435,15 @@ init:
   %cells = call i8* @malloc(i32 3)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 3, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %cell_index
   %cell_value = load i8, i8* %current_cell_ptr
   %cell_value_is_zero = icmp eq i8 0, %cell_value
@@ -468,7 +468,7 @@ multiply_after:                                   ; preds = %multiply_body, %aft
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -502,7 +502,7 @@ fn set_initial_cell_values() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -524,22 +524,22 @@ init:
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr1, i8 2, i32 1, i32 1, i1 true)
   %offset_cell_ptr2 = getelementptr i8, i8* %cells, i32 3
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr2, i8 0, i32 3, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %new_cell_index = add i32 %cell_index, 1
   store i32 %new_cell_index, i32* %cell_index_ptr
   call void @free(i8* %cells)
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -564,7 +564,7 @@ target triple = \"i686-pc-linux-gnu\"
 
 @known_outputs = constant [2 x i8] c\"\\05\\0A\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -586,7 +586,7 @@ beginning:                                        ; preds = %init
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -613,7 +613,7 @@ fn compile_ptr_increment() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -631,22 +631,22 @@ init:
   %cells = call i8* @malloc(i32 2)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 2, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %new_cell_index = add i32 %cell_index, 1
   store i32 %new_cell_index, i32* %cell_index_ptr
   call void @free(i8* %cells)
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -674,7 +674,7 @@ fn compile_increment() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -692,15 +692,15 @@ init:
   %cells = call i8* @malloc(i32 1)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %offset_cell_index = add i32 %cell_index, 0
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %offset_cell_index
   %cell_value = load i8, i8* %current_cell_ptr
@@ -710,7 +710,7 @@ after_init:                                       ; preds = %init, %beginning
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
@@ -738,7 +738,7 @@ fn compile_increment_with_offset() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -756,15 +756,15 @@ init:
   %cells = call i8* @malloc(i32 4)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 4, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %offset_cell_index = add i32 %cell_index, 3
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %offset_cell_index
   %cell_value = load i8, i8* %current_cell_ptr
@@ -774,7 +774,7 @@ after_init:                                       ; preds = %init, %beginning
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
 }
@@ -808,7 +808,7 @@ fn compile_start_instr_midway() {
 source_filename = \"foo\"
 target triple = \"i686-pc-linux-gnu\"
 
-; Function Attrs: argmemonly nounwind willreturn
+; Function Attrs: argmemonly nofree nosync nounwind willreturn writeonly
 declare void @llvm.memset.p0i8.i32(i8* nocapture writeonly, i8, i32, i32 immarg, i1) #0
 
 declare i8* @malloc(i32)
@@ -826,15 +826,15 @@ init:
   %cells = call i8* @malloc(i32 1)
   %offset_cell_ptr = getelementptr i8, i8* %cells, i32 0
   call void @llvm.memset.p0i8.i32(i8* %offset_cell_ptr, i8 0, i32 1, i32 1, i1 true)
-  %cell_index_ptr = alloca i32
-  store i32 0, i32* %cell_index_ptr
+  %cell_index_ptr = alloca i32, align 4
+  store i32 0, i32* %cell_index_ptr, align 4
   br label %after_init
 
 beginning:                                        ; No predecessors!
-  %cell_index = load i32, i32* %cell_index_ptr
+  %cell_index = load i32, i32* %cell_index_ptr, align 4
   %offset_cell_index = add i32 %cell_index, 0
   %current_cell_ptr = getelementptr i8, i8* %cells, i32 %offset_cell_index
-  store i8 1, i8* %current_cell_ptr
+  store i8 1, i8* %current_cell_ptr, align 1
   br label %after_init
 
 after_init:                                       ; preds = %init, %beginning
@@ -846,7 +846,7 @@ after_init:                                       ; preds = %init, %beginning
   ret i32 0
 }
 
-attributes #0 = { argmemonly nounwind willreturn }
+attributes #0 = { argmemonly nofree nosync nounwind willreturn writeonly }
 ";
 
     assert_cstring_eq!(result.to_cstring(), CString::new(expected).unwrap());
