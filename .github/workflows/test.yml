@@ -15,7 +15,7 @@ jobs:
 
     steps:
     - name: Install LLVM package
-      run: sudo apt-get install llvm-12-dev
+      run: sudo apt-get install llvm-13-dev
     - uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
