@@ -72,7 +72,7 @@ BF programs. This is due to bfc's speculative execution. You can
 disable this by passing `--opt=0` or `--opt=1` when running bfc.
 
 ```
-$ target/debug/bfc --opt=0 sample_programs/hello_world.bf
+$ target/release/bfc --opt=0 sample_programs/hello_world.bf
 ```
 
 ### Cross-compilation
