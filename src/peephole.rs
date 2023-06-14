@@ -314,7 +314,7 @@ pub fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
                     // MultiplyMove instructions are not redundant,
                     // because they affect other cells too.
-                    if matches!(instrs[prev_modify_index], MultiplyMove { ..}) {
+                    if matches!(instrs[prev_modify_index], MultiplyMove { .. }) {
                         continue;
                     }
 

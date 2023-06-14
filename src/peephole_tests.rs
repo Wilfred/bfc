@@ -767,7 +767,14 @@ fn is_pure(instrs: &[AstNode]) -> bool {
 fn quickcheck_should_annotate_known_zero_at_start() {
     fn should_annotate_known_zero_at_start(instrs: Vec<AstNode>) -> bool {
         let annotated = annotate_known_zero(instrs);
-        matches!(annotated[0], Set { amount: Wrapping(0), offset: 0, .. })
+        matches!(
+            annotated[0],
+            Set {
+                amount: Wrapping(0),
+                offset: 0,
+                ..
+            }
+        )
     }
     quickcheck(should_annotate_known_zero_at_start as fn(Vec<AstNode>) -> bool);
 }

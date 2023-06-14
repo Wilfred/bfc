@@ -165,10 +165,7 @@ pub fn execute_with_state<'a>(
                                 dest_ptr, *cell_offset, cell_ptr
                             );
 
-                            return Outcome::RuntimeError(Warning {
-                                message,
-                                position,
-                            });
+                            return Outcome::RuntimeError(Warning { message, position });
                         }
                         if dest_ptr as usize >= state.cells.len() {
                             state.start_instr = Some(&instrs[instr_idx]);

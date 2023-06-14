@@ -98,5 +98,5 @@ impl fmt::Display for Info {
         write!(f, "{}", self.message.bold())?;
         write!(f, "{}", context_line)?;
         write!(f, "{}", caret_line.bold().red())
- }
+    }
 }
