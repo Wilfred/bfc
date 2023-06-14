@@ -8,6 +8,7 @@ repository = "https://github.com/Wilfred/bfc"
 description = "An industrial-grade brainfuck compiler"
 readme = "README.md"
 license = "GPL-2.0"
+rust-version = "1.57.0"
 
 [dependencies]
 llvm-sys = "130.0.5"
