@@ -15,7 +15,29 @@ recommend [using rustup](https://rustup.rs/).
 #### LLVM
 
 bfc is built against recent LLVM. See [the changelog](changelog.md)
-for information on the most recent LLVM version used.
+for information on the most current LLVM version supported.
+
+bfc uses [llvm-sys](https://crates.io/crates/llvm-sys), which wraps
+the locally installed LLVM.
+
+**llvm-sys requires the `llvm-config` binary to be installed**. Check
+that your LLVM installation includes this (not all packages do,
+especially on Windows).
+
+#### System LLVM Versions
+
+`llvm-sys` picks up the default `llvm-config` binary on your path. If
+you want to use a different LLVM version, put it first on your path
+and recompile.
+
+```
+$ export PATH="/usr/lib/llvm13/bin/:$PATH"
+$ hash -r
+$ cargo clean
+$ cargo build
+```
+
+#### LLVM From Source
 
 You can usually install LLVM from your package manager of
 choice. Alternatively, you can build LLVM from source as follows:
@@ -30,13 +52,6 @@ $ cd ~/tmp/llvm_3_8_build
 $ cmake -G Ninja /path/to/untarred/llvm
 $ ninja
 ```
-
-bfc uses [llvm-sys](https://crates.io/crates/llvm-sys), which wraps
-the locally installed LLVM.
-
-**llvm-sys requires the `llvm-config` binary to be installed**. Check
-that your LLVM installation includes this (not all packages do,
-especially on Windows).
 
 llvm-sys will use whatever `llvm-config` is first on `PATH`. For
 example, to use the prebuilt LLVM shown above:
