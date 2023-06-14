@@ -5,7 +5,22 @@
 recommend <a href="https://rustup.rs/">using rustup</a>.</p>
 <h4><a class="anchor" aria-hidden="true" id="llvm"></a><a href="#llvm" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>LLVM</h4>
 <p>bfc is built against recent LLVM. See <a href="/docs/changelog">the changelog</a>
-for information on the most recent LLVM version used.</p>
+for information on the most current LLVM version supported.</p>
+<p>bfc uses <a href="https://crates.io/crates/llvm-sys">llvm-sys</a>, which wraps
+the locally installed LLVM.</p>
+<p><strong>llvm-sys requires the <code>llvm-config</code> binary to be installed</strong>. Check
+that your LLVM installation includes this (not all packages do,
+especially on Windows).</p>
+<h4><a class="anchor" aria-hidden="true" id="system-llvm-versions"></a><a href="#system-llvm-versions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>System LLVM Versions</h4>
+<p><code>llvm-sys</code> picks up the default <code>llvm-config</code> binary on your path. If
+you want to use a different LLVM version, put it first on your path
+and recompile.</p>
+<pre><code class="hljs"><span class="hljs-meta">$</span><span class="bash"> <span class="hljs-built_in">export</span> PATH=<span class="hljs-string">"/usr/lib/llvm13/bin/:<span class="hljs-variable">$PATH</span>"</span></span>
+<span class="hljs-meta">$</span><span class="bash"> <span class="hljs-built_in">hash</span> -r</span>
+<span class="hljs-meta">$</span><span class="bash"> cargo clean</span>
+<span class="hljs-meta">$</span><span class="bash"> cargo build</span>
+</code></pre>
+<h4><a class="anchor" aria-hidden="true" id="llvm-from-source"></a><a href="#llvm-from-source" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>LLVM From Source</h4>
 <p>You can usually install LLVM from your package manager of
 choice. Alternatively, you can build LLVM from source as follows:</p>
 <pre><code class="hljs"><span class="hljs-variable">$ </span>wget <span class="hljs-symbol">http:</span>/<span class="hljs-regexp">/llvm.org/pre</span>-releases/<span class="hljs-number">3.8</span>.0/rc1/llvm<span class="hljs-number">-3.8</span>.0rc1.src.tar.xz
@@ -17,11 +32,6 @@ choice. Alternatively, you can build LLVM from source as follows:</p>
 <span class="hljs-variable">$ </span>cmake -G Ninja /path/to/untarred/llvm
 <span class="hljs-variable">$ </span>ninja
 </code></pre>
-<p>bfc uses <a href="https://crates.io/crates/llvm-sys">llvm-sys</a>, which wraps
-the locally installed LLVM.</p>
-<p><strong>llvm-sys requires the <code>llvm-config</code> binary to be installed</strong>. Check
-that your LLVM installation includes this (not all packages do,
-especially on Windows).</p>
 <p>llvm-sys will use whatever <code>llvm-config</code> is first on <code>PATH</code>. For
 example, to use the prebuilt LLVM shown above:</p>
 <pre><code class="hljs">$ <span class="hljs-builtin-name">export</span> <span class="hljs-attribute">PATH</span>=~/tmp/llvm_3_8_build:$PATH
