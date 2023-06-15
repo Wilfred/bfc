@@ -2,6 +2,7 @@
 
 Interface:
 
+* Improved diagnostics display on warnings and errors.
 * CLI argument parsing now uses the clap library. No arguments have
   changed, but help and argument parsing errors should be clearer.
 

@@ -2,7 +2,8 @@
 
 //! bfc is a highly optimising compiler for BF.
 
-use crate::diagnostics::{Info, Level};
+use ariadne::{Label, Report, ReportKind, Source};
+use bfir::Position;
 use clap::builder::ValueParser;
 use clap::command;
 use clap::Arg;
@@ -36,17 +37,11 @@ mod soundness_tests;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents. Return a diagnostic if we can't open or read the file.
-fn slurp(path: &Path) -> Result<String, Info> {
+fn slurp(path: &Path) -> Result<String, String> {
     let mut file = match File::open(path) {
         Ok(file) => file,
         Err(message) => {
-            return Err(Info {
-                level: Level::Error,
-                filename: path.to_owned(),
-                message: format!("{}", message),
-                position: None,
-                source: None,
-            });
+            return Err(format!("{}: {}", path.display(), message));
         }
     };
 
@@ -54,13 +49,7 @@ fn slurp(path: &Path) -> Result<String, Info> {
 
     match file.read_to_string(&mut contents) {
         Ok(_) => Ok(contents),
-        Err(message) => Err(Info {
-            level: Level::Error,
-            filename: path.to_owned(),
-            message: format!("{}", message),
-            position: None,
-            source: None,
-        }),
+        Err(message) => Err(format!("{} {}", path.display(), message)),
     }
 }
 
@@ -99,31 +88,30 @@ fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
     }
 }
 
-// TODO: return a Vec<Info> that may contain warnings or errors,
-// instead of printing in lots of different place shere.
-fn compile_file(matches: &ArgMatches) -> Result<(), String> {
+fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
     let path = matches
         .get_one::<PathBuf>("path")
         .expect("Required argument");
 
-    let src = match slurp(path) {
-        Ok(src) => src,
-        Err(info) => {
-            return Err(format!("{}", info));
-        }
-    };
+    let src = slurp(path).map_err(|e| {
+        eprintln!("{}", e);
+    })?;
 
     let mut instrs = match bfir::parse(&src) {
         Ok(instrs) => instrs,
-        Err(parse_error) => {
-            let info = Info {
-                level: Level::Error,
-                filename: path.to_owned(),
-                message: parse_error.message,
-                position: Some(parse_error.position),
-                source: Some(src),
-            };
-            return Err(format!("{}", info));
+        Err(bfir::ParseError { message, position }) => {
+            let path_str = path.display().to_string();
+            Report::build(ReportKind::Error, &path_str, position.start)
+                .with_message("Parse error")
+                .with_label(
+                    Label::new((&path_str, position.start..position.end + 1))
+                        .with_message(message.clone()),
+                )
+                .finish()
+                .eprint((&path_str, Source::from(src.clone())))
+                .unwrap();
+
+            return Err(());
         }
     };
 
@@ -133,15 +121,18 @@ fn compile_file(matches: &ArgMatches) -> Result<(), String> {
         let (opt_instrs, warnings) = peephole::optimize(instrs, &pass_specification.cloned());
         instrs = opt_instrs;
 
-        for warning in warnings {
-            let info = Info {
-                level: Level::Warning,
-                filename: path.to_owned(),
-                message: warning.message,
-                position: warning.position,
-                source: Some(src.clone()),
-            };
-            eprintln!("{}", info);
+        for diagnostics::Warning { message, position } in warnings {
+            let path_str = path.display().to_string();
+            let position = position.unwrap_or(Position { start: 0, end: 0 });
+            Report::build(ReportKind::Warning, &path_str, position.start)
+                .with_message("Suspicious code found during optimization")
+                .with_label(
+                    Label::new((&path_str, position.start..position.end + 1))
+                        .with_message(message.clone()),
+                )
+                .finish()
+                .eprint((&path_str, Source::from(src.clone())))
+                .unwrap();
         }
     }
 
@@ -161,15 +152,19 @@ fn compile_file(matches: &ArgMatches) -> Result<(), String> {
         (init_state, None)
     };
 
-    if let Some(execution_warning) = execution_warning {
-        let info = Info {
-            level: Level::Warning,
-            filename: path.to_owned(),
-            message: execution_warning.message,
-            position: execution_warning.position,
-            source: Some(src),
-        };
-        eprintln!("{}", info);
+    if let Some(diagnostics::Warning { message, position }) = execution_warning {
+        let path_str = path.display().to_string();
+        let position = position.unwrap_or(Position { start: 0, end: 0 });
+
+        Report::build(ReportKind::Warning, &path_str, position.start)
+            .with_message("Invalid result during compiletime execution")
+            .with_label(
+                Label::new((&path_str, position.start..position.end + 1))
+                    .with_message(message.clone()),
+            )
+            .finish()
+            .eprint((&path_str, Source::from(src.clone())))
+            .unwrap();
     }
 
     llvm::init_llvm();
@@ -195,16 +190,25 @@ fn compile_file(matches: &ArgMatches) -> Result<(), String> {
     llvm::optimise_ir(&mut llvm_module, llvm_opt);
 
     // Compile the LLVM IR to a temporary object file.
-    let object_file = convert_io_error(NamedTempFile::new())?;
+    let object_file = convert_io_error(NamedTempFile::new()).map_err(|e| {
+        eprintln!("{}", e);
+    })?;
+
     let obj_file_path = object_file.path().to_str().expect("path not valid utf-8");
-    llvm::write_object_file(&mut llvm_module, obj_file_path)?;
+    llvm::write_object_file(&mut llvm_module, obj_file_path).map_err(|e| {
+        eprintln!("{}", e);
+    })?;
 
     let output_name = executable_name(path);
-    link_object_file(obj_file_path, &output_name, target_triple.cloned())?;
+    link_object_file(obj_file_path, &output_name, target_triple.cloned()).map_err(|e| {
+        eprintln!("{}", e);
+    })?;
 
     let strip_opt = matches.get_one::<String>("strip").expect("Has default");
     if strip_opt == "yes" {
-        strip_executable(&output_name)?
+        strip_executable(&output_name).map_err(|e| {
+            eprintln!("{}", e);
+        })?;
     }
 
     Ok(())
@@ -307,8 +311,7 @@ fn main() {
 
     match compile_file(&matches) {
         Ok(_) => {}
-        Err(e) => {
-            eprintln!("{}", e);
+        Err(()) => {
             std::process::exit(2);
         }
     }
