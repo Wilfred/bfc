@@ -3,11 +3,17 @@
 //! bfc is a highly optimising compiler for BF.
 
 use crate::diagnostics::{Info, Level};
-use getopts::{Matches, Options};
+use clap::builder::ValueParser;
+use clap::command;
+use clap::Arg;
+use clap::ArgAction;
+use clap::ArgMatches;
+use clap::ValueHint;
 use std::env;
 use std::fs::File;
 use std::io::prelude::Read;
 use std::path::Path;
+use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
 #[cfg(test)]
@@ -30,7 +36,7 @@ mod soundness_tests;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents. Return a diagnostic if we can't open or read the file.
-fn slurp(path: &str) -> Result<String, Info> {
+fn slurp(path: &Path) -> Result<String, Info> {
     let mut file = match File::open(path) {
         Ok(file) => file,
         Err(message) => {
@@ -59,8 +65,8 @@ fn slurp(path: &str) -> Result<String, Info> {
 }
 
 /// Convert "foo.bf" to "foo".
-fn executable_name(bf_path: &str) -> String {
-    let bf_file_name = Path::new(bf_path).file_name().unwrap().to_str().unwrap();
+fn executable_name(bf_path: &Path) -> String {
+    let bf_file_name = bf_path.file_name().unwrap().to_str().unwrap();
 
     let mut name_parts: Vec<_> = bf_file_name.split('.').collect();
     let parts_len = name_parts.len();
@@ -86,11 +92,6 @@ fn executable_name_relative_path() {
     assert_eq!(executable_name("bar/baz.bf"), "baz");
 }
 
-fn print_usage(bin_name: &str, opts: Options) {
-    let brief = format!("Usage: {} SOURCE_FILE [options]", bin_name);
-    print!("{}", opts.usage(&brief));
-}
-
 fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
     match result {
         Ok(value) => Ok(value),
@@ -100,8 +101,10 @@ fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
 
 // TODO: return a Vec<Info> that may contain warnings or errors,
 // instead of printing in lots of different place shere.
-fn compile_file(matches: &Matches) -> Result<(), String> {
-    let path = &matches.free[0];
+fn compile_file(matches: &ArgMatches) -> Result<(), String> {
+    let path = matches
+        .get_one::<PathBuf>("path")
+        .expect("Required argument");
 
     let src = match slurp(path) {
         Ok(src) => src,
@@ -124,10 +127,10 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         }
     };
 
-    let opt_level = matches.opt_str("opt").unwrap_or_else(|| String::from("2"));
+    let opt_level = matches.get_one::<String>("opt").expect("Required argument");
     if opt_level != "0" {
-        let pass_specification = matches.opt_str("passes");
-        let (opt_instrs, warnings) = peephole::optimize(instrs, &pass_specification);
+        let pass_specification = matches.get_one::<String>("passes");
+        let (opt_instrs, warnings) = peephole::optimize(instrs, &pass_specification.cloned());
         instrs = opt_instrs;
 
         for warning in warnings {
@@ -142,7 +145,7 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
         }
     }
 
-    if matches.opt_present("dump-ir") {
+    if matches.get_flag("dump-ir") {
         for instr in &instrs {
             println!("{}", instr);
         }
@@ -170,10 +173,15 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     }
 
     llvm::init_llvm();
-    let target_triple = matches.opt_str("target");
-    let mut llvm_module = llvm::compile_to_module(path, target_triple.clone(), &instrs, &state);
+    let target_triple = matches.get_one::<String>("target");
+    let mut llvm_module = llvm::compile_to_module(
+        &path.display().to_string(),
+        target_triple.cloned(),
+        &instrs,
+        &state,
+    );
 
-    if matches.opt_present("dump-llvm") {
+    if matches.get_flag("dump-llvm") {
         let llvm_ir_cstr = llvm_module.to_cstring();
         let llvm_ir = String::from_utf8_lossy(llvm_ir_cstr.as_bytes());
         println!("{}", llvm_ir);
@@ -181,14 +189,9 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     }
 
     let llvm_opt_raw = matches
-        .opt_str("llvm-opt")
-        .unwrap_or_else(|| "3".to_owned());
-    let mut llvm_opt = llvm_opt_raw.parse::<i64>().unwrap_or(3);
-    if llvm_opt < 0 || llvm_opt > 3 {
-        // TODO: warn on unrecognised input.
-        llvm_opt = 3;
-    }
-
+        .get_one::<String>("llvm-opt")
+        .expect("Required argument");
+    let llvm_opt = llvm_opt_raw.parse::<i64>().expect("Validated by clap");
     llvm::optimise_ir(&mut llvm_module, llvm_opt);
 
     // Compile the LLVM IR to a temporary object file.
@@ -197,9 +200,9 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     llvm::write_object_file(&mut llvm_module, obj_file_path)?;
 
     let output_name = executable_name(path);
-    link_object_file(obj_file_path, &output_name, target_triple)?;
+    link_object_file(obj_file_path, &output_name, target_triple.cloned())?;
 
-    let strip_opt = matches.opt_str("strip").unwrap_or_else(|| "yes".to_owned());
+    let strip_opt = matches.get_one::<String>("strip").expect("Has default");
     if strip_opt == "yes" {
         strip_executable(&output_name)?
     }
@@ -236,65 +239,71 @@ fn strip_executable(executable_path: &str) -> Result<(), String> {
     shell::run_shell_command("strip", &strip_args[..])
 }
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
 fn main() {
-    let args: Vec<_> = env::args().collect();
-
-    let mut opts = Options::new();
-
-    opts.optflag("h", "help", "print usage");
-    opts.optflag("v", "version", "print bfc version");
-    opts.optflag("", "dump-llvm", "print LLVM IR generated");
-    opts.optflag("", "dump-ir", "print BF IR generated");
-
-    opts.optopt("O", "opt", "optimization level (0 to 2)", "LEVEL");
-    opts.optopt("", "llvm-opt", "LLVM optimization level (0 to 3)", "LEVEL");
-    opts.optopt(
-        "",
-        "passes",
-        "limit bfc optimisations to those specified",
-        "PASS-SPECIFICATION",
-    );
-    opts.optopt(
-        "",
-        "strip",
-        "strip symbols from the binary (default: yes)",
-        "yes|no",
-    );
-
     let default_triple_cstring = llvm::get_default_target_triple();
     let default_triple = default_triple_cstring.to_str().unwrap();
 
-    opts.optopt(
-        "",
-        "target",
-        &format!("LLVM target triple (default: {})", default_triple),
-        "TARGET",
-    );
-
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(_) => {
-            print_usage(&args[0], opts);
-            std::process::exit(1);
-        }
-    };
-
-    if matches.opt_present("h") {
-        print_usage(&args[0], opts);
-        return;
-    }
-
-    if matches.opt_present("v") {
-        println!("bfc {}", VERSION);
-        return;
-    }
-
-    if matches.free.len() != 1 {
-        print_usage(&args[0], opts);
-        std::process::exit(1);
-    }
+    let matches = command!()
+        .arg(
+            Arg::new("path")
+                .value_name("SOURCE_FILE")
+                .value_hint(ValueHint::FilePath)
+                .help("The path to the brainfuck program to compile")
+                .value_parser(ValueParser::path_buf())
+                .required(true),
+        )
+        .arg(
+            Arg::new("opt")
+                .short('O')
+                .long("opt")
+                .value_name("LEVEL")
+                .help("Optimization level")
+                .value_parser(["0", "1", "2"])
+                .default_value("2"),
+        )
+        .arg(
+            Arg::new("llvm-opt")
+                .long("llvm-opt")
+                .value_name("LEVEL")
+                .help("LLVM optimization level")
+                .value_parser(["0", "1", "2", "3"])
+                .default_value("3"),
+        )
+        .arg(
+            Arg::new("passes")
+                .long("passes")
+                .value_name("PASS-SPECIFICATION")
+                .help("Limit bfc optimizations to those specified"),
+        )
+        .arg(
+            Arg::new("strip")
+                .long("strip")
+                .value_name("yes|no")
+                .help("Strip symbols from the binary")
+                .value_parser(["yes", "no"])
+                .default_value("yes"),
+        )
+        .arg(
+            Arg::new("target")
+                .long("target")
+                .value_name("TARGET")
+                .help("LLVM target triple")
+                .default_value(default_triple.to_string()),
+        )
+        .arg(
+            Arg::new("dump-llvm")
+                .long("dump-llvm")
+                .action(ArgAction::SetTrue)
+                .action(ArgAction::SetTrue)
+                .help("Print the LLVM IR generated"),
+        )
+        .arg(
+            Arg::new("dump-ir")
+                .long("dump-ir")
+                .action(ArgAction::SetTrue)
+                .help("Print the BF IR generated"),
+        )
+        .get_matches();
 
     match compile_file(&matches) {
         Ok(_) => {}

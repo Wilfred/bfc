@@ -1,7 +1,7 @@
 //! Human-readable warnings and errors for the CLI.
 
 use colored::*;
-use std::fmt;
+use std::{fmt, path::PathBuf};
 
 use crate::bfir::Position;
 
@@ -24,7 +24,7 @@ pub enum Level {
 #[derive(Debug)]
 pub struct Info {
     pub level: Level,
-    pub filename: String,
+    pub filename: PathBuf,
     pub message: String,
     pub position: Option<Position>,
     pub source: Option<String>,
@@ -48,7 +48,7 @@ fn position(s: &str, i: usize) -> (usize, usize) {
 
 impl fmt::Display for Info {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let mut file_text = self.filename.to_owned();
+        let mut file_text = self.filename.to_owned().display().to_string();
 
         // Find line and column offsets, if we have an index.
         let offsets = match (&self.position, &self.source) {

@@ -1,6 +1,9 @@
 # v1.10.0
 
-No changes yet.
+Interface:
+
+* CLI argument parsing now uses the clap library. No arguments have
+  changed, but help and argument parsing errors should be clearer.
 
 # v1.9.0
 
