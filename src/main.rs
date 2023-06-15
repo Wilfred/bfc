@@ -68,17 +68,17 @@ fn executable_name(bf_path: &Path) -> String {
 
 #[test]
 fn executable_name_bf() {
-    assert_eq!(executable_name("foo.bf"), "foo");
+    assert_eq!(executable_name(&PathBuf::from("foo.bf")), "foo");
 }
 
 #[test]
 fn executable_name_b() {
-    assert_eq!(executable_name("foo_bar.b"), "foo_bar");
+    assert_eq!(executable_name(&PathBuf::from("foo_bar.b")), "foo_bar");
 }
 
 #[test]
 fn executable_name_relative_path() {
-    assert_eq!(executable_name("bar/baz.bf"), "baz");
+    assert_eq!(executable_name(&PathBuf::from("bar/baz.bf")), "baz");
 }
 
 fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
