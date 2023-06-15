@@ -52,7 +52,7 @@ impl fmt::Display for Info {
 
         // Find line and column offsets, if we have an index.
         let offsets = match (&self.position, &self.source) {
-            (&Some(range), &Some(ref source)) => {
+            (&Some(range), Some(source)) => {
                 debug_assert!(range.start <= range.end);
 
                 let (line_idx, column_idx) = position(source, range.start);
@@ -63,19 +63,14 @@ impl fmt::Display for Info {
             _ => None,
         };
 
-        let level_text;
-        match self.level {
-            Level::Warning => {
-                level_text = " warning: ".purple();
-            }
-            Level::Error => {
-                level_text = " error: ".red();
-            }
-        }
+        let level_text = match self.level {
+            Level::Warning => " warning: ".purple(),
+            Level::Error => " error: ".red(),
+        };
 
         let mut context_line = "".to_owned();
         let mut caret_line = "".to_owned();
-        if let (Some((line_idx, column_idx, width)), &Some(ref source)) = (offsets, &self.source) {
+        if let (Some((line_idx, column_idx, width)), Some(source)) = (offsets, &self.source) {
             // The faulty line of code.
             let line = source.split('\n').nth(line_idx).unwrap();
             context_line = "\n".to_owned() + line;

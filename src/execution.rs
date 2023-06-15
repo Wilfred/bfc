@@ -230,7 +230,7 @@ pub fn execute_with_state<'a>(
                             // If we ran out of steps after a complete
                             // loop iteration, start_instr will still
                             // be None, so we set it to the current loop.
-                            if state.start_instr == None {
+                            if state.start_instr.is_none() {
                                 state.start_instr = Some(&instrs[instr_idx]);
                             }
                             return loop_outcome;

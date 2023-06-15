@@ -194,10 +194,10 @@ fn compile_file(matches: &Matches) -> Result<(), String> {
     // Compile the LLVM IR to a temporary object file.
     let object_file = convert_io_error(NamedTempFile::new())?;
     let obj_file_path = object_file.path().to_str().expect("path not valid utf-8");
-    llvm::write_object_file(&mut llvm_module, &obj_file_path)?;
+    llvm::write_object_file(&mut llvm_module, obj_file_path)?;
 
     let output_name = executable_name(path);
-    link_object_file(&obj_file_path, &output_name, target_triple)?;
+    link_object_file(obj_file_path, &output_name, target_triple)?;
 
     let strip_opt = matches.opt_str("strip").unwrap_or_else(|| "yes".to_owned());
     if strip_opt == "yes" {
@@ -217,12 +217,12 @@ fn link_object_file(
         vec![
             object_file_path,
             "-target",
-            &target_triple,
+            target_triple,
             "-o",
-            &executable_path[..],
+            executable_path,
         ]
     } else {
-        vec![object_file_path, "-o", &executable_path[..]]
+        vec![object_file_path, "-o", executable_path]
     };
 
     shell::run_shell_command("clang", &clang_args[..])
@@ -230,8 +230,8 @@ fn link_object_file(
 
 fn strip_executable(executable_path: &str) -> Result<(), String> {
     let strip_args = match std::env::consts::OS {
-        "macos" => vec![&executable_path[..]],
-        _ => vec!["-s", &executable_path[..]],
+        "macos" => vec![executable_path],
+        _ => vec!["-s", executable_path],
     };
     shell::run_shell_command("strip", &strip_args[..])
 }
