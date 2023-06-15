@@ -722,9 +722,8 @@ fn annotate_known_zero_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
 /// loops (which may not terminate so we should not remove).
 pub fn remove_pure_code(mut instrs: Vec<AstNode>) -> (Vec<AstNode>, Option<Warning>) {
     let mut pure_instrs = vec![];
-    while !instrs.is_empty() {
-        let last_instr = instrs.pop().unwrap();
 
+    while let Some(last_instr) = instrs.pop() {
         match last_instr {
             Read { .. } | Write { .. } | Loop { .. } => {
                 instrs.push(last_instr);

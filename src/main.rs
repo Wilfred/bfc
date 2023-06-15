@@ -86,11 +86,10 @@ fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
             Report::build(ReportKind::Error, &path_str, position.start)
                 .with_message("Parse error")
                 .with_label(
-                    Label::new((&path_str, position.start..position.end + 1))
-                        .with_message(message.clone()),
+                    Label::new((&path_str, position.start..position.end + 1)).with_message(message),
                 )
                 .finish()
-                .eprint((&path_str, Source::from(src.clone())))
+                .eprint((&path_str, Source::from(src)))
                 .unwrap();
 
             return Err(());
@@ -141,11 +140,10 @@ fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
         Report::build(ReportKind::Warning, &path_str, position.start)
             .with_message("Invalid result during compiletime execution")
             .with_label(
-                Label::new((&path_str, position.start..position.end + 1))
-                    .with_message(message.clone()),
+                Label::new((&path_str, position.start..position.end + 1)).with_message(message),
             )
             .finish()
-            .eprint((&path_str, Source::from(src.clone())))
+            .eprint((&path_str, Source::from(src)))
             .unwrap();
     }
 
@@ -301,8 +299,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn executable_name_bf() {
