@@ -11,8 +11,8 @@ bfc is an LLVM-based compiler that converts
 ## Is this a serious project?
 
 It's a legitimate BF implementation with genuine compiler
-optimisations. bfc is [referenced on
-Wikipedia](https://en.wikipedia.org/wiki/Brainfuck#Implementations)
+optimisations. bfc has been [referenced on
+Wikipedia](https://en.wikipedia.org/w/index.php?title=Brainfuck&oldid=1139432166#cite_ref-13)
 and [the llvm-sys
 docs](https://gitlab.com/taricorp/llvm-sys.rs#documentation).
 

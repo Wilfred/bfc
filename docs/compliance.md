@@ -4,7 +4,7 @@ title: BF Compliance
 ---
 
 BF is an [underspecified
-language](https://en.wikipedia.org/wiki/Brainfuck#Portability_issues). Most
+language](https://en.wikipedia.org/w/index.php?title=Brainfuck&oldid=1139432166#Portability_issues). Most
 BF programs just work, but this page documents implementation
 decisions.
 
