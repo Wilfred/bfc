@@ -1,5 +1,7 @@
 # v1.10.0
 
+Updated to LLVM 13.
+
 Interface:
 
 * Improved diagnostics display on warnings and errors.
