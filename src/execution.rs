@@ -2,26 +2,13 @@
 
 //! Compile time execution of BF programs.
 
-#[cfg(test)]
-use std::collections::HashMap;
 use std::env;
 use std::num::Wrapping;
-
-#[cfg(test)]
-use pretty_assertions::assert_eq;
-#[cfg(test)]
-use quickcheck::quickcheck;
-
-#[cfg(test)]
-use crate::bfir::{parse, Position};
 
 use crate::bfir::AstNode::*;
 use crate::bfir::{AstNode, Cell};
 
 use crate::diagnostics::Warning;
-
-#[cfg(test)]
-use crate::bounds::MAX_CELL_INDEX;
 
 use crate::bounds::highest_cell_index;
 
@@ -260,550 +247,562 @@ pub fn execute_with_state<'a>(
     }
 }
 
-/// We can't evaluate outputs of runtime values at compile time.
-#[test]
-fn cant_evaluate_inputs() {
-    let instrs = parse(",.").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+    use quickcheck::quickcheck;
+    use std::collections::HashMap;
 
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[0]),
-            cells: vec![Wrapping(0)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
+    use crate::bfir::{parse, Position};
+    use crate::bounds::MAX_CELL_INDEX;
 
-#[test]
-fn increment_executed() {
-    let instrs = parse("+").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
+    use super::*;
 
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(1)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
+    /// We can't evaluate outputs of runtime values at compile time.
+    #[test]
+    fn cant_evaluate_inputs() {
+        let instrs = parse(",.").unwrap();
+        let final_state = execute(&instrs, max_steps()).0;
 
-#[test]
-fn multiply_move_executed() {
-    let mut changes = HashMap::new();
-    changes.insert(1, Wrapping(2));
-    changes.insert(3, Wrapping(3));
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[0]),
+                cells: vec![Wrapping(0)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
 
-    let instrs = [
-        // Initial cells: [2, 1, 0, 0]
-        Increment {
+    #[test]
+    fn increment_executed() {
+        let instrs = parse("+").unwrap();
+        let final_state = execute(&instrs, max_steps()).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(1)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn multiply_move_executed() {
+        let mut changes = HashMap::new();
+        changes.insert(1, Wrapping(2));
+        changes.insert(3, Wrapping(3));
+
+        let instrs = [
+            // Initial cells: [2, 1, 0, 0]
+            Increment {
+                amount: Wrapping(2),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            PointerIncrement {
+                amount: 1,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            Increment {
+                amount: Wrapping(1),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            PointerIncrement {
+                amount: -1,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            MultiplyMove {
+                changes,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+        ];
+
+        let final_state = execute(&instrs, max_steps()).0;
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(0), Wrapping(5), Wrapping(0), Wrapping(6)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    /// When the current cell is zero, we shouldn't execute a multiply move instruction.
+    /// Otherwise, the BF program [-<+>] (which is well formed and does nothing) becomes
+    /// undefined behaviour when we have a multiply move instruction.
+    #[test]
+    fn multiply_move_when_current_cell_is_zero() {
+        let mut changes = HashMap::new();
+        changes.insert(-1, Wrapping(2));
+
+        let instrs = [MultiplyMove {
+            changes,
+            position: None,
+        }];
+
+        let (final_state, warning) = execute(&instrs, max_steps());
+        assert_eq!(warning, None);
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(0)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn multiply_move_wrapping() {
+        let mut changes = HashMap::new();
+        changes.insert(1, Wrapping(3));
+        let instrs = [
+            Increment {
+                amount: Wrapping(100),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            MultiplyMove {
+                changes,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+        ];
+
+        let final_state = execute(&instrs, max_steps()).0;
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                // 100 * 3 mod 256 == 44
+                cells: vec![Wrapping(0), Wrapping(44)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn multiply_move_offset_too_high() {
+        let mut changes: HashMap<isize, Cell> = HashMap::new();
+        changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
+        let instrs = [
+            Increment {
+                amount: Wrapping(1),
+                offset: 0,
+                position: None,
+            },
+            MultiplyMove {
+                changes,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+        ];
+
+        let final_state = execute(&instrs, max_steps()).0;
+        let mut expected_cells = vec![Wrapping(0); MAX_CELL_INDEX + 1];
+        expected_cells[0] = Wrapping(1);
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[1]),
+                cells: expected_cells,
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn multiply_move_offset_too_low() {
+        let mut changes = HashMap::new();
+        changes.insert(-1, Wrapping(1));
+        let instrs = [
+            Increment {
+                amount: Wrapping(1),
+                offset: 0,
+                position: None,
+            },
+            MultiplyMove {
+                changes,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+        ];
+
+        let final_state = execute(&instrs, max_steps()).0;
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[1]),
+                cells: vec![Wrapping(1)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn set_executed() {
+        let instrs = [Set {
             amount: Wrapping(2),
             offset: 0,
             position: Some(Position { start: 0, end: 0 }),
-        },
-        PointerIncrement {
-            amount: 1,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-        Increment {
-            amount: Wrapping(1),
-            offset: 0,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-        PointerIncrement {
-            amount: -1,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-        MultiplyMove {
-            changes,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-    ];
+        }];
+        let final_state = execute(&instrs, max_steps()).0;
 
-    let final_state = execute(&instrs, max_steps()).0;
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(0), Wrapping(5), Wrapping(0), Wrapping(6)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(2)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
 
-/// When the current cell is zero, we shouldn't execute a multiply move instruction.
-/// Otherwise, the BF program [-<+>] (which is well formed and does nothing) becomes
-/// undefined behaviour when we have a multiply move instruction.
-#[test]
-fn multiply_move_when_current_cell_is_zero() {
-    let mut changes = HashMap::new();
-    changes.insert(-1, Wrapping(2));
-
-    let instrs = [MultiplyMove {
-        changes,
-        position: None,
-    }];
-
-    let (final_state, warning) = execute(&instrs, max_steps());
-    assert_eq!(warning, None);
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(0)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn multiply_move_wrapping() {
-    let mut changes = HashMap::new();
-    changes.insert(1, Wrapping(3));
-    let instrs = [
-        Increment {
-            amount: Wrapping(100),
-            offset: 0,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-        MultiplyMove {
-            changes,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-    ];
-
-    let final_state = execute(&instrs, max_steps()).0;
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            // 100 * 3 mod 256 == 44
-            cells: vec![Wrapping(0), Wrapping(44)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn multiply_move_offset_too_high() {
-    let mut changes: HashMap<isize, Cell> = HashMap::new();
-    changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
-    let instrs = [
-        Increment {
-            amount: Wrapping(1),
-            offset: 0,
-            position: None,
-        },
-        MultiplyMove {
-            changes,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-    ];
-
-    let final_state = execute(&instrs, max_steps()).0;
-    let mut expected_cells = vec![Wrapping(0); MAX_CELL_INDEX + 1];
-    expected_cells[0] = Wrapping(1);
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[1]),
-            cells: expected_cells,
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn multiply_move_offset_too_low() {
-    let mut changes = HashMap::new();
-    changes.insert(-1, Wrapping(1));
-    let instrs = [
-        Increment {
-            amount: Wrapping(1),
-            offset: 0,
-            position: None,
-        },
-        MultiplyMove {
-            changes,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-    ];
-
-    let final_state = execute(&instrs, max_steps()).0;
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[1]),
-            cells: vec![Wrapping(1)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn set_executed() {
-    let instrs = [Set {
-        amount: Wrapping(2),
-        offset: 0,
-        position: Some(Position { start: 0, end: 0 }),
-    }];
-    let final_state = execute(&instrs, max_steps()).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(2)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn set_wraps() {
-    let instrs = [Set {
-        amount: Wrapping(-1),
-        offset: 0,
-        position: Some(Position { start: 0, end: 0 }),
-    }];
-    let final_state = execute(&instrs, max_steps()).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(-1)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn decrement_executed() {
-    let instrs = parse("-").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(-1)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn increment_wraps() {
-    let instrs = [
-        Increment {
+    #[test]
+    fn set_wraps() {
+        let instrs = [Set {
             amount: Wrapping(-1),
             offset: 0,
             position: Some(Position { start: 0, end: 0 }),
-        },
-        Increment {
-            amount: Wrapping(1),
-            offset: 0,
-            position: Some(Position { start: 0, end: 0 }),
-        },
-    ];
-    let final_state = execute(&instrs, max_steps()).0;
+        }];
+        let final_state = execute(&instrs, max_steps()).0;
 
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(0)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn ptr_increment_executed() {
-    let instrs = parse(">").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(0), Wrapping(0)],
-            cell_ptr: 1,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn ptr_out_of_range() {
-    let instrs = parse("<").unwrap();
-    let (final_state, warning) = execute(&instrs, max_steps());
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[0]),
-            cells: vec![Wrapping(0)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-
-    assert!(warning.is_some());
-}
-
-#[test]
-fn limit_to_steps_specified() {
-    let instrs = parse("++++").unwrap();
-    let final_state = execute(&instrs, 2).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[2]),
-            cells: vec![Wrapping(2)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn write_executed() {
-    let instrs = parse("+.").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(1)],
-            cell_ptr: 0,
-            outputs: vec![1],
-        }
-    );
-}
-
-#[test]
-fn loop_executed() {
-    let instrs = parse("++[-]").unwrap();
-    let final_state = execute(&instrs, max_steps()).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: None,
-            cells: vec![Wrapping(0)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-// If we can't execute all of a loop body, we should still return a
-// position within the loop.
-#[test]
-fn partially_execute_up_to_runtime_value() {
-    let instrs = parse("+[[,]]").unwrap();
-    let final_state = execute(&instrs, 10).0;
-
-    // Get the inner read instruction
-    let start_instr = match instrs[1] {
-        Loop { ref body, .. } => match body[0] {
-            Loop {
-                body: ref body2, ..
-            } => &body2[0],
-            _ => unreachable!(),
-        },
-        _ => unreachable!(),
-    };
-    assert_eq!(
-        *start_instr,
-        Read {
-            position: Some(Position { start: 3, end: 3 })
-        }
-    );
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(start_instr),
-            cells: vec![Wrapping(1)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn execute_read_with_dummy_value() {
-    let instrs = parse(",").unwrap();
-
-    let mut state = ExecutionState::initial(&instrs[..]);
-    execute_with_state(&instrs[..], &mut state, 5, Some(1));
-
-    assert_eq!(state.cells[0], Wrapping(1));
-}
-
-#[test]
-fn execute_read_with_dummy_value_nested_loop() {
-    // Regression test.
-    let instrs = parse("+[[,]]").unwrap();
-
-    let mut state = ExecutionState::initial(&instrs[..]);
-    let outcome = execute_with_state(&instrs[..], &mut state, 20, Some(0));
-
-    assert!(matches!(outcome, Outcome::Completed(_)));
-}
-
-/// Ensure that we have the correct InstrPosition when we finish
-/// executing a top-level loop.
-#[test]
-fn partially_execute_complete_toplevel_loop() {
-    let instrs = parse("+[-],").unwrap();
-    let final_state = execute(&instrs, 10).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[2]),
-            cells: vec![Wrapping(0)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn partially_execute_up_to_step_limit() {
-    let instrs = parse("+[++++]").unwrap();
-    let final_state = execute(&instrs, 3).0;
-
-    let start_instr = match instrs[1] {
-        Loop { ref body, .. } => &body[2],
-        _ => unreachable!(),
-    };
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(start_instr),
-            cells: vec![Wrapping(3)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn loop_up_to_step_limit() {
-    let instrs = parse("++[-]").unwrap();
-    // Assuming we take one step to enter the loop, we will execute
-    // the loop body once.
-    let final_state = execute(&instrs, 4).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[2]),
-            cells: vec![Wrapping(1)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn loop_with_read_body() {
-    // We can't execute the whole loop, so our start instruction
-    // should be the read.
-    let instrs = parse("+[+,]").unwrap();
-    let final_state = execute(&instrs, 4).0;
-
-    // Get the inner read instruction
-    let start_instr = match instrs[1] {
-        Loop { ref body, .. } => &body[1],
-        _ => unreachable!(),
-    };
-    assert_eq!(
-        *start_instr,
-        Read {
-            position: Some(Position { start: 3, end: 3 })
-        }
-    );
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(start_instr),
-            cells: vec![Wrapping(2)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn up_to_infinite_loop_executed() {
-    let instrs = parse("++[]").unwrap();
-    let final_state = execute(&instrs, 20).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[2]),
-            cells: vec![Wrapping(2)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn up_to_nonempty_infinite_loop() {
-    let instrs = parse("+[+]").unwrap();
-    let final_state = execute(&instrs, 20).0;
-
-    assert_eq!(
-        final_state,
-        ExecutionState {
-            start_instr: Some(&instrs[1]),
-            cells: vec![Wrapping(11)],
-            cell_ptr: 0,
-            outputs: vec![],
-        }
-    );
-}
-
-#[test]
-fn quickcheck_cell_ptr_in_bounds() {
-    fn cell_ptr_in_bounds(instrs: Vec<AstNode>) -> bool {
-        let state = execute(&instrs, 100).0;
-        (state.cell_ptr >= 0) && (state.cell_ptr < state.cells.len() as isize)
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(-1)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
     }
-    quickcheck(cell_ptr_in_bounds as fn(Vec<AstNode>) -> bool);
-}
 
-#[test]
-fn arithmetic_error_nested_loops() {
-    // Regression test, based on a snippet from
-    // mandlebrot.bf. Previously, if the first element in a loop was
-    // another loop, we had arithmetic overflow.
-    let instrs = parse("+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
-    execute(&instrs, max_steps());
+    #[test]
+    fn decrement_executed() {
+        let instrs = parse("-").unwrap();
+        let final_state = execute(&instrs, max_steps()).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(-1)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn increment_wraps() {
+        let instrs = [
+            Increment {
+                amount: Wrapping(-1),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            Increment {
+                amount: Wrapping(1),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            },
+        ];
+        let final_state = execute(&instrs, max_steps()).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(0)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn ptr_increment_executed() {
+        let instrs = parse(">").unwrap();
+        let final_state = execute(&instrs, max_steps()).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(0), Wrapping(0)],
+                cell_ptr: 1,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn ptr_out_of_range() {
+        let instrs = parse("<").unwrap();
+        let (final_state, warning) = execute(&instrs, max_steps());
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[0]),
+                cells: vec![Wrapping(0)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+
+        assert!(warning.is_some());
+    }
+
+    #[test]
+    fn limit_to_steps_specified() {
+        let instrs = parse("++++").unwrap();
+        let final_state = execute(&instrs, 2).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[2]),
+                cells: vec![Wrapping(2)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn write_executed() {
+        let instrs = parse("+.").unwrap();
+        let final_state = execute(&instrs, max_steps()).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(1)],
+                cell_ptr: 0,
+                outputs: vec![1],
+            }
+        );
+    }
+
+    #[test]
+    fn loop_executed() {
+        let instrs = parse("++[-]").unwrap();
+        let final_state = execute(&instrs, max_steps()).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: None,
+                cells: vec![Wrapping(0)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    // If we can't execute all of a loop body, we should still return a
+    // position within the loop.
+    #[test]
+    fn partially_execute_up_to_runtime_value() {
+        let instrs = parse("+[[,]]").unwrap();
+        let final_state = execute(&instrs, 10).0;
+
+        // Get the inner read instruction
+        let start_instr = match instrs[1] {
+            Loop { ref body, .. } => match body[0] {
+                Loop {
+                    body: ref body2, ..
+                } => &body2[0],
+                _ => unreachable!(),
+            },
+            _ => unreachable!(),
+        };
+        assert_eq!(
+            *start_instr,
+            Read {
+                position: Some(Position { start: 3, end: 3 })
+            }
+        );
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(start_instr),
+                cells: vec![Wrapping(1)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn execute_read_with_dummy_value() {
+        let instrs = parse(",").unwrap();
+
+        let mut state = ExecutionState::initial(&instrs[..]);
+        execute_with_state(&instrs[..], &mut state, 5, Some(1));
+
+        assert_eq!(state.cells[0], Wrapping(1));
+    }
+
+    #[test]
+    fn execute_read_with_dummy_value_nested_loop() {
+        // Regression test.
+        let instrs = parse("+[[,]]").unwrap();
+
+        let mut state = ExecutionState::initial(&instrs[..]);
+        let outcome = execute_with_state(&instrs[..], &mut state, 20, Some(0));
+
+        assert!(matches!(outcome, Outcome::Completed(_)));
+    }
+
+    /// Ensure that we have the correct InstrPosition when we finish
+    /// executing a top-level loop.
+    #[test]
+    fn partially_execute_complete_toplevel_loop() {
+        let instrs = parse("+[-],").unwrap();
+        let final_state = execute(&instrs, 10).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[2]),
+                cells: vec![Wrapping(0)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn partially_execute_up_to_step_limit() {
+        let instrs = parse("+[++++]").unwrap();
+        let final_state = execute(&instrs, 3).0;
+
+        let start_instr = match instrs[1] {
+            Loop { ref body, .. } => &body[2],
+            _ => unreachable!(),
+        };
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(start_instr),
+                cells: vec![Wrapping(3)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn loop_up_to_step_limit() {
+        let instrs = parse("++[-]").unwrap();
+        // Assuming we take one step to enter the loop, we will execute
+        // the loop body once.
+        let final_state = execute(&instrs, 4).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[2]),
+                cells: vec![Wrapping(1)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn loop_with_read_body() {
+        // We can't execute the whole loop, so our start instruction
+        // should be the read.
+        let instrs = parse("+[+,]").unwrap();
+        let final_state = execute(&instrs, 4).0;
+
+        // Get the inner read instruction
+        let start_instr = match instrs[1] {
+            Loop { ref body, .. } => &body[1],
+            _ => unreachable!(),
+        };
+        assert_eq!(
+            *start_instr,
+            Read {
+                position: Some(Position { start: 3, end: 3 })
+            }
+        );
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(start_instr),
+                cells: vec![Wrapping(2)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn up_to_infinite_loop_executed() {
+        let instrs = parse("++[]").unwrap();
+        let final_state = execute(&instrs, 20).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[2]),
+                cells: vec![Wrapping(2)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn up_to_nonempty_infinite_loop() {
+        let instrs = parse("+[+]").unwrap();
+        let final_state = execute(&instrs, 20).0;
+
+        assert_eq!(
+            final_state,
+            ExecutionState {
+                start_instr: Some(&instrs[1]),
+                cells: vec![Wrapping(11)],
+                cell_ptr: 0,
+                outputs: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn quickcheck_cell_ptr_in_bounds() {
+        fn cell_ptr_in_bounds(instrs: Vec<AstNode>) -> bool {
+            let state = execute(&instrs, 100).0;
+            (state.cell_ptr >= 0) && (state.cell_ptr < state.cells.len() as isize)
+        }
+        quickcheck(cell_ptr_in_bounds as fn(Vec<AstNode>) -> bool);
+    }
+
+    #[test]
+    fn arithmetic_error_nested_loops() {
+        // Regression test, based on a snippet from
+        // mandlebrot.bf. Previously, if the first element in a loop was
+        // another loop, we had arithmetic overflow.
+        let instrs = parse("+[[>>>>>>>>>]+>>>>>>>>>-]").unwrap();
+        execute(&instrs, max_steps());
+    }
 }

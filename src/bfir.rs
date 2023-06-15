@@ -9,9 +9,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::num::Wrapping;
 
-#[cfg(test)]
-use pretty_assertions::assert_eq;
-
 use self::AstNode::*;
 
 /// A cell is the fundamental BF datatype that we work with. BF
@@ -246,180 +243,186 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, ParseError> {
     Ok(instructions)
 }
 
-#[test]
-fn parse_increment() {
-    assert_eq!(
-        parse("+").unwrap(),
-        [Increment {
-            amount: Wrapping(1),
-            offset: 0,
-            position: Some(Position { start: 0, end: 0 }),
-        }]
-    );
-    assert_eq!(
-        parse("++").unwrap(),
-        [
-            Increment {
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+    use super::*;
+
+    #[test]
+    fn parse_increment() {
+        assert_eq!(
+            parse("+").unwrap(),
+            [Increment {
                 amount: Wrapping(1),
                 offset: 0,
                 position: Some(Position { start: 0, end: 0 }),
+            }]
+        );
+        assert_eq!(
+            parse("++").unwrap(),
+            [
+                Increment {
+                    amount: Wrapping(1),
+                    offset: 0,
+                    position: Some(Position { start: 0, end: 0 }),
+                },
+                Increment {
+                    amount: Wrapping(1),
+                    offset: 0,
+                    position: Some(Position { start: 1, end: 1 }),
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn parse_decrement() {
+        assert_eq!(
+            parse("-").unwrap(),
+            [Increment {
+                amount: Wrapping(-1),
+                offset: 0,
+                position: Some(Position { start: 0, end: 0 }),
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_pointer_increment() {
+        assert_eq!(
+            parse(">").unwrap(),
+            [PointerIncrement {
+                amount: 1,
+                position: Some(Position { start: 0, end: 0 }),
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_pointer_decrement() {
+        assert_eq!(
+            parse("<").unwrap(),
+            [PointerIncrement {
+                amount: -1,
+                position: Some(Position { start: 0, end: 0 }),
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_read() {
+        assert_eq!(
+            parse(",").unwrap(),
+            [Read {
+                position: Some(Position { start: 0, end: 0 })
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_write() {
+        assert_eq!(
+            parse(".").unwrap(),
+            [Write {
+                position: Some(Position { start: 0, end: 0 })
+            }]
+        );
+    }
+
+    #[test]
+    fn parse_empty_loop() {
+        let expected = [Loop {
+            body: vec![],
+            position: Some(Position { start: 0, end: 1 }),
+        }];
+        assert_eq!(parse("[]").unwrap(), expected);
+    }
+
+    #[test]
+    fn parse_simple_loop() {
+        let loop_body = vec![Increment {
+            amount: Wrapping(1),
+            offset: 0,
+            position: Some(Position { start: 1, end: 1 }),
+        }];
+        let expected = [Loop {
+            body: loop_body,
+            position: Some(Position { start: 0, end: 2 }),
+        }];
+        assert_eq!(parse("[+]").unwrap(), expected);
+    }
+
+    #[test]
+    fn parse_complex_loop() {
+        let loop_body = vec![
+            Read {
+                position: Some(Position { start: 2, end: 2 }),
             },
             Increment {
                 amount: Wrapping(1),
                 offset: 0,
-                position: Some(Position { start: 1, end: 1 }),
-            }
-        ]
-    );
-}
+                position: Some(Position { start: 3, end: 3 }),
+            },
+        ];
+        let expected = [
+            Write {
+                position: Some(Position { start: 0, end: 0 }),
+            },
+            Loop {
+                body: loop_body,
+                position: Some(Position { start: 1, end: 4 }),
+            },
+            Increment {
+                amount: Wrapping(-1),
+                offset: 0,
+                position: Some(Position { start: 5, end: 5 }),
+            },
+        ];
+        assert_eq!(parse(".[,+]-").unwrap(), expected);
+    }
 
-#[test]
-fn parse_decrement() {
-    assert_eq!(
-        parse("-").unwrap(),
-        [Increment {
-            amount: Wrapping(-1),
-            offset: 0,
-            position: Some(Position { start: 0, end: 0 }),
-        }]
-    );
-}
+    #[test]
+    fn parse_unbalanced_loop() {
+        assert!(parse("[").is_err());
+        assert!(parse("]").is_err());
+        assert!(parse("][").is_err());
+        assert!(parse("[][").is_err());
+    }
 
-#[test]
-fn parse_pointer_increment() {
-    assert_eq!(
-        parse(">").unwrap(),
-        [PointerIncrement {
-            amount: 1,
-            position: Some(Position { start: 0, end: 0 }),
-        }]
-    );
-}
+    #[test]
+    fn parse_comment() {
+        assert_eq!(parse("foo! ").unwrap(), []);
+    }
 
-#[test]
-fn parse_pointer_decrement() {
-    assert_eq!(
-        parse("<").unwrap(),
-        [PointerIncrement {
-            amount: -1,
-            position: Some(Position { start: 0, end: 0 }),
-        }]
-    );
-}
+    #[test]
+    fn test_combine_pos() {
+        let pos1 = Some(Position { start: 1, end: 2 });
+        let pos2 = Some(Position { start: 3, end: 4 });
 
-#[test]
-fn parse_read() {
-    assert_eq!(
-        parse(",").unwrap(),
-        [Read {
-            position: Some(Position { start: 0, end: 0 })
-        }]
-    );
-}
+        assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 4 }));
+    }
 
-#[test]
-fn parse_write() {
-    assert_eq!(
-        parse(".").unwrap(),
-        [Write {
-            position: Some(Position { start: 0, end: 0 })
-        }]
-    );
-}
+    #[test]
+    fn test_combine_order() {
+        let pos1 = Some(Position { start: 3, end: 4 });
+        let pos2 = Some(Position { start: 1, end: 2 });
 
-#[test]
-fn parse_empty_loop() {
-    let expected = [Loop {
-        body: vec![],
-        position: Some(Position { start: 0, end: 1 }),
-    }];
-    assert_eq!(parse("[]").unwrap(), expected);
-}
+        assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 4 }));
+    }
 
-#[test]
-fn parse_simple_loop() {
-    let loop_body = vec![Increment {
-        amount: Wrapping(1),
-        offset: 0,
-        position: Some(Position { start: 1, end: 1 }),
-    }];
-    let expected = [Loop {
-        body: loop_body,
-        position: Some(Position { start: 0, end: 2 }),
-    }];
-    assert_eq!(parse("[+]").unwrap(), expected);
-}
+    #[test]
+    fn test_combine_pos_not_consecutive() {
+        let pos1 = Some(Position { start: 1, end: 2 });
+        let pos2 = Some(Position { start: 4, end: 5 });
 
-#[test]
-fn parse_complex_loop() {
-    let loop_body = vec![
-        Read {
-            position: Some(Position { start: 2, end: 2 }),
-        },
-        Increment {
-            amount: Wrapping(1),
-            offset: 0,
-            position: Some(Position { start: 3, end: 3 }),
-        },
-    ];
-    let expected = [
-        Write {
-            position: Some(Position { start: 0, end: 0 }),
-        },
-        Loop {
-            body: loop_body,
-            position: Some(Position { start: 1, end: 4 }),
-        },
-        Increment {
-            amount: Wrapping(-1),
-            offset: 0,
-            position: Some(Position { start: 5, end: 5 }),
-        },
-    ];
-    assert_eq!(parse(".[,+]-").unwrap(), expected);
-}
+        assert_eq!(pos1.combine(pos2), Some(Position { start: 4, end: 5 }));
+    }
 
-#[test]
-fn parse_unbalanced_loop() {
-    assert!(parse("[").is_err());
-    assert!(parse("]").is_err());
-    assert!(parse("][").is_err());
-    assert!(parse("[][").is_err());
-}
+    #[test]
+    fn test_combine_pos_overlap() {
+        let pos1 = Some(Position { start: 1, end: 1 });
+        let pos2 = Some(Position { start: 1, end: 3 });
 
-#[test]
-fn parse_comment() {
-    assert_eq!(parse("foo! ").unwrap(), []);
-}
-
-#[test]
-fn test_combine_pos() {
-    let pos1 = Some(Position { start: 1, end: 2 });
-    let pos2 = Some(Position { start: 3, end: 4 });
-
-    assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 4 }));
-}
-
-#[test]
-fn test_combine_order() {
-    let pos1 = Some(Position { start: 3, end: 4 });
-    let pos2 = Some(Position { start: 1, end: 2 });
-
-    assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 4 }));
-}
-
-#[test]
-fn test_combine_pos_not_consecutive() {
-    let pos1 = Some(Position { start: 1, end: 2 });
-    let pos2 = Some(Position { start: 4, end: 5 });
-
-    assert_eq!(pos1.combine(pos2), Some(Position { start: 4, end: 5 }));
-}
-
-#[test]
-fn test_combine_pos_overlap() {
-    let pos1 = Some(Position { start: 1, end: 1 });
-    let pos2 = Some(Position { start: 1, end: 3 });
-
-    assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 3 }));
+        assert_eq!(pos1.combine(pos2), Some(Position { start: 1, end: 3 }));
+    }
 }

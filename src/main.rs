@@ -17,9 +17,6 @@ use std::path::Path;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
-#[cfg(test)]
-use pretty_assertions::assert_eq;
-
 mod bfir;
 mod bounds;
 mod diagnostics;
@@ -64,21 +61,6 @@ fn executable_name(bf_path: &Path) -> String {
     }
 
     name_parts.join(".")
-}
-
-#[test]
-fn executable_name_bf() {
-    assert_eq!(executable_name(&PathBuf::from("foo.bf")), "foo");
-}
-
-#[test]
-fn executable_name_b() {
-    assert_eq!(executable_name(&PathBuf::from("foo_bar.b")), "foo_bar");
-}
-
-#[test]
-fn executable_name_relative_path() {
-    assert_eq!(executable_name(&PathBuf::from("bar/baz.bf")), "baz");
 }
 
 fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
@@ -314,5 +296,26 @@ fn main() {
         Err(()) => {
             std::process::exit(2);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+    use super::*;
+
+    #[test]
+    fn executable_name_bf() {
+        assert_eq!(executable_name(&PathBuf::from("foo.bf")), "foo");
+    }
+
+    #[test]
+    fn executable_name_b() {
+        assert_eq!(executable_name(&PathBuf::from("foo_bar.b")), "foo_bar");
+    }
+
+    #[test]
+    fn executable_name_relative_path() {
+        assert_eq!(executable_name(&PathBuf::from("bar/baz.bf")), "baz");
     }
 }
