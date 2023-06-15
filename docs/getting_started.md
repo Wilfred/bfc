@@ -32,7 +32,6 @@ and recompile.
 
 ```
 $ export PATH="/usr/lib/llvm13/bin/:$PATH"
-$ hash -r
 $ cargo clean
 $ cargo build
 ```
