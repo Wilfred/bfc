@@ -12,7 +12,7 @@ rust-version = "1.64.0"
 
 [dependencies]
 llvm-sys = "130.0.5"
-itertools = "0.9"
+itertools = "0.10.5"
 tempfile = "3.1"
 getopts = "0.2.21"
 colored = "2"

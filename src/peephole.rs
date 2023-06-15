@@ -743,7 +743,7 @@ pub fn remove_pure_code(mut instrs: Vec<AstNode>) -> (Vec<AstNode>, Option<Warni
             .into_iter()
             .map(|instr| get_position(&instr))
             .filter(|pos| pos.is_some())
-            .fold1(|pos1, pos2| pos1.combine(pos2))
+            .reduce(|pos1, pos2| pos1.combine(pos2))
             .map(|pos| pos.unwrap());
         Some(Warning {
             message: "These instructions have no effect.".to_owned(),
