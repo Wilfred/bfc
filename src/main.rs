@@ -27,8 +27,6 @@ mod shell;
 
 #[cfg(test)]
 mod llvm_tests;
-#[cfg(test)]
-mod soundness_tests;
 
 /// Read the contents of the file at path, and return a string of its
 /// contents. Return a diagnostic if we can't open or read the file.

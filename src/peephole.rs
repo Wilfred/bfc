@@ -142,7 +142,7 @@ impl<I> MapLoopsExt for I where I: Iterator<Item = AstNode> {}
 /// if it has an offset. E.g. if the instruction is
 /// Set {amount:100, offset: 1}, we're still considering previous instructions that
 /// modify the current cell, not the (cell_index + 1)th cell.
-pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
+fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
@@ -183,7 +183,7 @@ pub fn previous_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
 /// vector. This proved extremely hard to reason about. Instead, we
 /// have copied the body of `previous_cell_change` and highlighted the
 /// differences.
-pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
+fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
     assert!(index < instrs.len());
 
     let mut needed_offset = 0;
@@ -221,7 +221,7 @@ pub fn next_cell_change(instrs: &[AstNode], index: usize) -> Option<usize> {
 
 /// Combine consecutive increments into a single increment
 /// instruction.
-pub fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs
         .into_iter()
         .coalesce(|prev_instr, instr| {
@@ -263,7 +263,7 @@ pub fn combine_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
         .map_loops(combine_increments)
 }
 
-pub fn combine_ptr_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn combine_ptr_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs
         .into_iter()
         .coalesce(|prev_instr, instr| {
@@ -295,7 +295,7 @@ pub fn combine_ptr_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
 /// Don't bother updating cells if they're immediately overwritten
 /// by a value from stdin.
 // TODO: this should generate a warning too.
-pub fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut redundant_instr_positions = HashSet::new();
     let mut last_write_index = None;
 
@@ -337,7 +337,7 @@ pub fn remove_read_clobber(instrs: Vec<AstNode>) -> Vec<AstNode> {
 }
 
 /// Convert [-] to Set 0.
-pub fn zeroing_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn zeroing_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs
         .into_iter()
         .map(|instr| {
@@ -364,7 +364,7 @@ pub fn zeroing_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
 }
 
 /// Remove any loops where we know the current cell is zero.
-pub fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs
         .clone()
         .into_iter()
@@ -405,7 +405,7 @@ pub fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
 /// Increment { amount: 1, offset: 1 }
 /// Increment { amount: 2, offset: 2 }
 /// PointerIncrement(1)
-pub fn sort_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn sort_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut sequence = vec![];
     let mut result = vec![];
 
@@ -515,7 +515,7 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
 /// Combine set instructions with other set instructions or
 /// increments.
-pub fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
     // It's sufficient to consider immediately adjacent instructions
     // as sort_sequence_by_offset ensures that if the offset is the
     // same, the instruction is adjacent.
@@ -604,7 +604,7 @@ pub fn combine_set_and_increments(instrs: Vec<AstNode>) -> Vec<AstNode> {
         .map_loops(combine_set_and_increments)
 }
 
-pub fn remove_redundant_sets(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn remove_redundant_sets(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut reduced = remove_redundant_sets_inner(instrs);
 
     // Remove a set zero at the beginning of the program, since cells
@@ -652,7 +652,7 @@ fn remove_redundant_sets_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
         .map_loops(remove_redundant_sets_inner)
 }
 
-pub fn annotate_known_zero(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn annotate_known_zero(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut result = vec![];
 
     let position = if instrs.is_empty() {
@@ -720,7 +720,7 @@ fn annotate_known_zero_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
 /// Remove code at the end of the program that has no side
 /// effects. This means we have no write commands afterwards, nor
 /// loops (which may not terminate so we should not remove).
-pub fn remove_pure_code(mut instrs: Vec<AstNode>) -> (Vec<AstNode>, Option<Warning>) {
+fn remove_pure_code(mut instrs: Vec<AstNode>) -> (Vec<AstNode>, Option<Warning>) {
     let mut pure_instrs = vec![];
 
     while let Some(last_instr) = instrs.pop() {
@@ -810,7 +810,7 @@ fn cell_changes(instrs: &[AstNode]) -> HashMap<isize, Cell> {
     changes
 }
 
-pub fn extract_multiply(instrs: Vec<AstNode>) -> Vec<AstNode> {
+fn extract_multiply(instrs: Vec<AstNode>) -> Vec<AstNode> {
     instrs
         .into_iter()
         .map(|instr| {
@@ -2424,5 +2424,203 @@ mod tests {
         ];
 
         assert_eq!(next_cell_change(&instrs, 0), Some(3));
+    }
+}
+
+#[cfg(test)]
+mod soundness_tests {
+    use super::*;
+
+    use quickcheck::{quickcheck, TestResult};
+
+    use crate::bfir::AstNode;
+    use crate::execution::Outcome::*;
+    use crate::execution::{execute_with_state, ExecutionState};
+
+    fn transform_is_sound<F>(
+        instrs: Vec<AstNode>,
+        transform: F,
+        check_cells: bool,
+        dummy_read_value: Option<i8>,
+    ) -> TestResult
+    where
+        F: Fn(Vec<AstNode>) -> Vec<AstNode>,
+    {
+        let max_steps = 1000;
+
+        // First, we execute the program given.
+        let mut state = ExecutionState::initial(&instrs[..]);
+        let result = execute_with_state(&instrs[..], &mut state, max_steps, dummy_read_value);
+
+        // Optimisations may change malformed programs to well-formed
+        // programs, so we ignore programs that don't terminate nicely.
+        match result {
+            RuntimeError(_) | OutOfSteps => return TestResult::discard(),
+            _ => (),
+        }
+
+        // Next, we execute the program after transformation.
+        let optimised_instrs = transform(instrs.clone());
+        // Deliberately start our state from the original instrs, so we
+        // get the same number of cells. Otherwise we could get in messy
+        // situations where a dead loop that makes us think we use
+        // MAX_CELLS so state2 has fewer cells.
+        let mut state2 = ExecutionState::initial(&instrs[..]);
+        let result2 = execute_with_state(
+            &optimised_instrs[..],
+            &mut state2,
+            max_steps,
+            dummy_read_value,
+        );
+
+        // Compare the outcomes: they should be the same.
+        match (result, result2) {
+            // If the first result completed, the second should have
+            // completed too. We allow them to take a different amount of
+            // steps.
+            (Completed(_), Completed(_)) => (),
+            (ReachedRuntimeValue, ReachedRuntimeValue) => (),
+            // Any other situation means that the first program terminated
+            // but the optimised program did not.
+            (_, _) => {
+                println!("Optimised program did not terminate properly!");
+                return TestResult::failed();
+            }
+        }
+
+        // Likewise we should have written the same outputs.
+        if state.outputs != state2.outputs {
+            println!(
+                "Different outputs! Original outputs: {:?} Optimised: {:?}",
+                state.outputs, state2.outputs
+            );
+            return TestResult::failed();
+        }
+
+        // If requested, compare that the cells at the end are the same
+        // too. This is true of most, but not all, of our optimisations.
+        if check_cells && state.cells != state2.cells {
+            println!(
+                "Different cell states! Optimised state: {:?} Optimised: {:?}",
+                state.cells, state2.cells
+            );
+            return TestResult::failed();
+        }
+
+        TestResult::passed()
+    }
+
+    #[test]
+    fn combine_increments_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, combine_increments, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn combine_ptr_increments_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, combine_ptr_increments, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn annotate_known_zero_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, annotate_known_zero, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn extract_multiply_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, extract_multiply, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn simplify_loops_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, zeroing_loops, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn combine_set_and_increments_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, combine_set_and_increments, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn remove_dead_loops_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, remove_dead_loops, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn remove_redundant_sets_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, remove_redundant_sets, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn combine_before_read_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>, read_value: Option<i8>) -> TestResult {
+            // remove_read_clobber can change the value of cells when we
+            // reach a runtime value. Conside `+,` to `,` -- the `,`
+            // overwrites the cell, but when we reach the runtime value
+            // the cells are different.
+            transform_is_sound(instrs, remove_read_clobber, false, read_value)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>, Option<i8>) -> TestResult)
+    }
+
+    #[test]
+    fn remove_pure_code_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            // We can't compare cells after this pass. Consider `.+` to
+            // `.` -- the outputs are the same, but the cell state is
+            // different at termination.
+            transform_is_sound(instrs, |instrs| remove_pure_code(instrs).0, false, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn sort_by_offset_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, sort_by_offset, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
+    #[test]
+    fn test_overall_optimize_is_sound() {
+        fn optimize_ignore_warnings(instrs: Vec<AstNode>) -> Vec<AstNode> {
+            optimize(instrs, &None).0
+        }
+
+        fn optimizations_sound_together(
+            instrs: Vec<AstNode>,
+            read_value: Option<i8>,
+        ) -> TestResult {
+            // Since sort_by_offset and remove_read_clobber can change
+            // cell values at termination, the overall optimize can change
+            // cells values at termination.
+            transform_is_sound(instrs, optimize_ignore_warnings, false, read_value)
+        }
+
+        quickcheck(optimizations_sound_together as fn(Vec<AstNode>, Option<i8>) -> TestResult);
     }
 }
