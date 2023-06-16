@@ -1,5 +1,7 @@
 # v1.11.0
 
+Fixed a crash on compiling empty programs at low optimisation levels.
+
 Stripping is now done during linking, rather than shelling out to
 `strip`. This is faster and more robust.
 

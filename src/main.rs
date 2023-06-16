@@ -119,8 +119,7 @@ fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
         execution::execute(&instrs, execution::max_steps())
     } else {
         let mut init_state = execution::ExecutionState::initial(&instrs[..]);
-        // TODO: this will crash on the empty program.
-        init_state.start_instr = Some(&instrs[0]);
+        init_state.start_instr = instrs.first();
         (init_state, None)
     };
 
