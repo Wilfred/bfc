@@ -66,32 +66,44 @@ impl Combine<Option<Position>> for Option<Position> {
 /// `AstNode` represents a node in our BF AST.
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum AstNode {
+    /// The `+` and `-` instructions in BF. `amount` may not be 1 or -1
+    /// after simplifying e.g. `++`.
     Increment {
         amount: Cell,
         offset: isize,
         position: Option<Position>,
     },
+    /// The `<` and `>` instructions in BF. `amount` may not be 1 or
+    /// -1 after simplifying e.g. `>>`.
     PointerIncrement {
         amount: isize,
         position: Option<Position>,
     },
+    /// The `,` instruction in BF.
     Read {
         position: Option<Position>,
     },
+    /// The `.` instruction in BF.
     Write {
         position: Option<Position>,
     },
+    /// A loop in BF, such as `[>]`.
     Loop {
         body: Vec<AstNode>,
         position: Option<Position>,
     },
-    // These instruction have no direct equivalent in BF, but we
-    // generate them during optimisation.
+    /// Set the current BF cell to a value.
+    ///
+    /// This is only emitted during simplification. For example, `[-]`
+    /// is equivalent to setting the BF cell to zero.
     Set {
         amount: Cell,
         offset: isize,
         position: Option<Position>,
     },
+    /// Assign multiple other BF cells to the value of this cell,
+    /// multiplied by a constant. This also sets the current BF cell
+    /// to zero.
     MultiplyMove {
         changes: HashMap<isize, Cell>,
         position: Option<Position>,
