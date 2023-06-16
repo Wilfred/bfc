@@ -61,13 +61,6 @@ fn executable_name(bf_path: &Path) -> String {
     name_parts.join(".")
 }
 
-fn convert_io_error<T>(result: Result<T, std::io::Error>) -> Result<T, String> {
-    match result {
-        Ok(value) => Ok(value),
-        Err(e) => Err(format!("{}", e)),
-    }
-}
-
 fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
     let path = matches
         .get_one::<PathBuf>("path")
@@ -168,7 +161,7 @@ fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
     llvm::optimise_ir(&mut llvm_module, llvm_opt);
 
     // Compile the LLVM IR to a temporary object file.
-    let object_file = convert_io_error(NamedTempFile::new()).map_err(|e| {
+    let object_file = NamedTempFile::new().map_err(|e| {
         eprintln!("{}", e);
     })?;
 
