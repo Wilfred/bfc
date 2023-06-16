@@ -83,10 +83,10 @@ Hello World!
 
 You can use debug builds of bfc, but bfc will run much slower on large
 BF programs. This is due to bfc's speculative execution. You can
-disable this by passing `--opt=0` or `--opt=1` when running bfc.
+disable speculative execution by passing `--opt=0` or `--opt=1` when running bfc.
 
 ```
-$ target/release/bfc --opt=0 sample_programs/hello_world.bf
+$ target/debug/bfc --opt=0 sample_programs/hello_world.bf
 ```
 
 ### Cross-compilation
@@ -96,7 +96,7 @@ current machine. You can explicitly specify architecture using LLVM
 target triples:
 
 ```
-$ target/release/bfc sample_programs/hello_world.bf --target=x86_64-pc-linux-gnu
+$ bfc sample_programs/hello_world.bf --target=x86_64-pc-linux-gnu
 ```
 
 ## Diagnostics
