@@ -167,9 +167,7 @@ fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
         eprintln!("{}", e);
     })?;
 
-    let strip_opt = matches.get_one::<String>("strip").expect("Has default");
-    let strip = strip_opt == "yes";
-
+    let strip = matches.get_flag("strip");
     let output_name = executable_name(path);
     link_object_file(obj_file_path, &output_name, target_triple.cloned(), strip).map_err(|e| {
         eprintln!("{}", e);
@@ -236,11 +234,9 @@ fn main() {
         )
         .arg(
             Arg::new("strip")
-                .long("strip")
-                .value_name("yes|no")
-                .help("Strip symbols from the binary")
-                .value_parser(["yes", "no"])
-                .default_value("yes"),
+                .short('S')
+                .action(ArgAction::SetTrue)
+                .help("Strip symbols from the binary"),
         )
         .arg(
             Arg::new("target")
@@ -252,7 +248,6 @@ fn main() {
         .arg(
             Arg::new("dump-llvm")
                 .long("dump-llvm")
-                .action(ArgAction::SetTrue)
                 .action(ArgAction::SetTrue)
                 .help("Print the LLVM IR generated"),
         )

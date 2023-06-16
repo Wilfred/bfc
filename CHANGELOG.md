@@ -2,6 +2,9 @@
 
 Fixed a crash on compiling empty programs at low optimisation levels.
 
+The strip argument is now `-s`, consistent with other compilers, and
+binaries are no longer stripped by default.
+
 Stripping is now done during linking, rather than shelling out to
 `strip`. This is faster and more robust.
 
