@@ -3,8 +3,6 @@
 
 use std::process::Command;
 
-// TODO: release this as a simple rust package.
-
 /// Execute the CLI command specified. If the command succeeds,
 /// returns stdout.
 ///
