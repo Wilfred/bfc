@@ -245,8 +245,8 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn parse_increment() {

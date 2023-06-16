@@ -149,8 +149,8 @@ mod tests {
     use std::collections::HashMap;
     use std::num::Wrapping;
 
-    use crate::bfir::{parse, Position};
     use super::*;
+    use crate::bfir::{parse, Position};
 
     #[test]
     fn one_cell_bounds() {
