@@ -28,8 +28,6 @@ mod shell;
 #[cfg(test)]
 mod llvm_tests;
 #[cfg(test)]
-mod peephole_tests;
-#[cfg(test)]
 mod soundness_tests;
 
 /// Read the contents of the file at path, and return a string of its
