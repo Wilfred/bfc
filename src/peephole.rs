@@ -370,12 +370,9 @@ fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
         .into_iter()
         .enumerate()
         .filter(|&(index, ref instr)| {
-            match *instr {
-                Loop { .. } => {}
+            if !matches!(instr, Loop { .. }) {
                 // Keep all instructions that aren't loops.
-                _ => {
-                    return true;
-                }
+                return true;
             }
 
             // Find the previous change instruction:
@@ -383,12 +380,15 @@ fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
                 let prev_instr = &instrs[prev_change_index];
                 // If the previous instruction set to zero, our loop is dead.
                 // TODO: MultiplyMove also zeroes the current cell.
-                if let Set {
-                    amount: Wrapping(0),
-                    offset: 0,
-                    ..
-                } = *prev_instr
-                {
+                // TODO: define an is_set_zero() helper.
+                if matches!(
+                    prev_instr,
+                    Set {
+                        amount: Wrapping(0),
+                        offset: 0,
+                        ..
+                    }
+                ) {
                     return false;
                 }
             }
@@ -410,23 +410,23 @@ fn sort_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut result = vec![];
 
     for instr in instrs {
-        match instr {
-            Increment { .. } | Set { .. } | PointerIncrement { .. } => {
-                sequence.push(instr);
+        if matches!(
+            instr,
+            Increment { .. } | Set { .. } | PointerIncrement { .. }
+        ) {
+            sequence.push(instr);
+        } else {
+            if !sequence.is_empty() {
+                result.extend(sort_sequence_by_offset(sequence));
+                sequence = vec![];
             }
-            _ => {
-                if !sequence.is_empty() {
-                    result.extend(sort_sequence_by_offset(sequence));
-                    sequence = vec![];
-                }
-                if let Loop { body, position } = instr {
-                    result.push(Loop {
-                        body: sort_by_offset(body),
-                        position,
-                    });
-                } else {
-                    result.push(instr);
-                }
+            if let Loop { body, position } = instr {
+                result.push(Loop {
+                    body: sort_by_offset(body),
+                    position,
+                });
+            } else {
+                result.push(instr);
             }
         }
     }
@@ -609,12 +609,14 @@ fn remove_redundant_sets(instrs: Vec<AstNode>) -> Vec<AstNode> {
 
     // Remove a set zero at the beginning of the program, since cells
     // are initialised to zero anyway.
-    if let Some(&Set {
-        amount: Wrapping(0),
-        offset: 0,
-        ..
-    }) = reduced.first()
-    {
+    if matches!(
+        reduced.first(),
+        Some(Set {
+            amount: Wrapping(0),
+            offset: 0,
+            ..
+        })
+    ) {
         reduced.remove(0);
     }
 
@@ -625,22 +627,19 @@ fn remove_redundant_sets_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
     let mut redundant_instr_positions = HashSet::new();
 
     for (index, instr) in instrs.iter().enumerate() {
-        match *instr {
-            Loop { .. } | MultiplyMove { .. } => {
-                // There's no point setting to zero after a loop, as
-                // the cell is already zero.
-                if let Some(next_index) = next_cell_change(&instrs, index) {
-                    if let Set {
-                        amount: Wrapping(0),
-                        offset: 0,
-                        ..
-                    } = instrs[next_index]
-                    {
-                        redundant_instr_positions.insert(next_index);
-                    }
+        if matches!(instr, Loop { .. } | MultiplyMove { .. }) {
+            // There's no point setting to zero after a loop, as
+            // the cell is already zero.
+            if let Some(next_index) = next_cell_change(&instrs, index) {
+                if let Set {
+                    amount: Wrapping(0),
+                    offset: 0,
+                    ..
+                } = instrs[next_index]
+                {
+                    redundant_instr_positions.insert(next_index);
                 }
             }
-            _ => {}
         }
     }
 
