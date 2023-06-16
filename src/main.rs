@@ -170,48 +170,35 @@ fn compile_file(matches: &ArgMatches) -> Result<(), ()> {
         eprintln!("{}", e);
     })?;
 
+    let strip_opt = matches.get_one::<String>("strip").expect("Has default");
+    let strip = strip_opt == "yes";
+
     let output_name = executable_name(path);
-    link_object_file(obj_file_path, &output_name, target_triple.cloned()).map_err(|e| {
+    link_object_file(obj_file_path, &output_name, target_triple.cloned(), strip).map_err(|e| {
         eprintln!("{}", e);
     })?;
-
-    let strip_opt = matches.get_one::<String>("strip").expect("Has default");
-    if strip_opt == "yes" {
-        strip_executable(&output_name).map_err(|e| {
-            eprintln!("{}", e);
-        })?;
-    }
 
     Ok(())
 }
 
+/// Link the object file.
 fn link_object_file(
     object_file_path: &str,
     executable_path: &str,
     target_triple: Option<String>,
+    strip: bool,
 ) -> Result<(), String> {
-    // Link the object file.
-    let clang_args = if let Some(ref target_triple) = target_triple {
-        vec![
-            object_file_path,
-            "-target",
-            target_triple,
-            "-o",
-            executable_path,
-        ]
-    } else {
-        vec![object_file_path, "-o", executable_path]
-    };
+    let mut clang_args = vec![object_file_path, "-o", executable_path];
+
+    if let Some(ref target_triple) = target_triple {
+        clang_args.push("-target");
+        clang_args.push(target_triple);
+    }
+    if strip {
+        clang_args.push("-s");
+    }
 
     shell::run_shell_command("clang", &clang_args[..])
-}
-
-fn strip_executable(executable_path: &str) -> Result<(), String> {
-    let strip_args = match std::env::consts::OS {
-        "macos" => vec![executable_path],
-        _ => vec!["-s", executable_path],
-    };
-    shell::run_shell_command("strip", &strip_args[..])
 }
 
 fn main() {

@@ -1,3 +1,8 @@
+# v1.11.0
+
+Stripping is now done during linking, rather than shelling out to
+`strip`. This is faster and more robust.
+
 # v1.10.0
 
 Updated to LLVM 13.
