@@ -66,10 +66,18 @@ impl Combine<Option<Position>> for Option<Position> {
 /// `AstNode` represents a node in our BF AST.
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum AstNode {
-    /// The `+` and `-` instructions in BF. `amount` may not be 1 or -1
-    /// after simplifying e.g. `++`.
+    /// The `+` and `-` instructions in BF.
     Increment {
+        /// The amount to increment the current BF cell by.
+        ///
+        /// `amount` can have values other than 1 and -1 after
+        /// simplification, e.g. `++` is simplified to a single
+        /// Increment with an amount of 2.
         amount: BfValue,
+        /// The offset of the affected BF cell relative to the current
+        /// BF cell pointer.
+        ///
+        /// For example, `>+<` is an increment at offset 1.
         offset: isize,
         position: Option<Position>,
     },
@@ -80,13 +88,9 @@ pub enum AstNode {
         position: Option<Position>,
     },
     /// The `,` instruction in BF.
-    Read {
-        position: Option<Position>,
-    },
+    Read { position: Option<Position> },
     /// The `.` instruction in BF.
-    Write {
-        position: Option<Position>,
-    },
+    Write { position: Option<Position> },
     /// A loop in BF, such as `[>]`.
     Loop {
         body: Vec<AstNode>,
@@ -98,6 +102,10 @@ pub enum AstNode {
     /// is equivalent to setting the BF cell to zero.
     Set {
         amount: BfValue,
+        /// The offset of the affected BF cell relative to the current
+        /// BF cell pointer.
+        ///
+        /// For example, `>[-]<` is `Set { amount: 0, offset: 1}`.
         offset: isize,
         position: Option<Position>,
     },
