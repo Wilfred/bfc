@@ -1,4 +1,4 @@
-# v1.11.0
+# v1.11.0 (released 17th June 2023)
 
 Fixed a crash on compiling empty programs at low optimisation levels.
 
@@ -11,7 +11,7 @@ Stripping is now done during linking, rather than shelling out to
 Improved dead code elimination after multiply loops, e.g. `[>++<-][-]`
 is equivalent to `[>++<-]`.
 
-# v1.10.0
+# v1.10.0 (released 15th June 2023)
 
 Updated to LLVM 13.
 
@@ -21,7 +21,7 @@ Interface:
 * CLI argument parsing now uses the clap library. No arguments have
   changed, but help and argument parsing errors should be clearer.
 
-# v1.9.0
+# v1.9.0 (released 24th October 2020)
 
 Updated to LLVM 10.0.
 

@@ -3,12 +3,32 @@ id: changelog
 title: Changelog
 ---
 
+<!-- TODO: sync with bfc/changelog.md automatically -->
 
-## v1.10.0
+# v1.11.0 (released 17th June 2023)
 
-No changes yet.
+Fixed a crash on compiling empty programs at low optimisation levels.
 
-## v1.9.0
+The strip argument is now `-s`, consistent with other compilers, and
+binaries are no longer stripped by default.
+
+Stripping is now done during linking, rather than shelling out to
+`strip`. This is faster and more robust.
+
+Improved dead code elimination after multiply loops, e.g. `[>++<-][-]`
+is equivalent to `[>++<-]`.
+
+# v1.10.0 (released 15th June 2023)
+
+Updated to LLVM 13.
+
+Interface:
+
+* Improved diagnostics display on warnings and errors.
+* CLI argument parsing now uses the clap library. No arguments have
+  changed, but help and argument parsing errors should be clearer.
+
+# v1.9.0 (released 24th October 2020)
 
 Updated to LLVM 10.0.
 
