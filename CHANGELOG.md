@@ -8,6 +8,9 @@ binaries are no longer stripped by default.
 Stripping is now done during linking, rather than shelling out to
 `strip`. This is faster and more robust.
 
+Improved dead code elimination after multiply loops, e.g. `[>++<-][-]`
+is equivalent to `[>++<-]`.
+
 # v1.10.0
 
 Updated to LLVM 13.

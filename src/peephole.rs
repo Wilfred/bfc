@@ -379,7 +379,6 @@ fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
             if let Some(prev_change_index) = previous_cell_change(&instrs, index) {
                 let prev_instr = &instrs[prev_change_index];
                 // If the previous instruction set to zero, our loop is dead.
-                // TODO: MultiplyMove also zeroes the current cell.
                 // TODO: define an is_set_zero() helper.
                 if matches!(
                     prev_instr,
@@ -387,7 +386,7 @@ fn remove_dead_loops(instrs: Vec<AstNode>) -> Vec<AstNode> {
                         amount: Wrapping(0),
                         offset: 0,
                         ..
-                    }
+                    } | MultiplyMove { .. }
                 ) {
                     return false;
                 }
