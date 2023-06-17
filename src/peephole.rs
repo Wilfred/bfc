@@ -2516,6 +2516,48 @@ mod soundness_tests {
         quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
     }
 
+    fn discard_positions(instrs: Vec<AstNode>) -> Vec<AstNode> {
+        instrs
+            .into_iter()
+            .map(|instr| match instr {
+                Increment { amount, offset, .. } => Increment {
+                    amount,
+                    offset,
+                    position: None,
+                },
+                PointerIncrement { amount, .. } => PointerIncrement {
+                    amount,
+                    position: None,
+                },
+                Read { .. } => Read { position: None },
+                Write { .. } => Write { position: None },
+                Loop { body, .. } => Loop {
+                    body,
+                    position: None,
+                },
+                Set { amount, offset, .. } => Set {
+                    amount,
+                    offset,
+                    position: None,
+                },
+                MultiplyMove { changes, .. } => MultiplyMove {
+                    changes,
+                    position: None,
+                },
+            })
+            .map_loops(discard_positions)
+    }
+
+    /// Optimisations should not be affected by the presence or
+    /// absence of position data.
+    #[test]
+    fn discard_positions_is_sound() {
+        fn is_sound(instrs: Vec<AstNode>) -> TestResult {
+            transform_is_sound(instrs, discard_positions, true, None)
+        }
+        quickcheck(is_sound as fn(Vec<AstNode>) -> TestResult)
+    }
+
     #[test]
     fn combine_ptr_increments_is_sound() {
         fn is_sound(instrs: Vec<AstNode>) -> TestResult {
