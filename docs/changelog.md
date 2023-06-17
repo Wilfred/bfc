@@ -3,8 +3,6 @@ id: changelog
 title: Changelog
 ---
 
-<!-- TODO: sync with bfc/changelog.md automatically -->
-
 # v1.11.0 (released 17th June 2023)
 
 Fixed a crash on compiling empty programs at low optimisation levels.
