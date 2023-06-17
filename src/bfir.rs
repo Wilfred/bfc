@@ -160,8 +160,8 @@ pub struct ParseError {
 }
 
 /// Given a string of BF source code, parse and return our BF IR
-/// representation. If parsing fails, return an Info describing what
-/// went wrong.
+/// representation. If parsing fails, return a position and message
+/// describing what went wrong.
 pub fn parse(source: &str) -> Result<Vec<AstNode>, ParseError> {
     // AstNodes in the current loop (or toplevel).
     let mut instructions = vec![];
