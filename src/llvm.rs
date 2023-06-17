@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::num::Wrapping;
 
 use crate::bfir::AstNode::*;
-use crate::bfir::{AstNode, Cell};
+use crate::bfir::{AstNode, BfValue};
 
 use crate::execution::ExecutionState;
 
@@ -406,7 +406,7 @@ unsafe fn add_current_cell_access(
 }
 
 unsafe fn compile_increment(
-    amount: Cell,
+    amount: BfValue,
     offset: isize,
     module: &mut Module,
     bb: LLVMBasicBlockRef,
@@ -456,7 +456,7 @@ unsafe fn compile_increment(
 }
 
 unsafe fn compile_set(
-    amount: Cell,
+    amount: BfValue,
     offset: isize,
     module: &mut Module,
     bb: LLVMBasicBlockRef,
@@ -496,7 +496,7 @@ unsafe fn compile_set(
 }
 
 unsafe fn compile_multiply_move(
-    changes: &HashMap<isize, Cell>,
+    changes: &HashMap<isize, BfValue>,
     module: &mut Module,
     bb: LLVMBasicBlockRef,
     ctx: CompileContext,

@@ -11,10 +11,10 @@ use std::num::Wrapping;
 
 use self::AstNode::*;
 
-/// A cell is the fundamental BF datatype that we work with. BF
-/// requires this to be at least one byte, we provide a cell of
-/// exactly one byte.
-pub type Cell = Wrapping<i8>;
+/// `BfValue` represents the size of a single BF cell. BF requires
+/// this to be at least one byte, we provide a BF cell of exactly one
+/// byte.
+pub type BfValue = Wrapping<i8>;
 
 /// An inclusive range used for tracking positions in source code.
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -69,7 +69,7 @@ pub enum AstNode {
     /// The `+` and `-` instructions in BF. `amount` may not be 1 or -1
     /// after simplifying e.g. `++`.
     Increment {
-        amount: Cell,
+        amount: BfValue,
         offset: isize,
         position: Option<Position>,
     },
@@ -97,7 +97,7 @@ pub enum AstNode {
     /// This is only emitted during simplification. For example, `[-]`
     /// is equivalent to setting the BF cell to zero.
     Set {
-        amount: Cell,
+        amount: BfValue,
         offset: isize,
         position: Option<Position>,
     },
@@ -105,7 +105,7 @@ pub enum AstNode {
     /// multiplied by a constant. This also sets the current BF cell
     /// to zero.
     MultiplyMove {
-        changes: HashMap<isize, Cell>,
+        changes: HashMap<isize, BfValue>,
         position: Option<Position>,
     },
 }

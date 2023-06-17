@@ -10,7 +10,7 @@ use itertools::Itertools;
 use crate::diagnostics::Warning;
 
 use crate::bfir::AstNode::*;
-use crate::bfir::{get_position, AstNode, Cell, Combine, Position};
+use crate::bfir::{get_position, AstNode, BfValue, Combine, Position};
 
 const MAX_OPT_ITERATIONS: u64 = 40;
 
@@ -788,7 +788,7 @@ fn is_multiply_loop_body(body: &[AstNode]) -> bool {
 /// Return a hashmap of all the cells that are affected by this
 /// sequence of instructions, and how much they change.
 /// E.g. "->>+++>+" -> {0: -1, 2: 3, 3: 1}
-fn cell_changes(instrs: &[AstNode]) -> HashMap<isize, Cell> {
+fn cell_changes(instrs: &[AstNode]) -> HashMap<isize, BfValue> {
     let mut changes = HashMap::new();
     let mut cell_index: isize = 0;
 

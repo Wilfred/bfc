@@ -6,7 +6,7 @@ use std::env;
 use std::num::Wrapping;
 
 use crate::bfir::AstNode::*;
-use crate::bfir::{AstNode, Cell};
+use crate::bfir::{AstNode, BfValue};
 
 use crate::diagnostics::Warning;
 
@@ -15,7 +15,7 @@ use crate::bounds::highest_cell_index;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionState<'a> {
     pub start_instr: Option<&'a AstNode>,
-    pub cells: Vec<Cell>,
+    pub cells: Vec<BfValue>,
     pub cell_ptr: isize,
     pub outputs: Vec<i8>,
 }
@@ -392,7 +392,7 @@ mod tests {
 
     #[test]
     fn multiply_move_offset_too_high() {
-        let mut changes: HashMap<isize, Cell> = HashMap::new();
+        let mut changes: HashMap<isize, BfValue> = HashMap::new();
         changes.insert(MAX_CELL_INDEX as isize + 1, Wrapping(1));
         let instrs = [
             Increment {
