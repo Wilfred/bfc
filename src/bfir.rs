@@ -112,6 +112,8 @@ pub enum AstNode {
     /// Assign multiple other BF cells to the value of this cell,
     /// multiplied by a constant. This also sets the current BF cell
     /// to zero.
+    ///
+    /// For example, `[>+++<-]` is `MultiplyMove { changes: { 1: 3 }}`.
     MultiplyMove {
         changes: HashMap<isize, BfValue>,
         position: Option<Position>,
