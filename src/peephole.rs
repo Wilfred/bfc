@@ -674,12 +674,12 @@ fn annotate_known_zero(instrs: Vec<AstNode>) -> Vec<AstNode> {
         result.push(set_instr);
     }
 
-    result.extend(annotate_known_zero_inner(instrs));
+    result.extend(annotate_known_zero_inner(&instrs));
     result
 }
 
-fn annotate_known_zero_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
-    let mut result = vec![];
+fn annotate_known_zero_inner(instrs: &[AstNode]) -> Vec<AstNode> {
+    let mut result = Vec::with_capacity(instrs.len());
 
     for (i, instr) in instrs.iter().enumerate() {
         let instr = instr.clone();
@@ -688,7 +688,7 @@ fn annotate_known_zero_inner(instrs: Vec<AstNode>) -> Vec<AstNode> {
             // After a loop, we know the cell is currently zero.
             Loop { body, position } => {
                 result.push(Loop {
-                    body: annotate_known_zero_inner(body),
+                    body: annotate_known_zero_inner(&body),
                     position,
                 });
                 // Treat this set as positioned at the ].
