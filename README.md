@@ -1,7 +1,6 @@
 # An optimising compiler for brainfuck
 
 [![Crate version](https://img.shields.io/crates/v/bfc)](https://crates.io/crates/bfc)
-[![docs](https://docs.rs/bfc/badge.svg)](https://docs.rs/crate/bfc/)
 [![codecov](https://codecov.io/gh/Wilfred/bfc/branch/master/graph/badge.svg?token=LXpqhjCjVZ)](https://codecov.io/gh/Wilfred/bfc)
 
 bfc is an industrial grade compiler for
