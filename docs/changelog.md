@@ -5,6 +5,8 @@ title: Changelog
 
 # v1.13.0 (unreleased)
 
+Upgraded to LLVM 14.
+
 # v1.12.0 (released 17th September 2023)
 
 Removed multiply loop optimisation due to soundness issues.

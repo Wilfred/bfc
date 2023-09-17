@@ -17,7 +17,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@1.64.0
 
     - name: Install LLVM package
-      run: sudo apt-get install llvm-13-dev
+      run: sudo apt-get install llvm-14-dev
 
     - uses: actions/checkout@v3
 
