@@ -462,8 +462,7 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
                 position,
             } => {
                 let new_offset = offset + current_offset;
-                let same_offset_instrs =
-                    instrs_by_offset.entry(new_offset).or_insert_with(Vec::new);
+                let same_offset_instrs = instrs_by_offset.entry(new_offset).or_default();
                 same_offset_instrs.push(Increment {
                     amount,
                     offset: new_offset,
@@ -476,8 +475,7 @@ fn sort_sequence_by_offset(instrs: Vec<AstNode>) -> Vec<AstNode> {
                 position,
             } => {
                 let new_offset = offset + current_offset;
-                let same_offset_instrs =
-                    instrs_by_offset.entry(new_offset).or_insert_with(Vec::new);
+                let same_offset_instrs = instrs_by_offset.entry(new_offset).or_default();
                 same_offset_instrs.push(Set {
                     amount,
                     offset: new_offset,
