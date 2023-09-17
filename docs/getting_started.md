@@ -36,6 +36,13 @@ $ cargo clean
 $ cargo build
 ```
 
+When testing with different LLVM versions locally, you may find it
+easier to build with dynamic linking.
+
+```
+$ cargo build --features=llvm-sys/prefer-dynamic
+```
+
 #### LLVM From Source
 
 You can usually install LLVM from your package manager of
