@@ -6,10 +6,13 @@ jobs:
   coverage:
     runs-on: ubuntu-22.04
     steps:
+      - uses: dtolnay/rust-toolchain@1.64.0
+
       - uses: actions/checkout@v3
 
-      - name: Install Rust
+      - name: Install LLVM tools
         run: rustup toolchain install stable --component llvm-tools-preview
+
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 

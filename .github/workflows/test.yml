@@ -15,9 +15,12 @@ jobs:
 
     steps:
     - uses: dtolnay/rust-toolchain@1.64.0
+
     - name: Install LLVM package
       run: sudo apt-get install llvm-13-dev
-    - uses: actions/checkout@v2
+
+    - uses: actions/checkout@v3
+
     - name: Build
       run: cargo build --verbose
     - name: Run tests
