@@ -34,8 +34,6 @@ jobs:
             os: ubuntu-22.04
           # - target: x86_64-apple-darwin
           #   os: macos-latest
-          # - target: x86_64-pc-windows-msvc
-          #   os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -46,10 +44,6 @@ jobs:
           # [default value: unix]
           # [possible values: all, unix, windows, none]
           tar: unix
-          # (optional) On which platform to distribute the `.zip` file.
-          # [default value: windows]
-          # [possible values: all, unix, windows, none]
-          zip: windows
           # (optional) Target triple, default is host triple.
           target: ${{ matrix.target }}
         env:
