@@ -5,6 +5,8 @@ title: Changelog
 
 # v1.12.0 (unreleased)
 
+Removed multiply loop optimisation due to soundness issues.
+
 # v1.11.0 (released 17th June 2023)
 
 Fixed a crash on compiling empty programs at low optimisation levels.
