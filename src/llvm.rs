@@ -528,7 +528,7 @@ unsafe fn compile_multiply_move(
         multiply_body,
     );
 
-    // In the multiply body, do the mulitply
+    // In the multiply body, do the multiply
     builder.position_at_end(multiply_body);
 
     // Zero the current cell.
@@ -730,7 +730,7 @@ unsafe fn compile_loop(
     &mut *loop_after
 }
 
-/// Append LLVM IR instructions to bb acording to the BF instruction
+/// Append LLVM IR instructions to bb according to the BF instruction
 /// passed in.
 unsafe fn compile_instr(
     instr: &AstNode,

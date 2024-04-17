@@ -2617,7 +2617,7 @@ mod soundness_tests {
     fn combine_before_read_is_sound() {
         fn is_sound(instrs: Vec<AstNode>, read_value: Option<i8>) -> TestResult {
             // remove_read_clobber can change the value of cells when we
-            // reach a runtime value. Conside `+,` to `,` -- the `,`
+            // reach a runtime value. Consider `+,` to `,` -- the `,`
             // overwrites the cell, but when we reach the runtime value
             // the cells are different.
             transform_is_sound(instrs, remove_read_clobber, false, read_value)

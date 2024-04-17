@@ -152,7 +152,7 @@ Optimisations:
 finish executing loops in order to skip runtime execution. We can now
 partly execute loops at runtime. This is a big help to many programs
 with a large outer loop, previously they did not benefit from compile
-time exeuction.
+time execution.
 
 Compiler performance:
 
